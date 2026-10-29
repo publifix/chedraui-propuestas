@@ -212,7 +212,7 @@ Toda plaza entrega **un SVG por nivel** (`niveles[].plano`, relativo a la carpet
 | `narrativa` | objeto | O | `apertura`, `pivote`, `cierre` |
 | `asesor` | string | O | Slug del asesor |
 | `secciones` | lista | Op | Orden y activación de secciones; si no se define se usa el orden por defecto |
-| `seo` | objeto | O | `titulo`, `descripcion`, `imagen_og` |
+| `seo` | objeto | O | `titulo`, `descripcion`, `imagen_og` (op: URL `https://` o imagen de la carpeta de la plaza; sin ella el build genera una, ver §10) |
 
 #### 7.5.1 Condiciones negociadas
 
@@ -307,6 +307,13 @@ Dirección visual: titulares en la familia de display de la plaza, alineada con 
 - Todas las páginas con `noindex, nofollow`; sin sitemap; `robots.txt` bloquea `/p/` y `/revision/`.
 - Etiquetas Open Graph personalizadas por presentación para la vista previa de WhatsApp (`seo.titulo`, `seo.descripcion`, `seo.imagen_og` de 1200×630).
 - Vigencia: comprobación en el cliente; si la fecha pasó, se muestra un estado de "propuesta vencida" con el contacto del asesor.
+
+Implementación (paso 7):
+- **Rutas** (`src/lib/routes.ts`, `src/lib/site.ts`): `/revision/<token_revision>/` para toda presentación y `/p/<token_envio>/` solo en estado `lista`. Cualquier otra ruta, incluido un token inexistente, la sirve GitHub Pages con `src/pages/404.astro`: página sobria con la identidad de Publifix (`src/lib/theme/publifix.ts`, neutra hasta tener la oficial), sin enlaces ni datos de presentaciones. El índice del sitio es una portada neutra que no lista nada. Ninguna página enlaza a otra presentación.
+- **Imagen Open Graph** (`src/lib/og.ts`, `src/pages/og/[hash].jpg.ts`): el build genera un JPEG de 1200×630 por presentación con satori + sharp en Archivo: foto hero con capa en `marca` (o solo `marca` si no hay foto), logo de la plaza en `texto_marca`, "Propuesta para {marca}", clave y nombre de la plaza. Se publica en `og/<hash>.jpg`, un hash de los tokens que no revela el id, el prospecto ni los tokens. Si `seo.imagen_og` es una imagen de la plaza, se recorta esa a 1200×630; si es una URL `https://`, se usa tal cual.
+- **Metadatos** (`src/lib/meta.ts`): título, descripción, `og:url` absoluta con el base, `og:image` con medidas y alt, `og:site_name`, `twitter:card` `summary_large_image`, favicon con el icono de la plaza y `noindex, nofollow` en todas las páginas. `public/robots.txt` bloquea `/p/` y `/revision/`; no hay integración de sitemap.
+- **Vigencia** (`src/lib/vigencia.ts`): un script en línea en el `<head>` (`expiryScript`, misma regla que `isExpired`, probada) marca `<html class="is-vencida">` antes de pintar. En el link de envío se oculta el contenido y queda un estado de propuesta vencida con el logo de la plaza, la marca del prospecto y WhatsApp al asesor para pedir una propuesta actualizada (`mensajeVencida`). En revisión se ve todo el contenido con un aviso de que la propuesta venció.
+- **Pruebas:** `src/lib/__fixtures__/2026-12-prueba-lista.yaml` es una presentación en `lista` solo para pruebas (fuera de `CONTENT_DIR`, nunca se publica). `pnpm test:dist` (`scripts/check-dist.mjs`, también en CI después del build) revisa el sitio construido: 404, robots, sin sitemap, ninguna página que liste presentaciones, rutas de envío solo para `lista` y metadatos e imagen OG de cada página.
 
 ## 11. Tracking
 
@@ -412,11 +419,11 @@ Se aplican especialmente en los pasos 4, 5 y 10 del plan de trabajo (sección 12
 ## 17. Ambiente y publicación
 
 - Node 24 (`.nvmrc`) y pnpm 10 (`packageManager`). TypeScript 6: `astro check` aún no soporta TS 7.
-- Comandos: `pnpm dev`, `pnpm test`, `pnpm build` (incluye `astro check`), `pnpm preview`.
+- Comandos: `pnpm dev`, `pnpm test`, `pnpm build` (incluye `astro check`), `pnpm test:dist` (verifica `dist/` después del build), `pnpm preview`.
 - **Solo `main` publica.** `.github/workflows/deploy.yml` corre pruebas y build en cualquier rama y en cada pull request, pero el empaquetado y el job `deploy` exigen `refs/heads/main` (también si se lanza a mano desde Actions). Ninguna otra rama puede publicar; los cambios llegan al sitio solo por merge a `main`.
 - Sitio: https://publifix.github.io/chedraui-propuestas/. `site` y `base` están en `astro.config.ts`; toda ruta interna o asset se construye con `withBase()` (`src/lib/paths.ts`), nunca con rutas absolutas escritas a mano. Al conectar el dominio personalizado, ajustar `site`, `base` y las rutas de `public/robots.txt`.
 - Variables de entorno: ver `.env.example`. Los valores reales de Supabase viven solo en `.env` local y en los secrets del repo; nunca en código ni en el chat.
-- **Flujo de cada paso:** correr `pnpm test` y `pnpm build`, hacer commit y push a la rama de trabajo, abrir el pull request hacia `main` y esperar la aprobación en el chat. Con la aprobación, Claude hace el merge, confirma que la corrida de `main` terminó en verde y que el sitio se actualizó.
+- **Flujo de cada paso:** correr `pnpm test`, `pnpm build` y `pnpm test:dist`, hacer commit y push a la rama de trabajo, abrir el pull request hacia `main` y esperar la aprobación en el chat. Con la aprobación, Claude hace el merge, confirma que la corrida de `main` terminó en verde y que el sitio se actualizó.
 - El contenido se valida al iniciar `pnpm build` (integración `src/lib/content-validation.ts`): cualquier error de esquema o de referencia detiene el build y se listan todos, en español, con archivo y campo. En `pnpm dev` los errores se reportan sin detener el servidor.
 - Datos pendientes: los campos de texto obligatorios usan `"TODO: …"`; los opcionales se omiten con un comentario `# TODO: …`; solo `costo_ocupacion_objetivo` y `ventas_mensuales` aceptan `TODO` en lugar de número.
 - El hook `.claude/hooks/session-start.sh` prepara Node 24 y las dependencias en sesiones en la nube.

@@ -17,3 +17,12 @@ export function formatVigencia(vigencia: string): string {
     new Date(`${vigencia}T00:00:00Z`),
   )
 }
+
+/**
+ * Script en línea para el <head>: marca <html class="is-vencida"> antes de pintar, sin parpadeo
+ * del contenido. Misma regla que isExpired (fecha local del visitante); lo prueban los tests.
+ */
+export function expiryScript(vigencia: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(vigencia)) throw new Error(`vigencia inválida: ${vigencia}`)
+  return `(function(){var d=new Date(),p=function(n){return(n<10?'0':'')+n},t=d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());if(t>${JSON.stringify(vigencia)})document.documentElement.classList.add('is-vencida')})()`
+}

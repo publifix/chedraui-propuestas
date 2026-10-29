@@ -1,0 +1,53 @@
+---
+// Páginas propias de Publifix (404 e índice): identidad neutra, sin datos de plazas ni de
+// presentaciones, y siempre noindex.
+import '../styles/base.css'
+import Label from '../components/Label.astro'
+import { withBase } from '../lib/paths'
+import { fontFaceCss, preloadUrls, themeCss, themeFonts } from '../lib/theme'
+import { PUBLIFIX_TEMA } from '../lib/theme/publifix'
+
+interface Props {
+  title: string
+}
+
+const { title } = Astro.props
+const fonts = themeFonts(PUBLIFIX_TEMA.tipografias)
+---
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title}</title>
+    <meta name="theme-color" content={PUBLIFIX_TEMA.colores.fondo} />
+    <link rel="icon" type="image/svg+xml" href={withBase('favicon.svg')} />
+    {preloadUrls(fonts).map((href) => <link rel="preload" href={href} as="font" type="font/woff2" crossorigin />)}
+    <style is:inline set:html={fontFaceCss(fonts)} />
+    <style is:inline set:html={themeCss(PUBLIFIX_TEMA)} />
+  </head>
+  <body>
+    <main class="publifix">
+      <Label as="p" class="publifix__marca" text="Publifix" />
+      <slot />
+    </main>
+  </body>
+</html>
+
+<style>
+  .publifix {
+    display: grid;
+    align-content: center;
+    gap: var(--space-m);
+    min-block-size: 100svh;
+    max-inline-size: 40rem;
+    margin-inline: auto;
+    padding: max(var(--space-xl), env(safe-area-inset-top)) max(var(--space-m), env(safe-area-inset-right)) max(var(--space-xl), env(safe-area-inset-bottom)) max(var(--space-m), env(safe-area-inset-left));
+  }
+
+  .publifix :global(.publifix__marca) {
+    font-size: var(--step-1);
+    letter-spacing: 0.2em;
+  }
+</style>

@@ -14,7 +14,7 @@ export function getStaticPaths() {
   return staticPaths('revision')
 }
 
-const { model } = Astro.props as RouteEntry['props']
+const { model, route } = Astro.props as RouteEntry['props']
 const { plaza } = model
 const { tema } = plaza
 const medidas = resolveMedidas(tema)
@@ -42,7 +42,7 @@ const citaMuestra = 'El lugar donde la Riviera Veracruzana ya viene a comprar, a
 const pct = (n: number) => `${(n / subtotal) * 100}%`
 const px = (n: number) => `${Math.round(n * 10) / 10}px`
 ---
-<PresentationLayout model={model} kind="revision" title={`Tokens de diseño · ${plaza.nombre}`}>
+<PresentationLayout model={model} kind="revision" route={{ path: `${route.path}tokens/` }} title={`Tokens de diseño · ${plaza.nombre}`}>
   <Screen section="TokensPaleta" labelledby="paleta" align="start">
     <Headline as="h1" id="paleta" text="Paleta y contraste" />
     <Label class="accent intro" text={`Tokens · ${plaza.nombre}`} />
