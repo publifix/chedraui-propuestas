@@ -1,0 +1,295 @@
+---
+import '../styles/base.css'
+import Field from '../components/Field.astro'
+import type { ResolvedPresentation } from '../lib/resolve'
+import { withBase } from '../lib/paths'
+import { fontFaceCss, preloadUrls, themeCss } from '../lib/theme'
+import { isTodo } from '../schemas'
+
+interface Props {
+  model: ResolvedPresentation
+  kind: 'revision' | 'envio'
+  /** Familias extra que necesita la página (p. ej. la muestra de tokens). */
+  extraFonts?: string[]
+  title?: string
+}
+
+const { model, kind, extraFonts = [], title } = Astro.props
+const { plaza, seo, prospecto } = model
+const { tema, legales } = plaza
+const isRevision = kind === 'revision'
+
+const fonts = [tema.tipografias.display, tema.tipografias.cuerpo, ...extraFonts]
+const pageTitle = title ?? seo.titulo
+const ogImage = isTodo(seo.imagen_og) ? undefined : new URL(withBase(seo.imagen_og), Astro.site).href
+const favicon = isTodo(tema.icono) ? withBase('favicon.svg') : withBase(tema.icono)
+const pendientes = model.pendientes
+---
+<!doctype html>
+<html lang="es" class:list={[isRevision && 'is-revision']}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={seo.descripcion} />
+    <meta name="theme-color" content={tema.colores.fondo} />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="es_MX" />
+    <meta property="og:title" content={seo.titulo} />
+    <meta property="og:description" content={seo.descripcion} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    {ogImage && <meta property="og:image:width" content="1200" />}
+    {ogImage && <meta property="og:image:height" content="630" />}
+    <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+    <link rel="icon" href={favicon} />
+    {preloadUrls(fonts).map((href) => <link rel="preload" href={href} as="font" type="font/woff2" crossorigin />)}
+    <style is:inline set:html={fontFaceCss(fonts)} />
+    <style is:inline set:html={themeCss(tema)} />
+    <script is:inline>
+      // Prepara la animación de entrada solo si el navegador puede ejecutarla y el
+      // usuario no pidió reducir movimiento; si el script de reveal no corre, se descubre todo.
+      if ('IntersectionObserver' in window && matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+        var root = document.documentElement
+        root.classList.add('reveal-ready')
+        setTimeout(function () { if (!root.dataset.revealing) root.classList.remove('reveal-ready') }, 3000)
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+    <div class="chrome">
+      {isRevision && (
+        <div class="review-banner">
+          <span class="t-label">Vista previa interna · sin registro</span>
+          {pendientes.length > 0 && (
+            <details class="review-banner__todos">
+              <summary class="t-label">{pendientes.length} pendientes</summary>
+              <ol>
+                {pendientes.map((todo) => (
+                  <li>
+                    <code>{todo.path}</code> <span>{todo.text}</span>
+                  </li>
+                ))}
+              </ol>
+            </details>
+          )}
+        </div>
+      )}
+      <header class="site-header">
+        <span class="site-header__brand">
+          {isTodo(tema.logo) ? plaza.nombre : <img src={withBase(tema.logo)} alt={plaza.nombre} />}
+        </span>
+        <span class="site-header__recipient t-label">Propuesta para {prospecto.marca}</span>
+        <div class="progress" aria-hidden="true"><span class="progress__bar"></span></div>
+      </header>
+    </div>
+
+    <main id="contenido" tabindex="-1">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <p class="t-meta"><Field value={legales.leyenda_imagenes} /></p>
+      <p class="t-meta">
+        {isTodo(legales.aviso_privacidad_url)
+          ? <>Aviso de privacidad: <Field value={legales.aviso_privacidad_url} /></>
+          : <a href={legales.aviso_privacidad_url} rel="noopener">Aviso de privacidad</a>}
+      </p>
+      <p class="site-footer__credit t-meta">Presentación preparada por Publifix</p>
+    </footer>
+
+    <script>
+      const root = document.documentElement
+      const bar = document.querySelector<HTMLElement>('.progress__bar')
+
+      // Barra de progreso de lectura.
+      let ticking = false
+      const update = () => {
+        const max = root.scrollHeight - root.clientHeight
+        bar?.style.setProperty('--progress', String(max > 0 ? root.scrollTop / max : 0))
+        ticking = false
+      }
+      addEventListener('scroll', () => {
+        if (!ticking) requestAnimationFrame(update)
+        ticking = true
+      }, { passive: true })
+      update()
+
+      // Entrada sutil de cada pantalla al aparecer.
+      if (root.classList.contains('reveal-ready')) {
+        root.dataset.revealing = 'true'
+        const observer = new IntersectionObserver((entries) => {
+          for (const entry of entries) {
+            if (!entry.isIntersecting) continue
+            entry.target.classList.add('is-visible')
+            observer.unobserve(entry.target)
+          }
+        }, { threshold: 0.15 })
+        document.querySelectorAll('[data-reveal]').forEach((el) => observer.observe(el))
+      }
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --header-h: calc(var(--space-s) * 2 + 2.75rem);
+    --banner-h: 0px;
+    --chrome-h: calc(var(--header-h) + var(--banner-h) + env(safe-area-inset-top));
+  }
+
+  .is-revision {
+    --banner-h: 3.25rem;
+  }
+
+  @media (min-width: 40rem) {
+    .is-revision {
+      --banner-h: 2.25rem;
+    }
+  }
+</style>
+
+<style>
+  .skip-link {
+    position: absolute;
+    inset-inline-start: var(--space-s);
+    inset-block-start: calc(-1 * var(--space-3xl));
+    z-index: 20;
+    padding: var(--space-2xs) var(--space-s);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    border-radius: var(--radius-s);
+  }
+
+  .skip-link:focus {
+    inset-block-start: var(--space-s);
+  }
+
+  /* El encabezado queda fijo arriba con fondo propio: los titulares pasan por debajo, nunca encima del logo. */
+  .chrome {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 10;
+    padding-block-start: env(safe-area-inset-top);
+    background: var(--color-bg);
+  }
+
+  .review-banner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--space-3xs);
+    block-size: var(--banner-h);
+    padding-inline: max(var(--space-m), env(safe-area-inset-left)) max(var(--space-m), env(safe-area-inset-right));
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+
+  .review-banner .t-label {
+    white-space: nowrap;
+  }
+
+  @media (min-width: 40rem) {
+    .review-banner {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-s);
+    }
+  }
+
+  .review-banner__todos summary {
+    cursor: pointer;
+    list-style: none;
+    text-decoration: underline;
+    text-decoration-thickness: var(--line-width);
+    text-underline-offset: 0.25em;
+  }
+
+  .review-banner__todos summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .review-banner__todos ol {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 100%;
+    max-block-size: 60svh;
+    overflow-y: auto;
+    padding: var(--space-s) var(--space-m) var(--space-s) var(--space-xl);
+    background: var(--color-surface);
+    color: var(--color-text);
+    border-block-end: var(--line-width) solid var(--color-line);
+    font-size: var(--step--1);
+  }
+
+  .review-banner__todos li + li {
+    margin-block-start: var(--space-3xs);
+  }
+
+  .review-banner__todos code {
+    color: var(--color-accent);
+  }
+
+  .site-header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-s);
+    block-size: var(--header-h);
+    padding-inline: max(var(--space-m), env(safe-area-inset-left)) max(var(--space-m), env(safe-area-inset-right));
+    border-block-end: var(--line-width) solid var(--color-line);
+  }
+
+  .site-header__brand {
+    font-family: var(--font-display);
+    font-size: var(--step-2);
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .site-header__brand img {
+    block-size: 2rem;
+    inline-size: auto;
+  }
+
+  .site-header__recipient {
+    color: var(--color-text-muted);
+    text-align: end;
+  }
+
+  .progress {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: calc(-1 * var(--line-width));
+    block-size: calc(var(--line-width) * 2);
+  }
+
+  .progress__bar {
+    display: block;
+    block-size: 100%;
+    background: var(--color-accent);
+    transform: scaleX(var(--progress, 0));
+    transform-origin: left center;
+  }
+
+  main:focus {
+    outline: none;
+  }
+
+  .site-footer {
+    display: grid;
+    gap: var(--space-2xs);
+    padding-block: var(--space-xl) max(var(--space-xl), env(safe-area-inset-bottom));
+    padding-inline: max(var(--space-m), env(safe-area-inset-left)) max(var(--space-m), env(safe-area-inset-right));
+    background: var(--color-surface);
+  }
+
+  .site-footer__credit {
+    margin-block-start: var(--space-s);
+  }
+</style>

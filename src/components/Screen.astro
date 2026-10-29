@@ -1,0 +1,40 @@
+---
+// Una idea por pantalla: cada sección del visor (paso 5) se monta dentro de un Screen.
+interface Props {
+  /** Nombre de la sección (CLAUDE.md §9); se usa para tracking y anclas. */
+  section: string
+  labelledby?: string
+  align?: 'start' | 'center'
+}
+
+const { section, labelledby, align = 'center' } = Astro.props
+---
+<section class:list={['screen', `screen--${align}`]} data-section={section} aria-labelledby={labelledby}>
+  <div class="screen__inner" data-reveal>
+    <slot />
+  </div>
+</section>
+
+<style>
+  .screen {
+    display: grid;
+    min-block-size: calc(100svh - var(--chrome-h));
+    padding-block: var(--space-2xl);
+    padding-inline: max(var(--space-m), env(safe-area-inset-left)) max(var(--space-m), env(safe-area-inset-right));
+    border-block-end: var(--line-width) solid var(--color-line);
+  }
+
+  .screen--center {
+    align-items: center;
+  }
+
+  .screen--start {
+    align-items: start;
+  }
+
+  .screen__inner {
+    inline-size: 100%;
+    max-inline-size: 72rem;
+    margin-inline: auto;
+  }
+</style>

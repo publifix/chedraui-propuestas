@@ -12,15 +12,16 @@ ubicacion:
 tema:
   # TODO: confirmar los valores oficiales de la identidad (morado con velero blanco); colores provisionales.
   colores:
-    fondo: "#faf8fc"
+    fondo: "#f6f3f8"
     superficie: "#ffffff"
-    texto: "#1d1426"
-    texto_suave: "#5c5266"
-    acento: "#5b2a86"
-    linea: "#e3dcea"
+    texto: "#1f1529"
+    texto_suave: "#5d5068"
+    acento: "#562a82"
+    linea: "#ddd4e4"
+  # Provisional (combinación A del paso 4); se elige en la página de muestra de tokens.
   tipografias:
-    display: "TODO: serif display condensada (se define en el paso 4)"
-    cuerpo: "TODO: sans geométrica (se define en el paso 4)"
+    display: Instrument Serif
+    cuerpo: Jost
   logo: "TODO: logo de El Dorado en media/"
   icono: "TODO: icono del velero en media/"
 

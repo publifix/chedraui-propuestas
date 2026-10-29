@@ -1,0 +1,15 @@
+---
+// Link de envío: solo existe para presentaciones en estado "lista". El tracking llega en el paso 9.
+import PresentationLayout from '../../layouts/PresentationLayout.astro'
+import PendingSections from '../../components/PendingSections.astro'
+import { staticPaths, type RouteEntry } from '../../lib/site'
+
+export function getStaticPaths() {
+  return staticPaths('envio')
+}
+
+const { model } = Astro.props as RouteEntry['props']
+---
+<PresentationLayout model={model} kind="envio">
+  <PendingSections model={model} />
+</PresentationLayout>

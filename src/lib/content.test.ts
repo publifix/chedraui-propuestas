@@ -211,3 +211,26 @@ describe('estado "lista"', () => {
     expect(() => buildContent(files)).not.toThrow()
   })
 })
+
+describe('tema de la plaza', () => {
+  it('falla el build si un par de texto sobre fondo no cumple WCAG AA', () => {
+    const files = editYaml(seedFiles(), SEED.plaza, (d) => (d['tema'].colores.texto_suave = '#a89fb0'))
+    const errors = errorsOf(files)
+    expect(errors[0]).toMatch(
+      /^content\/plazas\/el-dorado\/plaza\.yaml › tema\.colores\.texto_suave: contraste \d\.\d\d:1 sobre "fondo"; WCAG AA exige 4\.5:1$/,
+    )
+    expect(errors.some((e) => e.includes('sobre "superficie"'))).toBe(true)
+  })
+
+  it('falla si la tipografía no está en el catálogo o tiene otro rol', () => {
+    const files = editYaml(seedFiles(), SEED.plaza, (d) => {
+      d['tema'].tipografias.display = 'Jost'
+      d['tema'].tipografias.cuerpo = 'Inter'
+    })
+    const errors = errorsOf(files)
+    expect(errors).toContain(
+      'content/plazas/el-dorado/plaza.yaml › tema.tipografias.display: "Jost" no está en el catálogo de fuentes (disponibles: "Instrument Serif", "Gloock", "Bodoni Moda")',
+    )
+    expect(errors.some((e) => e.includes('tema.tipografias.cuerpo: "Inter"'))).toBe(true)
+  })
+})

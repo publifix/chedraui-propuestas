@@ -116,7 +116,7 @@ Leyenda: **O** = obligatorio, **Op** = opcional.
 | `nombre` | string | O | Nombre comercial |
 | `nombre_completo` | string | Op | p. ej. "El Dorado Centro Comercial & Marina" |
 | `ubicacion` | objeto | O | `ciudad`, `estado`, `direccion`, `zona` |
-| `tema` | objeto | O | `colores` (fondo, superficie, texto, texto_suave, acento, linea), `tipografias` (display, cuerpo), `logo`, `icono` |
+| `tema` | objeto | O | `colores` (fondo, superficie, texto, texto_suave, acento, linea), `tipografias` (display, cuerpo), `logo`, `icono`, `medidas` (op). Ver 7.1.1 |
 | `frase_principal` | string | O | Titular de apertura de la plaza |
 | `hero` | objeto | O | `imagen`, `alt` |
 | `metricas` | lista | O | Cada una: `valor`, `etiqueta`, `fuente`, `periodo` |
@@ -127,6 +127,14 @@ Leyenda: **O** = obligatorio, **Op** = opcional.
 | `modulos` | lista | Op | Experiencias propias (p. ej. `marina`, `park`, `eventos`) con su contenido |
 | `contacto_general` | objeto | O | `web`, `correo`, `telefono` |
 | `legales` | objeto | O | `aviso_privacidad_url`, `leyenda_imagenes` |
+
+#### 7.1.1 Tema
+
+- **Colores:** hex. El build falla si un par de texto sobre fondo no cumple WCAG AA (4.5:1): texto, texto_suave y acento sobre fondo y superficie, y superficie sobre acento (`src/lib/theme/contrast.ts`).
+- **Tipografías:** nombres del catálogo autoalojado de `src/lib/theme/fonts.ts` (OFL, subset latin, solo pesos 400/500, `font-display: swap`; nada se carga de Google Fonts). Display: Instrument Serif, Gloock, Bodoni Moda. Cuerpo: Jost, Outfit, Urbanist. Para agregar una familia, se suma al catálogo y a `font-roles.ts`.
+- **Medidas (opcional):** `escala` (razón tipográfica en escritorio, 1.1–1.6), `espacio_base` (px), `radio` (px), `linea` (px), `duracion_ms`. Sin ellas se usan los valores del motor (`DEFAULT_MEDIDAS`).
+- `src/lib/theme/tokens.ts` convierte el tema en variables CSS (`--color-*`, `--font-*`, `--step-*` fluidos con `clamp()` de 360 a 1280 px, `--space-*`, `--radius-*`, `--line-width`, `--duration*`) que el layout inyecta en `:root`. Ningún componente usa valores visuales propios.
+- El tema no cambia con el modo claro u oscuro del dispositivo: `color-scheme` queda fijo según el fondo de la plaza.
 
 ### 7.2 Local (`locales/<clave>.yaml`) · uno por local disponible
 
@@ -255,6 +263,8 @@ Una sección = un componente en `src/components/sections`. Cada una recibe el mo
 | 13 | `Cierre` | Frase de cierre, botón de WhatsApp al asesor, vigencia de la oferta |
 | — | `Footer` | Aviso de privacidad, leyenda de imágenes, crédito discreto de Publifix |
 
+Layout base (`src/layouts/PresentationLayout.astro`): encabezado fijo con fondo, barra de progreso de lectura, `<main>` donde cada sección va dentro de `src/components/Screen.astro` (una idea por pantalla), footer con aviso de privacidad, leyenda de imágenes y crédito de Publifix, franja "Vista previa interna · sin registro" con la lista de pendientes solo en revisión, `noindex` y Open Graph desde `seo`, márgenes seguros (`env(safe-area-inset-*)`) y entrada sutil que respeta `prefers-reduced-motion`. Los valores en `TODO` se muestran con `src/components/Field.astro`. La muestra de tokens de cada plaza vive en `/revision/<token_revision>/tokens/`.
+
 Dirección visual: titulares en serif display condensada, cuerpo en sans geométrica, etiquetas en mayúsculas con tracking amplio, líneas finas como separadores, una idea por pantalla, mucho espacio. El encabezado fijo debe tener fondo para que los titulares no se encimen al hacer scroll. Sin sonido. Animaciones de entrada sutiles y respetando `prefers-reduced-motion`.
 
 ## 10. Links, vigencia y SEO
@@ -369,7 +379,7 @@ Se aplican especialmente en los pasos 4, 5 y 10 del plan de trabajo (sección 12
 - **Solo `main` publica.** `.github/workflows/deploy.yml` corre pruebas y build en cualquier rama y en cada pull request, pero el empaquetado y el job `deploy` exigen `refs/heads/main` (también si se lanza a mano desde Actions). Ninguna otra rama puede publicar; los cambios llegan al sitio solo por merge a `main`.
 - Sitio: https://publifix.github.io/chedraui-propuestas/. `site` y `base` están en `astro.config.ts`; toda ruta interna o asset se construye con `withBase()` (`src/lib/paths.ts`), nunca con rutas absolutas escritas a mano. Al conectar el dominio personalizado, ajustar `site`, `base` y las rutas de `public/robots.txt`.
 - Variables de entorno: ver `.env.example`. Los valores reales de Supabase viven solo en `.env` local y en los secrets del repo; nunca en código ni en el chat.
-- **Al terminar cada ronda de trabajo:** correr `pnpm test` y `pnpm build`, hacer commit y push, y confirmar que el workflow terminó en verde.
+- **Flujo de cada paso:** correr `pnpm test` y `pnpm build`, hacer commit y push a la rama de trabajo, abrir el pull request hacia `main` y esperar la aprobación en el chat. Con la aprobación, Claude hace el merge, confirma que la corrida de `main` terminó en verde y que el sitio se actualizó.
 - El contenido se valida al iniciar `pnpm build` (integración `src/lib/content-validation.ts`): cualquier error de esquema o de referencia detiene el build y se listan todos, en español, con archivo y campo. En `pnpm dev` los errores se reportan sin detener el servidor.
 - Datos pendientes: los campos de texto obligatorios usan `"TODO: …"`; los opcionales se omiten con un comentario `# TODO: …`; solo `costo_ocupacion_objetivo` y `ventas_mensuales` aceptan `TODO` en lugar de número.
 - El hook `.claude/hooks/session-start.sh` prepara Node 24 y las dependencias en sesiones en la nube.

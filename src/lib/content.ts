@@ -2,6 +2,8 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { parse } from 'yaml'
 import { resolvePresentation } from './resolve'
+import { AA_NORMAL_TEXT, checkContrast } from './theme/contrast'
+import { fontNames, isFont } from './theme/font-roles'
 import type * as z from 'zod'
 import {
   asesorSchema,
@@ -129,6 +131,11 @@ export function buildContent(files: Map<string, string>, label = 'content'): Con
         errors.push(formatIssue(where(rel), ['slug'], `debe coincidir con el nombre de la carpeta ("${folder}")`))
         continue
       }
+      const themeErrors = validateTheme(where(rel), plaza)
+      if (themeErrors.length > 0) {
+        errors.push(...themeErrors)
+        continue
+      }
       plazas.set(plaza.slug, { file: where(rel), plaza, locales: new Map() })
     } else if (localMatch) {
       localFiles.push({ rel, plazaSlug: localMatch[1]! })
@@ -220,6 +227,29 @@ export function buildContent(files: Map<string, string>, label = 'content'): Con
 
   if (errors.length > 0) throw new ContentValidationError(errors)
   return content
+}
+
+/** Contraste WCAG AA de los pares de texto del tema y fuentes del catálogo. */
+export function validateTheme(file: string, plaza: Plaza): string[] {
+  const errors: string[] = []
+  const { colores, tipografias } = plaza.tema
+  for (const { texto, fondo, ratio, pasa } of checkContrast(colores)) {
+    if (pasa) continue
+    errors.push(
+      formatIssue(file, ['tema', 'colores', texto], `contraste ${ratio.toFixed(2)}:1 sobre "${fondo}"; WCAG AA exige ${AA_NORMAL_TEXT}:1`),
+    )
+  }
+  const fonts = [
+    ['display', tipografias.display, 'display'],
+    ['cuerpo', tipografias.cuerpo, 'body'],
+  ] as const
+  for (const [campo, nombre, role] of fonts) {
+    if (!isFont(nombre, role)) {
+      const disponibles = fontNames(role).map((n) => `"${n}"`).join(', ')
+      errors.push(formatIssue(file, ['tema', 'tipografias', campo], `"${nombre}" no está en el catálogo de fuentes (disponibles: ${disponibles})`))
+    }
+  }
+  return errors
 }
 
 /** Ids de los elementos de un SVG. */
