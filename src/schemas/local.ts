@@ -7,9 +7,10 @@ const deposito = z.strictObject({
   incluye_iva: z.boolean(),
 })
 
+// valor como fracción (0.05 = 5 %). Con `inpc` es el supuesto de inflación anual usado para estimar.
 const incrementoAnual = z.strictObject({
   tipo: z.enum(['fijo', 'inpc']),
-  valor: z.number().min(0),
+  valor: z.number().min(0).max(1, 'debe expresarse como fracción (p. ej. 0.05)'),
 })
 
 export const condicionesBaseSchema = z.strictObject({
@@ -50,5 +51,9 @@ export const localSchema = z.strictObject({
     .optional(),
 })
 
+/** Campos de condiciones_base que una presentación puede sobrescribir. */
+export const condicionesOverrideSchema = condicionesBaseSchema.partial()
+
 export type CondicionesBase = z.infer<typeof condicionesBaseSchema>
+export type CondicionesOverride = z.infer<typeof condicionesOverrideSchema>
 export type Local = z.infer<typeof localSchema>

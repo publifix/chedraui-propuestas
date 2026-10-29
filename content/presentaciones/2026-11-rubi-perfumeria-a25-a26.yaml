@@ -1,5 +1,8 @@
 id: 2026-11-rubi-perfumeria-a25-a26
 
+# borrador: solo link de revisión con TODO visibles. lista: sin TODO visibles, genera link de envío.
+estado: borrador
+
 # Generados con crypto.randomBytes(12).toString('base64url').
 tokens:
   envio: "-LVqzlD3b5b80Ps0"

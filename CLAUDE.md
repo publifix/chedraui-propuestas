@@ -173,17 +173,39 @@ Leyenda: **O** = obligatorio, **Op** = opcional.
 | Campo | Tipo | | Descripción |
 |---|---|---|---|
 | `id` | string | O | Igual al nombre del archivo |
+| `estado` | enum | O | `borrador` o `lista`. Ver 7.5.2 |
 | `tokens` | objeto | O | `envio`, `revision`. Aleatorios, ≥ 12 caracteres, distintos entre sí. Los genera el comando `/nueva-presentacion` |
 | `plaza` | string | O | Slug de la plaza |
 | `locales` | lista | O | Una o dos claves (dos = comparativa) |
 | `prospecto` | objeto | O | `marca`, `destinatario`, `giro` (slug), `logo` (op) |
-| `condiciones` | objeto | Op | Sobrescribe campos de `condiciones_base` |
+| `condiciones` | objeto | Op | Sobrescribe campos de `condiciones_base`. Ver 7.5.1 |
 | `vigencia` | fecha | O | Después de esta fecha la página muestra "propuesta vencida" |
 | `escenarios_venta` | lista | O | 3 escenarios: `nombre`, `ventas_mensuales` |
 | `narrativa` | objeto | O | `apertura`, `pivote`, `cierre` |
 | `asesor` | string | O | Slug del asesor |
 | `secciones` | lista | Op | Orden y activación de secciones; si no se define se usa el orden por defecto |
 | `seo` | objeto | O | `titulo`, `descripcion`, `imagen_og` |
+
+#### 7.5.1 Condiciones negociadas
+
+- **Un local:** `condiciones` contiene directamente los campos de `condiciones_base` que cambian.
+- **Dos locales (comparativa):** `condiciones` va por clave de local; cada local solo recibe lo de su clave y un local sin clave conserva sus condiciones base. Las claves deben ser locales de la presentación.
+
+```yaml
+condiciones:           # un local
+  renta_mensual: 15000
+---
+condiciones:           # dos locales
+  A25+A26: { renta_mensual: 16000 }
+  A27: { meses_gracia: 2 }
+```
+
+- Se sobrescribe campo por campo y nada más; `deposito` e `incremento_anual` se reemplazan completos. Ninguna otra capa se sobrescribe.
+
+#### 7.5.2 Estado
+
+- **`borrador`:** solo se genera el link de revisión, con los `TODO` visibles.
+- **`lista`:** el build falla si queda cualquier valor `TODO` en un campo que vea el prospecto (el modelo resuelto: plaza, locales, giro, asesor y presentación, sin contar los campos de secciones desactivadas en `secciones`). Solo entonces se genera también el link de envío (`src/lib/routes.ts`). Los comentarios `# TODO` no bloquean.
 
 ## 8. Cálculos (`src/lib/calc`)
 
@@ -202,6 +224,13 @@ Funciones puras, sin efectos secundarios, con pruebas en Vitest para cada una, i
 | `costoAnual` | totalMensual × 12, aplicando meses de gracia e incremento si existen |
 
 Reglas: redondear solo al mostrar, nunca en cálculos intermedios; formato `es-MX` con `$` y separador de miles; mostrar siempre si un monto incluye o no IVA.
+
+Implementación:
+- Cada monto es `{ amount, vat, estimate, assumptions }`, con `vat` = `excluded` (+ IVA), `included` (IVA incluido) u `only` (el IVA mismo). Los porcentajes llevan también `vat`.
+- Si un dato está en `TODO` (ventas de un escenario, rango de costo de ocupación del giro), el resultado es `{ kind: 'pending', reason }`, no un número ni un error; la interfaz lo muestra como "Pendiente".
+- `costoAnual(c, anio)` calcula el año `anio` del contrato (1 por defecto). Supuestos, pendientes de confirmar con Chedraui: los meses de gracia eximen solo la renta, desde el primer mes (el mantenimiento se paga); el incremento anual aplica solo a la renta desde el año 2, compuesto. Con `tipo: inpc`, `valor` es la inflación supuesta y el resultado se marca como estimación con el supuesto escrito.
+- `incremento_anual.valor` se expresa como fracción (`0.05` = 5 %).
+- Formato: `src/lib/calc/format.ts` (`formatMoney`, `formatAmount`, `formatPercent`). Los cálculos de cada local viven en `calculos` del modelo resuelto.
 
 **Caso conocido a cubrir con prueba:** en el PDF actual de El Dorado el depósito dice "renta + mantenimiento + IVA = $19,720", pero $19,720 = $17,000 × 1.16 (solo renta con IVA). La regla correcta está pendiente de confirmar con Chedraui; mientras tanto, configurar `deposito: { meses: 1, incluye_mantenimiento: false, incluye_iva: true }` y documentarlo en la presentación demo.
 
@@ -337,8 +366,8 @@ Se aplican especialmente en los pasos 4, 5 y 10 del plan de trabajo (sección 12
 
 - Node 24 (`.nvmrc`) y pnpm 10 (`packageManager`). TypeScript 6: `astro check` aún no soporta TS 7.
 - Comandos: `pnpm dev`, `pnpm test`, `pnpm build` (incluye `astro check`), `pnpm preview`.
-- Cada push a `main` ejecuta `.github/workflows/deploy.yml`: pruebas, build y despliegue a GitHub Pages. También se puede lanzar a mano desde la pestaña Actions.
-- Sitio: https://publifix.github.io/chedraui-propuestas/. `site` y `base` están en `astro.config.mjs`; toda ruta interna o asset se construye con `withBase()` (`src/lib/paths.ts`), nunca con rutas absolutas escritas a mano. Al conectar el dominio personalizado, ajustar `site`, `base` y las rutas de `public/robots.txt`.
+- **Solo `main` publica.** `.github/workflows/deploy.yml` corre pruebas y build en cualquier rama y en cada pull request, pero el empaquetado y el job `deploy` exigen `refs/heads/main` (también si se lanza a mano desde Actions). Ninguna otra rama puede publicar; los cambios llegan al sitio solo por merge a `main`.
+- Sitio: https://publifix.github.io/chedraui-propuestas/. `site` y `base` están en `astro.config.ts`; toda ruta interna o asset se construye con `withBase()` (`src/lib/paths.ts`), nunca con rutas absolutas escritas a mano. Al conectar el dominio personalizado, ajustar `site`, `base` y las rutas de `public/robots.txt`.
 - Variables de entorno: ver `.env.example`. Los valores reales de Supabase viven solo en `.env` local y en los secrets del repo; nunca en código ni en el chat.
 - **Al terminar cada ronda de trabajo:** correr `pnpm test` y `pnpm build`, hacer commit y push, y confirmar que el workflow terminó en verde.
 - El contenido se valida al iniciar `pnpm build` (integración `src/lib/content-validation.ts`): cualquier error de esquema o de referencia detiene el build y se listan todos, en español, con archivo y campo. En `pnpm dev` los errores se reportan sin detener el servidor.
