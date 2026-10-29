@@ -203,3 +203,71 @@ describe('presentación', () => {
     expect(errors.some((e) => e.includes('Llave desconocida: "area_m2"'))).toBe(true)
   })
 })
+
+describe('estado de la presentación', () => {
+  it('es obligatorio', () => {
+    const p = seed(SEED.presentacion)
+    delete p['estado']
+    expect(errorsOf(presentacionSchema, p)).toEqual(['archivo.yaml › estado: campo obligatorio'])
+  })
+
+  it('solo admite borrador o lista', () => {
+    const p = seed(SEED.presentacion)
+    p['estado'] = 'enviada'
+    expect(errorsOf(presentacionSchema, p)[0]).toMatch(/estado: Opción inválida: se esperaba una de "borrador"\|"lista"/)
+  })
+})
+
+describe('condiciones de la presentación', () => {
+  it('con un local, se definen directo', () => {
+    const p = seed(SEED.presentacion)
+    p['condiciones'] = { renta_mensual: 15000, meses_gracia: 1 }
+    expect(presentacionSchema.safeParse(p).success).toBe(true)
+  })
+
+  it('con un local, rechaza la clave del local', () => {
+    const p = seed(SEED.presentacion)
+    p['condiciones'] = { 'A25+A26': { renta_mensual: 15000 } }
+    expect(errorsOf(presentacionSchema, p)).toEqual([
+      'archivo.yaml › condiciones: con un solo local las condiciones van directo, sin la clave del local',
+    ])
+  })
+
+  it('con dos locales, se definen por clave de local', () => {
+    const p = seed(SEED.presentacion)
+    p['locales'] = ['A25+A26', 'A27']
+    p['condiciones'] = { 'A25+A26': { renta_mensual: 15000 }, A27: { meses_gracia: 2 } }
+    expect(presentacionSchema.safeParse(p).success).toBe(true)
+  })
+
+  it('con dos locales, rechaza el formato plano', () => {
+    const p = seed(SEED.presentacion)
+    p['locales'] = ['A25+A26', 'A27']
+    p['condiciones'] = { renta_mensual: 15000 }
+    expect(errorsOf(presentacionSchema, p)[0]).toContain('condiciones: con dos locales las condiciones se definen por clave de local')
+  })
+
+  it('con dos locales, rechaza claves que no son locales de la presentación', () => {
+    const p = seed(SEED.presentacion)
+    p['locales'] = ['A25+A26', 'A27']
+    p['condiciones'] = { B1: { renta_mensual: 15000 } }
+    expect(errorsOf(presentacionSchema, p)[0]).toContain('las claves deben ser locales de la presentación ("A25+A26", "A27")')
+  })
+
+  it('con dos locales, valida los campos de cada local', () => {
+    const p = seed(SEED.presentacion)
+    p['locales'] = ['A25+A26', 'A27']
+    p['condiciones'] = { A27: { renta_mensual: -5 } }
+    expect(errorsOf(presentacionSchema, p)[0]).toMatch(/^archivo\.yaml › condiciones\.A27\.renta_mensual: /)
+  })
+})
+
+describe('incremento anual', () => {
+  it('exige el valor como fracción', () => {
+    const local = seed(SEED.local)
+    local['condiciones_base'].incremento_anual = { tipo: 'fijo', valor: 5 }
+    expect(errorsOf(localSchema, local)[0]).toContain('condiciones_base.incremento_anual.valor: debe expresarse como fracción')
+    local['condiciones_base'].incremento_anual = { tipo: 'inpc', valor: 0.045 }
+    expect(localSchema.safeParse(local).success).toBe(true)
+  })
+})

@@ -1,18 +1,17 @@
 name: Deploy to GitHub Pages
 
-# Cada push a main publica el sitio; también se puede lanzar a mano desde Actions.
+# Todas las ramas y PRs corren pruebas y build. Solo main publica: los pasos de
+# empaquetado y el job deploy exigen refs/heads/main, también al lanzarlo a mano.
 on:
   push:
-    branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: ${{ github.ref == 'refs/heads/main' && 'pages' || format('ci-{0}', github.ref) }}
   cancel-in-progress: true
 
 jobs:
@@ -30,13 +29,18 @@ jobs:
       - run: pnpm build
         env:
           ASTRO_TELEMETRY_DISABLED: 1
-      - uses: actions/upload-pages-artifact@v4
+      - if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v4
         with:
           path: dist
 
   deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

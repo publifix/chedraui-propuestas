@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { parse } from 'yaml'
+import { resolvePresentation } from './resolve'
 import type * as z from 'zod'
 import {
   asesorSchema,
@@ -206,7 +207,19 @@ export function buildContent(files: Map<string, string>, label = 'content'): Con
   }
 
   if (errors.length > 0) throw new ContentValidationError(errors)
-  return { plazas, giros, asesores, presentaciones, todos }
+  const content = { plazas, giros, asesores, presentaciones, todos }
+
+  // Una presentación "lista" no puede mostrarle ningún TODO al prospecto.
+  for (const p of presentaciones.values()) {
+    if (p.estado !== 'lista') continue
+    const file = where(`presentaciones/${p.id}.yaml`)
+    for (const todo of resolvePresentation(content, p.id).pendientes) {
+      errors.push(formatIssue(file, ['estado'], `"lista" exige completar ${todo.path} (${todo.text})`))
+    }
+  }
+
+  if (errors.length > 0) throw new ContentValidationError(errors)
+  return content
 }
 
 /** Ids de los elementos de un SVG. */

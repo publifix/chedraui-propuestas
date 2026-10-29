@@ -4,7 +4,9 @@ import * as z from 'zod'
 z.config(z.locales.es())
 z.config({
   customError: (issue) =>
-    issue.code === 'invalid_type' && issue.input === undefined ? 'campo obligatorio' : undefined,
+    (issue.code === 'invalid_type' || issue.code === 'invalid_value') && issue.input === undefined
+      ? 'campo obligatorio'
+      : undefined,
 })
 
 /** Marcador de dato pendiente. Visible solo en el link de revisión (CLAUDE.md §14). */

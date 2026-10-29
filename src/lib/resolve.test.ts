@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildContent } from './content'
 import { mergeCondiciones, resolveAll, resolvePresentation } from './resolve'
-import { editYaml, SEED, seedFiles } from './test-utils'
+import { editYaml, readYaml, SEED, seedFiles } from './test-utils'
 import { SECCIONES, type CondicionesBase } from '../schemas'
 
 const ID = '2026-11-rubi-perfumeria-a25-a26'
@@ -66,7 +66,7 @@ describe('resolvePresentation', () => {
     expect(local!.condiciones).toEqual({ ...original.condiciones_base, renta_mensual: 15000 })
     // El resto del local y sus condiciones_base quedan intactos.
     expect(local!.condiciones_base).toEqual(original.condiciones_base)
-    const { condiciones: _, ...rest } = local!
+    const { condiciones: _c, calculos: _k, ...rest } = local!
     expect(rest).toEqual(original)
   })
 
@@ -81,5 +81,70 @@ describe('resolvePresentation', () => {
 
   it('resolveAll resuelve todas las presentaciones', () => {
     expect(resolveAll(buildContent(seedFiles())).map((p) => p.id)).toEqual([ID])
+  })
+})
+
+/** Semilla con un segundo local (A27) en la plaza y la presentación como comparativa. */
+function comparativa(condiciones?: unknown) {
+  const files = seedFiles()
+  const segundo = readYaml(files, SEED.local)
+  segundo['clave'] = 'A27'
+  segundo['plano_ref'] = 'local-a27'
+  segundo['area_m2'] = 60
+  segundo['condiciones_base'].renta_mensual = 14000
+  files.set('plazas/el-dorado/locales/a27.yaml', JSON.stringify(segundo))
+  return editYaml(files, SEED.presentacion, (d) => {
+    d['locales'] = ['A25+A26', 'A27']
+    if (condiciones !== undefined) d['condiciones'] = condiciones
+  })
+}
+
+describe('condiciones por local (comparativa)', () => {
+  it('aplica a cada local solo las condiciones de su clave', () => {
+    const files = comparativa({ 'A25+A26': { renta_mensual: 16000 }, A27: { meses_gracia: 2 } })
+    const [a25, a27] = resolvePresentation(buildContent(files), ID).locales
+    expect(a25!.condiciones.renta_mensual).toBe(16000)
+    expect(a25!.condiciones.meses_gracia).toBeUndefined()
+    expect(a27!.condiciones.renta_mensual).toBe(14000)
+    expect(a27!.condiciones.meses_gracia).toBe(2)
+  })
+
+  it('un local sin clave en condiciones conserva sus condiciones base', () => {
+    const files = comparativa({ A27: { renta_mensual: 13000 } })
+    const [a25, a27] = resolvePresentation(buildContent(files), ID).locales
+    expect(a25!.condiciones).toEqual(a25!.condiciones_base)
+    expect(a27!.condiciones.renta_mensual).toBe(13000)
+  })
+
+  it('calcula los montos de cada local con sus propias condiciones', () => {
+    const files = comparativa({ A27: { renta_mensual: 13000 } })
+    const [a25, a27] = resolvePresentation(buildContent(files), ID).locales
+    expect(a25!.calculos.subtotalMensual.amount).toBe(19550)
+    expect(a27!.calculos.subtotalMensual.amount).toBe(15550)
+  })
+})
+
+describe('modelo resuelto', () => {
+  it('conecta los cálculos con las condiciones resueltas', () => {
+    const files = editYaml(seedFiles(), SEED.presentacion, (d) => (d['condiciones'] = { renta_mensual: 15000 }))
+    const [local] = resolvePresentation(buildContent(files), ID).locales
+    expect(local!.calculos.subtotalMensual).toMatchObject({ amount: 17550, vat: 'excluded' })
+    expect(local!.calculos.deposito).toMatchObject({ amount: 15000 * 1.16, vat: 'included' })
+  })
+
+  it('marca como pendientes los cálculos que dependen de TODO', () => {
+    const [local] = resolvePresentation(buildContent(seedFiles()), ID).locales
+    expect(local!.calculos.ventasEquilibrio.kind).toBe('pending')
+    expect(local!.calculos.escenarios.map((e) => e.costoOcupacion.kind)).toEqual(['pending', 'pending', 'pending'])
+  })
+
+  it('lista los TODO visibles para el link de revisión', () => {
+    const model = resolvePresentation(buildContent(seedFiles()), ID)
+    expect(model.estado).toBe('borrador')
+    const paths = model.pendientes.map((t) => t.path)
+    expect(paths).toContain('plaza.frase_principal')
+    expect(paths).toContain('narrativa.pivote')
+    expect(paths).toContain('giro.costo_ocupacion_objetivo.max')
+    expect(paths).not.toContain('tokens.envio')
   })
 })
