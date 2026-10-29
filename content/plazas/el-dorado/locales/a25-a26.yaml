@@ -1,0 +1,33 @@
+# Local A25+A26 · El Dorado, planta baja. Datos del PDF de Chedraui (junio 2026).
+clave: A25+A26
+nivel: PB
+plano_ref: local-a25-a26
+area_m2: 77.76
+estado: disponible
+
+condiciones_base:
+  renta_mensual: 17000
+  mantenimiento_mensual: 2550
+  iva: 0.16
+  # El PDF dice "renta + mantenimiento + IVA = $19,720", pero 19,720 = 17,000 × 1.16
+  # (solo renta con IVA). TODO: confirmar la regla del depósito con Chedraui (CLAUDE.md §8).
+  deposito:
+    meses: 1
+    incluye_mantenimiento: false
+    incluye_iva: true
+  # TODO: incremento anual (incremento_anual).
+  # TODO: plazo mínimo (plazo_minimo_meses).
+  # TODO: meses de gracia (meses_gracia).
+  # TODO: giros permitidos (giros_permitidos).
+
+# TODO: ficha técnica del local (frente, altura, agua, gas, carga eléctrica, extracción).
+
+vecinos:
+  - A23
+  - A22
+  - Innvictus (A19)
+  - B3 Studio
+  - A18
+  - A20
+
+# TODO: fotos de buena calidad del local (media.fotos).

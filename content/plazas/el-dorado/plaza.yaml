@@ -1,0 +1,112 @@
+# Plaza El Dorado · datos de la presentación PDF de Chedraui (junio 2026), CLAUDE.md §14.
+slug: el-dorado
+nombre: El Dorado
+nombre_completo: El Dorado Centro Comercial & Marina
+
+ubicacion:
+  ciudad: Boca del Río
+  estado: Veracruz
+  direccion: "Carretera Federal Paso del Toro–Boca del Río–Antón Lizardo #4405, Col. El Novillero, Boca del Río, Veracruz, C.P. 94290"
+  zona: Riviera Veracruzana
+
+tema:
+  # TODO: confirmar los valores oficiales de la identidad (morado con velero blanco); colores provisionales.
+  colores:
+    fondo: "#faf8fc"
+    superficie: "#ffffff"
+    texto: "#1d1426"
+    texto_suave: "#5c5266"
+    acento: "#5b2a86"
+    linea: "#e3dcea"
+  tipografias:
+    display: "TODO: serif display condensada (se define en el paso 4)"
+    cuerpo: "TODO: sans geométrica (se define en el paso 4)"
+  logo: "TODO: logo de El Dorado en media/"
+  icono: "TODO: icono del velero en media/"
+
+frase_principal: "TODO: frase principal de apertura de la plaza"
+
+hero:
+  imagen: "TODO: imagen hero en media/"
+  alt: El Dorado Centro Comercial & Marina en la Riviera Veracruzana
+
+metricas:
+  - valor: "+600 mil"
+    etiqueta: visitantes mensuales
+    fuente: "TODO: fuente de la métrica"
+    periodo: "TODO: periodo de la métrica"
+  - valor: "+1,600"
+    etiqueta: cajones de estacionamiento
+    fuente: "TODO: fuente de la métrica"
+    periodo: "TODO: periodo de la métrica"
+  - valor: "43"
+    etiqueta: locales en planta baja
+    fuente: Presentación comercial de Inmobiliaria Chedraui
+    periodo: junio 2026
+  - valor: "9"
+    etiqueta: restaurantes en planta baja
+    fuente: Presentación comercial de Inmobiliaria Chedraui
+    periodo: junio 2026
+
+diferenciales:
+  - titulo: Diseño de Legorreta + Legorreta
+    texto: Arquitectura firmada por uno de los despachos más reconocidos de México.
+  - titulo: 160 mil m² de construcción
+    texto: Una de las plazas de mayor escala de la Riviera Veracruzana.
+  - titulo: Marina con club náutico
+    texto: Acceso en yate y club náutico integrados al centro comercial.
+  - titulo: Terrazas con vista a la marina
+    texto: Espacios abiertos para comer y convivir frente al agua.
+  - titulo: El Dorado Park
+    texto: Más de 50 atracciones, arcade, realidad virtual y trampolines.
+
+anclas:
+  - marca: Liverpool
+    logo: "TODO: logo de Liverpool"
+    giro: Tienda departamental
+    area_m2: 28000
+  - marca: Chedraui Selecto
+    logo: "TODO: logo de Chedraui Selecto"
+    giro: Supermercado
+    area_m2: 10706
+
+directorio:
+  - { marca: Forever 21, logo: "TODO: logo", giro: Moda }
+  - { marca: Steve Madden, logo: "TODO: logo", giro: Calzado }
+  - { marca: Smart Fit, logo: "TODO: logo", giro: Gimnasio }
+  - { marca: Sonora Grill, logo: "TODO: logo", giro: Restaurante }
+  - { marca: Coppel, logo: "TODO: logo", giro: Tienda departamental }
+  - { marca: Cinépolis, logo: "TODO: logo", giro: Cine }
+  - { marca: Cinépolis VIP, logo: "TODO: logo", giro: Cine }
+  - { marca: Pandora, logo: "TODO: logo", giro: Joyería }
+  - { marca: Starbucks, logo: "TODO: logo", giro: Cafetería }
+  - { marca: adidas, logo: "TODO: logo", giro: Ropa deportiva }
+  - { marca: Shasa, logo: "TODO: logo", giro: Moda }
+  - { marca: Sally Beauty, logo: "TODO: logo", giro: Belleza }
+  - { marca: Petco, logo: "TODO: logo", giro: Mascotas }
+  - { marca: Telcel, logo: "TODO: logo", giro: Telefonía }
+  - { marca: Santander, logo: "TODO: logo", giro: Banco }
+  - { marca: Banregio, logo: "TODO: logo", giro: Banco }
+
+niveles:
+  # TODO: plano vectorial de planta baja (planos/pb.svg); mientras no exista, no se valida plano_ref.
+  - id: PB
+    nombre: Planta baja
+    plano: planos/pb.svg
+
+modulos:
+  - id: marina
+    titulo: Marina
+    texto: Club náutico y acceso en yate.
+  - id: park
+    titulo: El Dorado Park
+    texto: Más de 50 atracciones, arcade, realidad virtual y trampolines.
+
+contacto_general:
+  web: centrocomercialeldorado.mx
+  correo: administracion@centrocomercialeldorado.mx
+  telefono: (229) 986 11 96 / 41 23
+
+legales:
+  aviso_privacidad_url: "TODO: URL del aviso de privacidad"
+  leyenda_imagenes: "TODO: leyenda de imágenes ilustrativas"

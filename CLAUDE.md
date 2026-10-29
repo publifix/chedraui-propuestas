@@ -341,4 +341,6 @@ Se aplican especialmente en los pasos 4, 5 y 10 del plan de trabajo (sección 12
 - Sitio: https://publifix.github.io/chedraui-propuestas/. `site` y `base` están en `astro.config.mjs`; toda ruta interna o asset se construye con `withBase()` (`src/lib/paths.ts`), nunca con rutas absolutas escritas a mano. Al conectar el dominio personalizado, ajustar `site`, `base` y las rutas de `public/robots.txt`.
 - Variables de entorno: ver `.env.example`. Los valores reales de Supabase viven solo en `.env` local y en los secrets del repo; nunca en código ni en el chat.
 - **Al terminar cada ronda de trabajo:** correr `pnpm test` y `pnpm build`, hacer commit y push, y confirmar que el workflow terminó en verde.
+- El contenido se valida al iniciar `pnpm build` (integración `src/lib/content-validation.ts`): cualquier error de esquema o de referencia detiene el build y se listan todos, en español, con archivo y campo. En `pnpm dev` los errores se reportan sin detener el servidor.
+- Datos pendientes: los campos de texto obligatorios usan `"TODO: …"`; los opcionales se omiten con un comentario `# TODO: …`; solo `costo_ocupacion_objetivo` y `ventas_mensuales` aceptan `TODO` en lugar de número.
 - El hook `.claude/hooks/session-start.sh` prepara Node 24 y las dependencias en sesiones en la nube.

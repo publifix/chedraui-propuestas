@@ -1,0 +1,12 @@
+slug: perfumeria
+nombre: Perfumería
+
+# Rango sano de (renta + mantenimiento) / ventas mensuales.
+# Pendiente de validar con una fuente: no se capturan cifras de mercado sin respaldo.
+costo_ocupacion_objetivo:
+  min: "TODO: validar con fuente"
+  max: "TODO: validar con fuente"
+
+angulos_narrativos:
+  - Convivencia con marcas de moda, joyería y belleza (Liverpool, Pandora, Sally Beauty, Forever 21).
+  - Flujo de visitantes de una plaza ancla de la Riviera Veracruzana.
