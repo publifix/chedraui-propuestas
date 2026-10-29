@@ -8,11 +8,11 @@ import { staticPaths, type RouteEntry } from '../../../lib/site'
 import {
   checkContrast,
   FONT_PAIRINGS,
-  fontStack,
   resolveMedidas,
   SPACE_STEPS,
   typeStep,
   TYPE_STEPS,
+  typographyVariables,
   type ColorName,
 } from '../../../lib/theme'
 
@@ -33,21 +33,31 @@ const swatches: Array<{ name: ColorName; variable: string; uso: string }> = [
   { name: 'texto_suave', variable: '--color-text-muted', uso: 'Texto secundario y metadatos' },
   { name: 'acento', variable: '--color-accent', uso: 'Etiquetas, progreso, foco y bandas' },
   { name: 'linea', variable: '--color-line', uso: 'Líneas finas y separadores' },
+  { name: 'marca', variable: '--color-brand', uso: 'Fondo de secciones a sangre' },
+  { name: 'texto_marca', variable: '--color-on-brand', uso: 'Texto sobre el fondo de marca' },
 ]
 const contrast = checkContrast(tema.colores)
+
+const style = (vars: Record<string, string>) =>
+  Object.entries(vars)
+    .map(([k, v]) => `${k}:${v}`)
+    .join(';')
+
 const pairings = FONT_PAIRINGS.map((p) => ({
   ...p,
   provisional: p.display === tema.tipografias.display && p.body === tema.tipografias.cuerpo,
-  style: `--font-display:${fontStack(p.display)};--font-body:${fontStack(p.body)}`,
+  sinCita: style(typographyVariables({ display: p.display, cuerpo: p.body })),
+  conCita: style(typographyVariables({ display: p.display, cuerpo: p.body, cita: p.cita })),
 }))
-const extraFonts = FONT_PAIRINGS.flatMap((p) => [p.display, p.body])
+const extraFonts = FONT_PAIRINGS.flatMap((p) => [p.display, p.body, p.cita])
 const parrafo = model.plaza.diferenciales.slice(0, 3).map((d) => d.texto).join(' ')
+const citaMuestra = 'El lugar donde la Riviera Veracruzana ya viene a comprar, a comer y a pasear.'
 const px = (n: number) => `${Math.round(n * 10) / 10}px`
 ---
 <PresentationLayout model={model} kind="revision" extraFonts={extraFonts} title={`Tokens de diseño · ${model.plaza.nombre}`}>
   <Screen section="TokensPaleta" labelledby="paleta" align="start">
     <h1 id="paleta" class="t-heading">Paleta y contraste</h1>
-    <p class="t-label accent intro">Tokens de diseño · {model.plaza.nombre}</p>
+    <p class="t-label accent intro">Tokens de diseño · {model.plaza.nombre} · morado de marca tomado del PDF de Chedraui</p>
     <ul class="swatches">
       {swatches.map((s) => (
         <li class="swatch">
@@ -64,7 +74,7 @@ const px = (n: number) => `${Math.round(n * 10) / 10}px`
         <li class="pair" style={`background:${tema.colores[c.fondo]};color:${tema.colores[c.texto]}`}>
           <span class="pair__sample">Aa</span>
           <span>{c.texto} sobre {c.fondo}</span>
-          <strong>{c.ratio.toFixed(2)}:1 · {c.pasa ? 'Cumple AA' : 'No cumple'}</strong>
+          <strong class="tabular">{c.ratio.toFixed(2)}:1 · {c.pasa ? 'Cumple AA' : 'No cumple'}</strong>
         </li>
       ))}
     </ul>
@@ -72,10 +82,10 @@ const px = (n: number) => `${Math.round(n * 10) / 10}px`
 
   {pairings.map((p) => (
     <Screen section={`TokensTipografia${p.id}`} labelledby={`tipo-${p.id}`} align="start">
-      <div class="pairing" style={p.style}>
+      <div class="pairing" style={p.sinCita}>
         <h2 id={`tipo-${p.id}`} class="t-display">Para {model.prospecto.marca}</h2>
         <p class="t-label accent">
-          Combinación {p.id} · {p.display} + {p.body}{p.provisional && ' · provisional'}
+          Combinación {p.id} · {p.display}{p.display !== p.body && ` + ${p.body}`}{p.provisional && ' · provisional'}
         </p>
         <p class="t-meta">{p.nota}</p>
         <hr class="rule" />
@@ -90,9 +100,56 @@ const px = (n: number) => `${Math.round(n * 10) / 10}px`
             <p class="t-meta">IVA incluido · {local!.clave} · {local!.area_m2} m²</p>
           </div>
         </div>
+        <hr class="rule" />
+        <div class="quotes">
+          <figure class="quote">
+            <blockquote class="t-quote">{citaMuestra}</blockquote>
+            <figcaption class="t-label">Cita pivote · {p.display}, sin serif</figcaption>
+          </figure>
+          <figure class="quote" style={p.conCita}>
+            <blockquote class="t-quote">{citaMuestra}</blockquote>
+            <figcaption class="t-label">Variante opcional · {p.cita} itálica</figcaption>
+          </figure>
+        </div>
       </div>
     </Screen>
   ))}
+
+  <Screen section="TokensSeccionClara" labelledby="seccion-clara">
+    <h2 id="seccion-clara" class="t-heading">Sección clara</h2>
+    <p class="t-label accent intro">Ejemplo · fondo, texto y acento del tema</p>
+    <p class="t-lead">{model.plaza.diferenciales[3]?.texto}</p>
+    <div class="figure-row">
+      <div>
+        <p class="t-label">Renta mensual</p>
+        <p class="t-figure">{formatAmount(local!.condiciones.renta_mensual)}</p>
+        <p class="t-meta">+ IVA</p>
+      </div>
+      <div>
+        <p class="t-label">Área</p>
+        <p class="t-figure">{local!.area_m2}</p>
+        <p class="t-meta">m²</p>
+      </div>
+    </div>
+  </Screen>
+
+  <Screen section="TokensSeccionMarca" labelledby="seccion-marca" tone="brand">
+    <h2 id="seccion-marca" class="t-heading">Sección en morado de marca</h2>
+    <p class="t-label intro">Ejemplo · fondo de marca a sangre con su texto</p>
+    <p class="t-lead">{model.plaza.diferenciales[3]?.texto}</p>
+    <div class="figure-row">
+      <div>
+        <p class="t-label">Renta mensual</p>
+        <p class="t-figure">{formatAmount(local!.condiciones.renta_mensual)}</p>
+        <p class="t-meta">+ IVA</p>
+      </div>
+      <div>
+        <p class="t-label">Área</p>
+        <p class="t-figure">{local!.area_m2}</p>
+        <p class="t-meta">m²</p>
+      </div>
+    </div>
+  </Screen>
 
   <Screen section="TokensEscala" labelledby="escala" align="start">
     <h2 id="escala" class="t-heading">Escala tipográfica fluida</h2>
@@ -102,8 +159,10 @@ const px = (n: number) => `${Math.round(n * 10) / 10}px`
         const { minPx, maxPx } = typeStep(step, medidas.escala)
         return (
           <li class="step">
-            <code class="t-meta">--step-{step} · {px(minPx)} → {px(maxPx)}</code>
-            <span class="step__sample" style={`font-size:var(--step-${step})`}>{step >= 1 ? 'Riviera' : 'Texto de cuerpo y etiquetas'}</span>
+            <code class="t-meta">--step-{step} · {px(minPx)} a {px(maxPx)}</code>
+            <span class:list={['step__sample', step >= 1 && 'step__sample--display']} style={`font-size:var(--step-${step})`}>
+              {step >= 1 ? 'Riviera' : 'Texto de cuerpo y etiquetas'}
+            </span>
           </li>
         )
       })}
@@ -150,7 +209,7 @@ const px = (n: number) => `${Math.round(n * 10) / 10}px`
 
   .sub {
     margin-block: var(--space-2xl) var(--space-m);
-    font-size: var(--step-2);
+    font-size: calc(var(--step-2) * var(--display-size));
   }
 
   .swatches {
@@ -192,13 +251,16 @@ const px = (n: number) => `${Math.round(n * 10) / 10}px`
 
   .pair__sample {
     font-family: var(--font-display);
+    font-weight: var(--display-weight);
     font-size: var(--step-3);
     line-height: 1;
   }
 
   /* Las familias se reasignan aquí: font-family se hereda ya calculada desde body. */
-  .pairing {
+  .pairing,
+  .quote {
     font-family: var(--font-body);
+    font-weight: var(--body-weight);
   }
 
   .pairing .t-display {
@@ -213,14 +275,15 @@ const px = (n: number) => `${Math.round(n * 10) / 10}px`
     margin-block: var(--space-xl);
   }
 
-  .pairing__grid {
+  .pairing__grid,
+  .quotes {
     display: grid;
     gap: var(--space-xl);
   }
 
   .pairing__grid .t-heading {
     margin-block: 0 var(--space-s);
-    font-size: var(--step-3);
+    font-size: calc(var(--step-3) * var(--display-size));
   }
 
   .pairing__figure {
@@ -229,11 +292,39 @@ const px = (n: number) => `${Math.round(n * 10) / 10}px`
     gap: var(--space-2xs);
   }
 
+  .quote {
+    display: grid;
+    gap: var(--space-s);
+  }
+
+  .quote .t-quote {
+    font-size: var(--step-3);
+  }
+
+  .quote figcaption {
+    color: var(--color-text-muted);
+  }
+
   @media (min-width: 48rem) {
     .pairing__grid {
       grid-template-columns: 3fr 2fr;
       align-items: end;
     }
+
+    .quotes {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .figure-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xl) var(--space-2xl);
+    margin-block-start: var(--space-xl);
+  }
+
+  .figure-row .t-meta {
+    margin-block-start: var(--space-3xs);
   }
 
   .steps,
@@ -252,9 +343,16 @@ const px = (n: number) => `${Math.round(n * 10) / 10}px`
   }
 
   .step__sample {
-    font-family: var(--font-display);
     line-height: 1.05;
     overflow-wrap: anywhere;
+  }
+
+  .step__sample--display {
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    font-stretch: var(--display-stretch);
+    text-transform: var(--display-transform);
+    letter-spacing: var(--display-tracking);
   }
 
   .space {
@@ -302,8 +400,9 @@ const px = (n: number) => `${Math.round(n * 10) / 10}px`
     color: var(--color-text-muted);
   }
 
+  /* Montos de la tarjeta de condiciones con números tabulares. */
   .card__rows dd {
-    font-variant-numeric: tabular-nums;
+    font-variant-numeric: lining-nums tabular-nums;
   }
 
   .card__total {
@@ -316,6 +415,6 @@ const px = (n: number) => `${Math.round(n * 10) / 10}px`
   }
 
   .card__total .t-figure {
-    font-size: var(--step-3);
+    font-size: calc(var(--step-3) * var(--figure-size));
   }
 </style>

@@ -1,6 +1,6 @@
 import type { Plaza } from '../../schemas'
 import { luminance } from './contrast'
-import { fontStack } from './fonts'
+import { family, fontStack } from './fonts'
 
 type Tema = Plaza['tema']
 export type Medidas = { [K in keyof NonNullable<Tema['medidas']>]-?: number }
@@ -67,8 +67,9 @@ export function themeVariables(tema: Tema): Record<string, string> {
     '--color-accent': c.acento,
     '--color-on-accent': c.superficie,
     '--color-line': c.linea,
-    '--font-display': fontStack(tema.tipografias.display),
-    '--font-body': fontStack(tema.tipografias.cuerpo),
+    '--color-brand': c.marca,
+    '--color-on-brand': c.texto_marca,
+    ...typographyVariables(tema.tipografias),
     '--radius-s': `${m.radio}px`,
     '--radius-m': `${m.radio * 2}px`,
     '--line-width': `${m.linea}px`,
@@ -87,6 +88,38 @@ export function themeVariables(tema: Tema): Record<string, string> {
     vars[`--space-${name}`] = fluid(minPx, minPx * SPACE_GROWTH)
   }
   return vars
+}
+
+/**
+ * Familias y su tratamiento (mayúsculas, tracking, peso, ancho, factor de tamaño) según el
+ * catálogo. Sin `cita`, la cita pivote usa la familia de display sin mayúsculas.
+ */
+export function typographyVariables(t: Tema['tipografias']): Record<string, string> {
+  const display = family(t.display).display!
+  const text = family(t.cuerpo).text!
+  return {
+    '--font-display': fontStack(t.display),
+    '--font-body': fontStack(t.cuerpo),
+    '--font-quote': fontStack(t.cita ?? t.display),
+    '--quote-style': t.cita ? 'italic' : 'normal',
+    '--quote-weight': t.cita ? '400' : String(display.weight),
+    '--display-transform': display.transform,
+    '--display-tracking': display.tracking,
+    '--display-weight': String(display.weight),
+    '--display-stretch': display.stretch,
+    '--display-size': String(display.size),
+    '--figure-size': String(display.figureSize),
+    '--display-leading': String(display.leading),
+    '--body-weight': String(text.weight),
+    '--strong-weight': String(text.strongWeight),
+    '--label-weight': String(text.labelWeight),
+    '--label-stretch': text.labelStretch,
+  }
+}
+
+/** Familias que necesita un tema: display, cuerpo y, si existe, la de la cita. */
+export function themeFonts(t: Tema['tipografias']): string[] {
+  return [t.display, t.cuerpo, ...(t.cita ? [t.cita] : [])]
 }
 
 /** El tema es fijo: claro u oscuro según el fondo de la plaza, nunca según el dispositivo. */

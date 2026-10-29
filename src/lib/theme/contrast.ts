@@ -13,6 +13,8 @@ export const CONTRAST_PAIRS: ReadonlyArray<{ texto: ColorName; fondo: ColorName 
   { texto: 'acento', fondo: 'superficie' },
   // Texto sobre bandas y botones de acento.
   { texto: 'superficie', fondo: 'acento' },
+  // Secciones a sangre en el color de marca.
+  { texto: 'texto_marca', fondo: 'marca' },
 ]
 
 export const AA_NORMAL_TEXT = 4.5

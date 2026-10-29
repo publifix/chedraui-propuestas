@@ -16,11 +16,16 @@ const tema = z.strictObject({
     texto_suave: cssColor,
     acento: cssColor,
     linea: cssColor,
+    // Fondo de marca para secciones a sangre y el texto que va sobre él.
+    marca: cssColor,
+    texto_marca: cssColor,
   }),
   // Nombres del catálogo de src/lib/theme/fonts.ts (se valida al cargar el contenido).
   tipografias: z.strictObject({
     display: text,
     cuerpo: text,
+    // Opcional: serif itálica solo para la cita pivote.
+    cita: text.optional(),
   }),
   logo: text,
   icono: text,
