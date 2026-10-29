@@ -4,6 +4,7 @@ import {
   costoAnual,
   costoOcupacionPct,
   deposito,
+  evaluarRango,
   ivaMensual,
   mantenimientoPorM2,
   rentaPorM2,
@@ -188,5 +189,28 @@ describe('calcularLocal', () => {
     expect(base!.ventasMensuales).toMatchObject({ amount: 250000, vat: 'excluded' })
     expect(base!.costoOcupacion).toMatchObject({ value: 19550 / 250000 })
     expect(optimista!.costoOcupacion).toMatchObject({ value: 19550 / 400000 })
+  })
+})
+
+describe('evaluarRango', () => {
+  const giro = { costo_ocupacion_objetivo: { min: 0.08, max: 0.12 } }
+
+  it('ubica el costo de ocupación respecto al rango sano del giro', () => {
+    expect(evaluarRango(costoOcupacionPct(elDorado, 300000), giro)).toMatchObject({ kind: 'range', estado: 'below' })
+    expect(evaluarRango(costoOcupacionPct(elDorado, 195500), giro)).toMatchObject({ estado: 'within' })
+    expect(evaluarRango(costoOcupacionPct(elDorado, 100000), giro)).toMatchObject({ estado: 'above', min: 0.08, max: 0.12 })
+  })
+
+  it('en el máximo exacto sigue dentro del rango', () => {
+    const enEquilibrio = (ventasEquilibrio(elDorado, giro) as { amount: number }).amount
+    expect(evaluarRango(costoOcupacionPct(elDorado, enEquilibrio), giro)).toMatchObject({ estado: 'within' })
+  })
+
+  it('es pendiente si el rango del giro o las ventas están en TODO', () => {
+    expect(evaluarRango(costoOcupacionPct(elDorado, 200000), { costo_ocupacion_objetivo: { min: pendingTodo, max: pendingTodo } })).toEqual({
+      kind: 'pending',
+      reason: 'costo de ocupación objetivo del giro pendiente de validar',
+    })
+    expect(evaluarRango(costoOcupacionPct(elDorado, 'TODO: ventas'), giro).kind).toBe('pending')
   })
 })

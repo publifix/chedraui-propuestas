@@ -1,0 +1,33 @@
+---
+// 8 · Pivote, a sangre en el color de marca: la cita que lleva de la plaza a los números.
+// Único lugar del visor con la serif itálica (tema.tipografias.cita).
+import Field from '../Field.astro'
+import Screen from '../Screen.astro'
+import { SECTION_IDS } from '../../lib/sections'
+import type { SectionProps } from './types'
+
+type Props = SectionProps
+
+const { model } = Astro.props
+---
+<Screen section={SECTION_IDS.Pivote} tone="brand">
+  <figure class="pivote">
+    <blockquote class="t-quote pivote__cita">
+      <p><Field value={model.narrativa.pivote} /></p>
+    </blockquote>
+  </figure>
+</Screen>
+
+<style>
+  .pivote {
+    display: grid;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .pivote__cita {
+    font-size: var(--step-5);
+    line-height: 1.12;
+    max-inline-size: 22ch;
+  }
+</style>

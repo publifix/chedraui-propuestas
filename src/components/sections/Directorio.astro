@@ -1,0 +1,79 @@
+---
+// 12 · Directorio: marcas de la plaza. Sin logo, se muestra el nombre en un recuadro sobrio.
+import Headline from '../Headline.astro'
+import Screen from '../Screen.astro'
+import { Image } from 'astro:assets'
+import { plazaImage } from '../../lib/media'
+import { SECTION_IDS } from '../../lib/sections'
+import { isTodo } from '../../lib/todo'
+import type { SectionProps } from './types'
+
+type Props = SectionProps
+
+const { model, kind } = Astro.props
+const { plaza } = model
+const marcas = plaza.directorio ?? []
+const sinLogo = marcas.filter((m) => isTodo(m.logo)).length
+const logos = await Promise.all(marcas.map((m) => plazaImage(plaza.slug, m.logo)))
+---
+{marcas.length > 0 && (
+  <Screen section={SECTION_IDS.Directorio} labelledby="directorio-titulo" align="start">
+    <Headline id="directorio-titulo" text="Directorio" />
+    {kind === 'revision' && sinLogo > 0 && <p class="todo aviso">{sinLogo} logos pendientes (directorio[].logo)</p>}
+    <ul class="marcas">
+      {marcas.map((m, i) => {
+        const logo = logos[i]
+        return (
+          <li class="marca">
+            {logo ? <Image src={logo} alt={m.marca} width={160} densities={[1, 2]} class="marca__logo" /> : <span class="marca__nombre">{m.marca}</span>}
+            <span class="marca__giro t-meta">{m.giro}</span>
+          </li>
+        )
+      })}
+    </ul>
+    <p class="t-meta nota">Entre otras marcas.</p>
+  </Screen>
+)}
+
+<style>
+  .aviso {
+    display: inline-block;
+    margin-block-start: var(--space-s);
+  }
+
+  .marcas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr));
+    gap: var(--line-width);
+    margin-block-start: var(--space-xl);
+    padding: 0;
+    list-style: none;
+    background: var(--color-line);
+    border: var(--line-width) solid var(--color-line);
+  }
+
+  .marca {
+    display: grid;
+    align-content: center;
+    gap: var(--space-3xs);
+    min-block-size: 6rem;
+    padding: var(--space-s);
+    background: var(--color-bg);
+    text-align: center;
+  }
+
+  .marca__nombre {
+    font-weight: var(--strong-weight);
+    line-height: 1.2;
+  }
+
+  .marca__logo {
+    max-block-size: 2.5rem;
+    inline-size: auto;
+    margin-inline: auto;
+  }
+
+  .nota {
+    margin-block-start: var(--space-s);
+  }
+</style>

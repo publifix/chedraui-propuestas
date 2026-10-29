@@ -1,0 +1,53 @@
+---
+// Imagen de la plaza optimizada por Astro (AVIF/WebP, varios anchos para celular).
+// Si falta o está en TODO, muestra un marcador con la misma proporción.
+import { Picture } from 'astro:assets'
+import MediaPlaceholder from './MediaPlaceholder.astro'
+import { plazaImage } from '../lib/media'
+
+interface Props {
+  plaza: string
+  ruta: string | undefined
+  alt: string
+  /** Proporción de recorte, p. ej. "4/3". */
+  ratio: string
+  sizes: string
+  kind: 'revision' | 'envio'
+  falta: string
+  widths?: number[]
+  loading?: 'lazy' | 'eager'
+  /** false para logos o gráficos con transparencia (respaldo PNG en lugar de JPG). */
+  photo?: boolean
+  class?: string | undefined
+}
+
+const { plaza, ruta, alt, ratio, sizes, kind, falta, widths = [360, 540, 720, 1080, 1440], loading = 'lazy', photo = true, class: className } = Astro.props
+const image = await plazaImage(plaza, ruta)
+const usable = image ? widths.filter((w) => w <= image.width) : []
+---
+{image ? (
+  <Picture
+    src={image}
+    alt={alt}
+    widths={usable.length > 0 ? usable : [image.width]}
+    sizes={sizes}
+    formats={['avif', 'webp']}
+    fallbackFormat={image.format === 'png' && !photo ? 'png' : 'jpg'}
+    loading={loading}
+    decoding="async"
+    fetchpriority={loading === 'eager' ? 'high' : undefined}
+    class:list={['plaza-image', className]}
+    style={`aspect-ratio:${ratio}`}
+  />
+) : (
+  <MediaPlaceholder ratio={ratio} kind={kind} falta={falta} class={className} />
+)}
+
+<style>
+  .plaza-image {
+    inline-size: 100%;
+    block-size: auto;
+    object-fit: cover;
+    border-radius: var(--radius-m);
+  }
+</style>

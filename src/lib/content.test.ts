@@ -162,6 +162,7 @@ function completarSemilla(): Map<string, string> {
       if (key === 'min') return 0.08
       if (key === 'max') return 0.12
       if (key === 'aviso_privacidad_url') return 'https://example.com/privacidad'
+      if (key === 'logo' || key === 'imagen' || key === 'icono') return 'media/fachada-marina.jpg'
       return 'Dato completo'
     }
     if (Array.isArray(value)) return value.map((v) => fill(v, key))
@@ -245,5 +246,33 @@ describe('tema de la plaza', () => {
     )
     expect(errors.some((e) => e.includes('tema.tipografias.cuerpo: "Inter"'))).toBe(true)
     expect(errors.some((e) => e.includes('tema.tipografias.cita: "Archivo"'))).toBe(true)
+  })
+})
+
+describe('imágenes de la plaza', () => {
+  it('la semilla cita imágenes que existen en media/', () => {
+    const plaza = readYaml(seedFiles(), SEED.plaza)
+    expect(plaza['hero'].imagen).toBe('media/fachada-marina.jpg')
+    expect(seedFiles().has('plazas/el-dorado/media/fachada-marina.jpg')).toBe(true)
+  })
+
+  it('falla si una imagen citada no existe', () => {
+    const files = editYaml(seedFiles(), SEED.plaza, (d) => (d['hero'].imagen = 'media/no-existe.jpg'))
+    expect(errorsOf(files)).toContain('content/plazas/el-dorado/plaza.yaml › hero.imagen: no existe la imagen "media/no-existe.jpg" en la carpeta de la plaza')
+  })
+
+  it('falla si la ruta no es una imagen', () => {
+    const files = editYaml(seedFiles(), SEED.plaza, (d) => (d['diferenciales'][0].imagen = 'media/plano.pdf'))
+    expect(errorsOf(files)).toContain('content/plazas/el-dorado/plaza.yaml › diferenciales.0.imagen: "media/plano.pdf" no es una imagen (jpg, png, webp o avif)')
+  })
+
+  it('valida también las fotos del local', () => {
+    const files = editYaml(seedFiles(), SEED.local, (d) => (d['media'] = { fotos: ['media/local.jpg'] }))
+    expect(errorsOf(files)).toContain('content/plazas/el-dorado/locales/a25-a26.yaml › media.fotos.0: no existe la imagen "media/local.jpg" en la carpeta de la plaza')
+  })
+
+  it('acepta TODO en lugar de una imagen', () => {
+    const files = editYaml(seedFiles(), SEED.plaza, (d) => (d['hero'].imagen = 'TODO: foto'))
+    expect(() => buildContent(files)).not.toThrow()
   })
 })

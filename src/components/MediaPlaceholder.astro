@@ -1,0 +1,33 @@
+---
+// Marcador sobrio para una imagen que todavía falta: conserva la proporción final.
+// En el link de revisión dice qué imagen falta y dónde se configura.
+interface Props {
+  ratio: string
+  kind: 'revision' | 'envio'
+  /** Qué imagen falta, p. ej. "Foto del local (media.fotos)". */
+  falta: string
+  class?: string | undefined
+}
+
+const { ratio, kind, falta, class: className } = Astro.props
+---
+<div class:list={['media-placeholder', className]} style={`aspect-ratio:${ratio}`} role={kind === 'revision' ? 'img' : undefined} aria-label={kind === 'revision' ? `Imagen pendiente: ${falta}` : undefined} aria-hidden={kind === 'revision' ? undefined : 'true'}>
+  {kind === 'revision' && <span class="media-placeholder__label todo">Imagen pendiente · {falta}</span>}
+</div>
+
+<style>
+  .media-placeholder {
+    display: grid;
+    place-items: center;
+    inline-size: 100%;
+    padding: var(--space-s);
+    background: color-mix(in srgb, var(--color-text) 5%, var(--color-surface));
+    border: var(--line-width) solid var(--color-line);
+    border-radius: var(--radius-m);
+  }
+
+  .media-placeholder__label {
+    max-inline-size: 30ch;
+    text-align: center;
+  }
+</style>

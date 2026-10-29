@@ -14,9 +14,7 @@ export const todoMarker = z
   .string()
   .regex(/^TODO\b/, 'se esperaba un marcador que empiece con "TODO"')
 
-export function isTodo(value: unknown): value is string {
-  return typeof value === 'string' && /^TODO\b/.test(value)
-}
+export { isTodo } from '../lib/todo'
 
 /** Número que todavía puede estar pendiente de validar (p. ej. cifras de mercado). */
 export const pendingNumber = (schema: z.ZodNumber) => z.union([schema, todoMarker])

@@ -28,14 +28,16 @@ tema:
     display: Archivo
     cuerpo: Archivo
     cita: Newsreader
-  logo: "TODO: logo de El Dorado en media/"
-  icono: "TODO: icono del velero en media/"
+  # Logo vertical (velero + EL DORADO + CENTRO COMERCIAL), morado sobre transparente.
+  logo: media/logo-el-dorado.png
+  # Velero recortado del logo, cuadrado, para favicon.
+  icono: media/icono-velero.png
 
 frase_principal: "TODO: frase principal de apertura de la plaza"
 
 hero:
-  imagen: "TODO: imagen hero en media/"
-  alt: El Dorado Centro Comercial & Marina en la Riviera Veracruzana
+  imagen: media/fachada-marina.jpg
+  alt: Fachada de El Dorado sobre el canal de la marina al atardecer, con terrazas y yates atracados
 
 metricas:
   - valor: "+600 mil"
@@ -58,12 +60,16 @@ metricas:
 diferenciales:
   - titulo: Diseño de Legorreta + Legorreta
     texto: Arquitectura firmada por uno de los despachos más reconocidos de México.
+    # TODO: reemplazar por una foto de mayor resolución (la actual mide 662×302 px).
+    imagen: media/acceso-nocturno.jpg
   - titulo: 160 mil m² de construcción
     texto: Una de las plazas de mayor escala de la Riviera Veracruzana.
   - titulo: Marina con club náutico
     texto: Acceso en yate y club náutico integrados al centro comercial.
+    imagen: media/marina-panoramica.png
   - titulo: Terrazas con vista a la marina
     texto: Espacios abiertos para comer y convivir frente al agua.
+    imagen: media/terraza-marina.jpg
   - titulo: El Dorado Park
     texto: Más de 50 atracciones, arcade, realidad virtual y trampolines.
 

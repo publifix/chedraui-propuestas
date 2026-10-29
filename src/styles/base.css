@@ -224,9 +224,10 @@ p {
   outline: var(--line-width) dashed var(--color-accent);
   outline-offset: 1px;
   border-radius: var(--radius-s);
-  padding-inline: 0.25em;
+  padding: 0.2em 0.35em;
   font-family: var(--font-body);
-  font-size: 0.8em;
+  font-size: max(0.8em, 0.75rem);
+  line-height: 1.5;
   font-weight: 500;
   letter-spacing: 0;
   text-transform: none;

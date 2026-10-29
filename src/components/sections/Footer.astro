@@ -1,0 +1,62 @@
+---
+// Footer: contacto general de la plaza, aviso de privacidad, leyenda de imágenes y crédito de Publifix.
+import Field from '../Field.astro'
+import { Image } from 'astro:assets'
+import { plazaImage } from '../../lib/media'
+import { SECTION_IDS } from '../../lib/sections'
+import { isTodo } from '../../lib/todo'
+import type { SectionProps } from './types'
+
+type Props = SectionProps
+
+const { model } = Astro.props
+const { plaza } = model
+const { legales, contacto_general: contacto } = plaza
+const logo = await plazaImage(plaza.slug, plaza.tema.logo)
+const web = contacto.web.startsWith('http') ? contacto.web : `https://${contacto.web}`
+---
+<footer class="site-footer" data-section={SECTION_IDS.Footer}>
+  <div class="site-footer__inner">
+    {logo && <Image src={logo} alt={plaza.nombre} width={120} densities={[1, 2]} class="site-footer__logo" />}
+    <p class="t-meta">
+      {plaza.nombre_completo ?? plaza.nombre} · {plaza.ubicacion.direccion}
+    </p>
+    <p class="t-meta">
+      <a href={web} rel="noopener">{contacto.web}</a> · <a href={`mailto:${contacto.correo}`}>{contacto.correo}</a> · {contacto.telefono}
+    </p>
+    <p class="t-meta"><Field value={legales.leyenda_imagenes} /></p>
+    <p class="t-meta">
+      {isTodo(legales.aviso_privacidad_url)
+        ? <>Aviso de privacidad: <Field value={legales.aviso_privacidad_url} /></>
+        : <a href={legales.aviso_privacidad_url} rel="noopener">Aviso de privacidad</a>}
+    </p>
+    <p class="site-footer__credit t-meta">Presentación preparada por Publifix</p>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    padding-block: var(--space-2xl) max(var(--space-2xl), env(safe-area-inset-bottom));
+    padding-inline: max(var(--space-m), env(safe-area-inset-left)) max(var(--space-m), env(safe-area-inset-right));
+    background: var(--color-surface);
+  }
+
+  .site-footer__inner {
+    display: grid;
+    gap: var(--space-2xs);
+    max-inline-size: 72rem;
+    margin-inline: auto;
+  }
+
+  .site-footer__logo {
+    inline-size: 5rem;
+    block-size: auto;
+    margin-block-end: var(--space-s);
+  }
+
+  .site-footer__credit {
+    margin-block-start: var(--space-m);
+    padding-block-start: var(--space-s);
+    border-block-start: var(--line-width) solid var(--color-line);
+  }
+</style>

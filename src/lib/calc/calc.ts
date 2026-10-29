@@ -1,4 +1,5 @@
-import { isTodo, type CondicionesBase, type Giro } from '../../schemas'
+import type { CondicionesBase, Giro } from '../../schemas'
+import { isTodo } from '../todo'
 import { formatPercent } from './format'
 import { money, pending, type Money, type Pending, type Ratio } from './types'
 
@@ -95,4 +96,31 @@ export function costoAnual(
     )
   }
   return money(amount, 'included', assumptions, aplicaIncremento && incremento.tipo === 'inpc')
+}
+
+export type RangoEstado = 'below' | 'within' | 'above'
+
+export interface RangoResult {
+  kind: 'range'
+  estado: RangoEstado
+  min: number
+  max: number
+}
+
+/**
+ * Ubica un costo de ocupación respecto al rango sano del giro (costo_ocupacion_objetivo).
+ * below: por debajo del mínimo (más holgado); within: dentro; above: por encima del máximo.
+ * Pendiente si el costo o el rango del giro están en TODO.
+ */
+export function evaluarRango(
+  costo: Ratio | Pending,
+  giro: Pick<Giro, 'costo_ocupacion_objetivo'>,
+): RangoResult | Pending {
+  if (costo.kind === 'pending') return costo
+  const { min, max } = giro.costo_ocupacion_objetivo
+  if (typeof min !== 'number' || typeof max !== 'number') {
+    return pending('costo de ocupación objetivo del giro pendiente de validar')
+  }
+  const estado: RangoEstado = costo.value < min ? 'below' : costo.value > max ? 'above' : 'within'
+  return { kind: 'range', estado, min, max }
 }
