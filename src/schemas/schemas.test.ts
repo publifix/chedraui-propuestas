@@ -58,7 +58,7 @@ describe('plaza', () => {
   it('rechaza un color que no es CSS', () => {
     const plaza = seed(SEED.plaza)
     plaza['tema'].colores.acento = 'morado'
-    expect(errorsOf(plazaSchema, plaza)[0]).toContain('tema.colores.acento: debe ser un color CSS válido')
+    expect(errorsOf(plazaSchema, plaza)[0]).toContain('tema.colores.acento: debe ser un color hex')
   })
 
   it('rechaza niveles repetidos', () => {

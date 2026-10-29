@@ -17,12 +17,23 @@ const tema = z.strictObject({
     acento: cssColor,
     linea: cssColor,
   }),
+  // Nombres del catálogo de src/lib/theme/fonts.ts (se valida al cargar el contenido).
   tipografias: z.strictObject({
     display: text,
     cuerpo: text,
   }),
   logo: text,
   icono: text,
+  // Opcional: sin estos valores se usan los del motor (src/lib/theme/tokens.ts).
+  medidas: z
+    .strictObject({
+      escala: z.number().min(1.1).max(1.6, 'la escala tipográfica debe estar entre 1.1 y 1.6').optional(),
+      espacio_base: z.number().min(8).max(24, 'el espacio base debe estar entre 8 y 24 px').optional(),
+      radio: z.number().min(0).max(24).optional(),
+      linea: z.number().min(0.5).max(4).optional(),
+      duracion_ms: z.number().int().min(0).max(2000).optional(),
+    })
+    .optional(),
 })
 
 const metrica = z.strictObject({

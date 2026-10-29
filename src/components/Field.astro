@@ -1,0 +1,12 @@
+---
+// Muestra un valor del contenido. Si está en TODO lo marca como pendiente
+// (solo ocurre en el link de revisión: una presentación "lista" no admite TODO).
+import { isTodo } from '../schemas'
+
+interface Props {
+  value: string
+}
+
+const { value } = Astro.props
+---
+{isTodo(value) ? <span class="todo">{value}</span> : value}

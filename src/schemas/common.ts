@@ -27,13 +27,10 @@ export const slug = z
   .string()
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'debe ser un slug en minúsculas con guiones (p. ej. "el-dorado")')
 
-/** Hex (#rgb, #rrggbb, #rrggbbaa) o notación funcional CSS (rgb, hsl, oklch…). */
+/** Color hex (#rgb, #rrggbb o #rrggbbaa): permite validar el contraste exacto del tema. */
 export const cssColor = z
   .string()
-  .regex(
-    /^(#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})|(rgb|rgba|hsl|hsla|oklch|oklab|lab|lch)\(.+\))$/i,
-    'debe ser un color CSS válido (p. ej. "#5b2a86")',
-  )
+  .regex(/^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i, 'debe ser un color hex (p. ej. "#5b2a86")')
 
 export const url = z.union([z.url('debe ser una URL válida'), todoMarker])
 

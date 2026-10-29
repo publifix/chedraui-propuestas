@@ -1,0 +1,321 @@
+---
+// Muestra de los tokens de diseño de la plaza, para revisión interna. Solo existe bajo
+// el token de revisión de cada presentación y hereda noindex del layout.
+import PresentationLayout from '../../../layouts/PresentationLayout.astro'
+import Screen from '../../../components/Screen.astro'
+import { formatAmount, formatMoney } from '../../../lib/calc'
+import { staticPaths, type RouteEntry } from '../../../lib/site'
+import {
+  checkContrast,
+  FONT_PAIRINGS,
+  fontStack,
+  resolveMedidas,
+  SPACE_STEPS,
+  typeStep,
+  TYPE_STEPS,
+  type ColorName,
+} from '../../../lib/theme'
+
+export function getStaticPaths() {
+  return staticPaths('revision')
+}
+
+const { model } = Astro.props as RouteEntry['props']
+const { tema } = model.plaza
+const medidas = resolveMedidas(tema)
+const [local] = model.locales
+const calc = local!.calculos
+
+const swatches: Array<{ name: ColorName; variable: string; uso: string }> = [
+  { name: 'fondo', variable: '--color-bg', uso: 'Fondo de página' },
+  { name: 'superficie', variable: '--color-surface', uso: 'Tarjetas, footer y texto sobre acento' },
+  { name: 'texto', variable: '--color-text', uso: 'Titulares y cuerpo' },
+  { name: 'texto_suave', variable: '--color-text-muted', uso: 'Texto secundario y metadatos' },
+  { name: 'acento', variable: '--color-accent', uso: 'Etiquetas, progreso, foco y bandas' },
+  { name: 'linea', variable: '--color-line', uso: 'Líneas finas y separadores' },
+]
+const contrast = checkContrast(tema.colores)
+const pairings = FONT_PAIRINGS.map((p) => ({
+  ...p,
+  provisional: p.display === tema.tipografias.display && p.body === tema.tipografias.cuerpo,
+  style: `--font-display:${fontStack(p.display)};--font-body:${fontStack(p.body)}`,
+}))
+const extraFonts = FONT_PAIRINGS.flatMap((p) => [p.display, p.body])
+const parrafo = model.plaza.diferenciales.slice(0, 3).map((d) => d.texto).join(' ')
+const px = (n: number) => `${Math.round(n * 10) / 10}px`
+---
+<PresentationLayout model={model} kind="revision" extraFonts={extraFonts} title={`Tokens de diseño · ${model.plaza.nombre}`}>
+  <Screen section="TokensPaleta" labelledby="paleta" align="start">
+    <h1 id="paleta" class="t-heading">Paleta y contraste</h1>
+    <p class="t-label accent intro">Tokens de diseño · {model.plaza.nombre}</p>
+    <ul class="swatches">
+      {swatches.map((s) => (
+        <li class="swatch">
+          <span class="swatch__chip" style={`background:var(${s.variable})`}></span>
+          <span class="t-label">{s.name}</span>
+          <code class="t-meta">{tema.colores[s.name]}</code>
+          <span class="t-meta">{s.uso}</span>
+        </li>
+      ))}
+    </ul>
+    <h2 class="sub">Pares de texto sobre fondo · WCAG AA (4.5:1)</h2>
+    <ul class="pairs">
+      {contrast.map((c) => (
+        <li class="pair" style={`background:${tema.colores[c.fondo]};color:${tema.colores[c.texto]}`}>
+          <span class="pair__sample">Aa</span>
+          <span>{c.texto} sobre {c.fondo}</span>
+          <strong>{c.ratio.toFixed(2)}:1 · {c.pasa ? 'Cumple AA' : 'No cumple'}</strong>
+        </li>
+      ))}
+    </ul>
+  </Screen>
+
+  {pairings.map((p) => (
+    <Screen section={`TokensTipografia${p.id}`} labelledby={`tipo-${p.id}`} align="start">
+      <div class="pairing" style={p.style}>
+        <h2 id={`tipo-${p.id}`} class="t-display">Para {model.prospecto.marca}</h2>
+        <p class="t-label accent">
+          Combinación {p.id} · {p.display} + {p.body}{p.provisional && ' · provisional'}
+        </p>
+        <p class="t-meta">{p.nota}</p>
+        <hr class="rule" />
+        <div class="pairing__grid">
+          <div>
+            <h3 class="t-heading">{model.plaza.diferenciales[0]?.titulo}</h3>
+            <p class="t-body">{parrafo}</p>
+          </div>
+          <div class="pairing__figure">
+            <p class="t-label">Total mensual</p>
+            <p class="t-figure">{formatAmount(calc.totalMensual.amount)}</p>
+            <p class="t-meta">IVA incluido · {local!.clave} · {local!.area_m2} m²</p>
+          </div>
+        </div>
+      </div>
+    </Screen>
+  ))}
+
+  <Screen section="TokensEscala" labelledby="escala" align="start">
+    <h2 id="escala" class="t-heading">Escala tipográfica fluida</h2>
+    <p class="t-label accent intro">De 360 a 1280 px de ancho · razón {medidas.escala} en escritorio</p>
+    <ol class="steps">
+      {[...TYPE_STEPS].reverse().map((step) => {
+        const { minPx, maxPx } = typeStep(step, medidas.escala)
+        return (
+          <li class="step">
+            <code class="t-meta">--step-{step} · {px(minPx)} → {px(maxPx)}</code>
+            <span class="step__sample" style={`font-size:var(--step-${step})`}>{step >= 1 ? 'Riviera' : 'Texto de cuerpo y etiquetas'}</span>
+          </li>
+        )
+      })}
+    </ol>
+  </Screen>
+
+  <Screen section="TokensEspacios" labelledby="espacios" align="start">
+    <h2 id="espacios" class="t-heading">Espacios, línea y tarjeta</h2>
+    <p class="t-label accent intro">Base {medidas.espacio_base} px · radio {medidas.radio} px · línea {medidas.linea} px · movimiento {medidas.duracion_ms} ms</p>
+    <ul class="spaces">
+      {Object.entries(SPACE_STEPS).map(([name, factor]) => (
+        <li class="space">
+          <code class="t-meta">--space-{name} · {px(medidas.espacio_base * factor)}</code>
+          <span class="space__bar" style={`inline-size:var(--space-${name})`}></span>
+        </li>
+      ))}
+    </ul>
+    <hr class="rule" />
+    <article class="card" aria-labelledby="tarjeta">
+      <p id="tarjeta" class="t-label">Ejemplo de tarjeta · {local!.clave}</p>
+      <dl class="card__rows">
+        <div><dt>Renta mensual</dt><dd>{formatAmount(local!.condiciones.renta_mensual)} + IVA</dd></div>
+        <div><dt>Mantenimiento</dt><dd>{formatAmount(local!.condiciones.mantenimiento_mensual)} + IVA</dd></div>
+        <div><dt>IVA</dt><dd>{formatMoney(calc.ivaMensual)}</dd></div>
+        <div class="card__total"><dt>Total mensual</dt><dd class="t-figure">{formatAmount(calc.totalMensual.amount)}</dd></div>
+      </dl>
+      <p class="t-meta">Montos calculados con src/lib/calc desde las condiciones del local.</p>
+    </article>
+  </Screen>
+</PresentationLayout>
+
+<style>
+  .accent {
+    color: var(--color-accent);
+  }
+
+  .t-heading {
+    margin-block-end: var(--space-xs);
+  }
+
+  .intro {
+    margin-block-end: var(--space-xl);
+  }
+
+  .sub {
+    margin-block: var(--space-2xl) var(--space-m);
+    font-size: var(--step-2);
+  }
+
+  .swatches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+    gap: var(--space-l) var(--space-m);
+    padding: 0;
+    list-style: none;
+  }
+
+  .swatch {
+    display: grid;
+    gap: var(--space-3xs);
+  }
+
+  .swatch__chip {
+    block-size: 5rem;
+    margin-block-end: var(--space-2xs);
+    border: var(--line-width) solid var(--color-line);
+    border-radius: var(--radius-m);
+  }
+
+  .pairs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+    gap: var(--space-s);
+    padding: 0;
+    list-style: none;
+  }
+
+  .pair {
+    display: grid;
+    gap: var(--space-3xs);
+    padding: var(--space-m);
+    border: var(--line-width) solid var(--color-line);
+    border-radius: var(--radius-m);
+    font-size: var(--step--1);
+  }
+
+  .pair__sample {
+    font-family: var(--font-display);
+    font-size: var(--step-3);
+    line-height: 1;
+  }
+
+  /* Las familias se reasignan aquí: font-family se hereda ya calculada desde body. */
+  .pairing {
+    font-family: var(--font-body);
+  }
+
+  .pairing .t-display {
+    margin-block-end: var(--space-s);
+  }
+
+  .pairing .t-label {
+    margin-block-end: var(--space-3xs);
+  }
+
+  .pairing .rule {
+    margin-block: var(--space-xl);
+  }
+
+  .pairing__grid {
+    display: grid;
+    gap: var(--space-xl);
+  }
+
+  .pairing__grid .t-heading {
+    margin-block: 0 var(--space-s);
+    font-size: var(--step-3);
+  }
+
+  .pairing__figure {
+    display: grid;
+    align-content: start;
+    gap: var(--space-2xs);
+  }
+
+  @media (min-width: 48rem) {
+    .pairing__grid {
+      grid-template-columns: 3fr 2fr;
+      align-items: end;
+    }
+  }
+
+  .steps,
+  .spaces {
+    display: grid;
+    gap: var(--space-s);
+    padding: 0;
+    list-style: none;
+  }
+
+  .step {
+    display: grid;
+    gap: var(--space-3xs);
+    padding-block-end: var(--space-s);
+    border-block-end: var(--line-width) solid var(--color-line);
+  }
+
+  .step__sample {
+    font-family: var(--font-display);
+    line-height: 1.05;
+    overflow-wrap: anywhere;
+  }
+
+  .space {
+    display: grid;
+    grid-template-columns: minmax(0, 14rem) 1fr;
+    align-items: center;
+    gap: var(--space-s);
+  }
+
+  .space__bar {
+    block-size: var(--space-s);
+    background: var(--color-accent);
+    border-radius: var(--radius-s);
+  }
+
+  .spaces + .rule {
+    margin-block: var(--space-2xl);
+  }
+
+  .card {
+    display: grid;
+    gap: var(--space-m);
+    max-inline-size: 28rem;
+    padding: var(--space-l);
+    background: var(--color-surface);
+    border: var(--line-width) solid var(--color-line);
+    border-radius: var(--radius-m);
+    box-shadow: 0 var(--space-3xs) var(--space-l) color-mix(in srgb, var(--color-text) 6%, transparent);
+  }
+
+  .card__rows {
+    display: grid;
+  }
+
+  .card__rows div {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-s);
+    padding-block: var(--space-xs);
+    border-block-end: var(--line-width) solid var(--color-line);
+  }
+
+  .card__rows dt {
+    color: var(--color-text-muted);
+  }
+
+  .card__rows dd {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .card__total {
+    border-block-end: 0 !important;
+    padding-block-start: var(--space-s) !important;
+  }
+
+  .card__total dt {
+    color: var(--color-text);
+  }
+
+  .card__total .t-figure {
+    font-size: var(--step-3);
+  }
+</style>
