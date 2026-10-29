@@ -1,0 +1,47 @@
+---
+// Monta las secciones en el orden de la presentación (o el de CLAUDE.md §9 por defecto).
+// PlanoInteractivo llega en el paso 6: por ahora solo deja un aviso en el link de revisión.
+import Anclas from './Anclas.astro'
+import BusinessCase from './BusinessCase.astro'
+import Cierre from './Cierre.astro'
+import Condiciones from './Condiciones.astro'
+import Diferenciales from './Diferenciales.astro'
+import FichaLocal from './FichaLocal.astro'
+import HeroPlaza from './HeroPlaza.astro'
+import Metricas from './Metricas.astro'
+import Modulos from './Modulos.astro'
+import Pivote from './Pivote.astro'
+import Portada from './Portada.astro'
+import Directorio from './Directorio.astro'
+import Screen from '../Screen.astro'
+import { SECTION_IDS } from '../../lib/sections'
+import type { Seccion } from '../../schemas'
+import type { SectionProps } from './types'
+
+type Props = SectionProps
+
+const { model, kind } = Astro.props
+const COMPONENTS: Partial<Record<Seccion, typeof Portada>> = {
+  Portada,
+  HeroPlaza,
+  Metricas,
+  Diferenciales,
+  Anclas,
+  FichaLocal,
+  Pivote,
+  Condiciones,
+  BusinessCase,
+  Modulos,
+  Directorio,
+  Cierre,
+}
+---
+{model.secciones.map((seccion) => {
+  const Component = COMPONENTS[seccion]
+  if (Component) return <Component model={model} kind={kind} />
+  return kind === 'revision' && (
+    <Screen section={SECTION_IDS[seccion]} compact>
+      <p class="todo">{seccion}: se construye en el paso 6.</p>
+    </Screen>
+  )
+})}

@@ -1,8 +1,10 @@
 ---
 import '../styles/base.css'
-import Field from '../components/Field.astro'
+import { getImage } from 'astro:assets'
+import Footer from '../components/sections/Footer.astro'
 import Label from '../components/Label.astro'
 import type { ResolvedPresentation } from '../lib/resolve'
+import { plazaImage } from '../lib/media'
 import { withBase } from '../lib/paths'
 import { fontFaceCss, preloadUrls, themeCss, themeFonts } from '../lib/theme'
 import { isTodo } from '../schemas'
@@ -18,13 +20,15 @@ interface Props {
 
 const { model, kind, extraFonts = [], title } = Astro.props
 const { plaza, seo, prospecto } = model
-const { tema, legales } = plaza
+const { tema } = plaza
 const isRevision = kind === 'revision'
 
 const fonts = [...themeFonts(tema.tipografias), ...extraFonts]
 const pageTitle = title ?? seo.titulo
 const ogImage = isTodo(seo.imagen_og) ? undefined : new URL(withBase(seo.imagen_og), Astro.site).href
-const favicon = isTodo(tema.icono) ? withBase('favicon.svg') : withBase(tema.icono)
+const icono = await plazaImage(plaza.slug, tema.icono)
+const favicon = icono ? (await getImage({ src: icono, width: 64, height: 64, format: 'png' })).src : withBase('favicon.svg')
+const appleIcon = icono ? (await getImage({ src: icono, width: 180, height: 180, format: 'png' })).src : undefined
 const pendientes = model.pendientes
 ---
 <!doctype html>
@@ -45,6 +49,7 @@ const pendientes = model.pendientes
     {ogImage && <meta property="og:image:height" content="630" />}
     <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
     <link rel="icon" href={favicon} />
+    {appleIcon && <link rel="apple-touch-icon" href={appleIcon} />}
     {preloadUrls([tema.tipografias.display, tema.tipografias.cuerpo]).map((href) => <link rel="preload" href={href} as="font" type="font/woff2" crossorigin />)}
     <style is:inline set:html={fontFaceCss(fonts)} />
     <style is:inline set:html={themeCss(tema)} />
@@ -63,7 +68,7 @@ const pendientes = model.pendientes
 
     <div class="chrome">
       {isRevision && (
-        <div class="review-banner">
+        <aside class="review-banner" aria-label="Vista previa interna">
           <Label as="span" text="Vista previa interna · sin registro" />
           {pendientes.length > 0 && (
             <details class="review-banner__todos">
@@ -77,13 +82,15 @@ const pendientes = model.pendientes
               </ol>
             </details>
           )}
-        </div>
+        </aside>
       )}
       <header class="site-header">
         <span class:list={['site-header__brand', isShortText(plaza.nombre) ? 'is-short' : 'is-long']}>
-          {isTodo(tema.logo) ? plaza.nombre : <img src={withBase(tema.logo)} alt={plaza.nombre} />}
+          {plaza.nombre}
         </span>
-        <Label as="span" class="site-header__recipient" text={`Propuesta para ${prospecto.marca}`} />
+        <span class:list={['t-label', 'site-header__recipient', !isShortText(`Propuesta para ${prospecto.marca}`) && 'is-long']}>
+          <span class="site-header__para">Propuesta para </span>{prospecto.marca}
+        </span>
         <div class="progress" aria-hidden="true"><span class="progress__bar"></span></div>
       </header>
     </div>
@@ -92,15 +99,7 @@ const pendientes = model.pendientes
       <slot />
     </main>
 
-    <footer class="site-footer">
-      <p class="t-meta"><Field value={legales.leyenda_imagenes} /></p>
-      <p class="t-meta">
-        {isTodo(legales.aviso_privacidad_url)
-          ? <>Aviso de privacidad: <Field value={legales.aviso_privacidad_url} /></>
-          : <a href={legales.aviso_privacidad_url} rel="noopener">Aviso de privacidad</a>}
-      </p>
-      <p class="site-footer__credit t-meta">Presentación preparada por Publifix</p>
-    </footer>
+    <Footer model={model} kind={kind} />
 
     <script>
       const root = document.documentElement
@@ -190,8 +189,21 @@ const pendientes = model.pendientes
     color: var(--color-on-accent);
   }
 
-  .review-banner .t-label {
+  /* En la franja y el encabezado las etiquetas van en ancho normal para caber en 360 px. */
+  .review-banner :global(.t-label),
+  .site-header :global(.t-label) {
+    font-stretch: 100%;
+    letter-spacing: 0.08em;
+  }
+
+  .review-banner :global(.t-label) {
     white-space: nowrap;
+  }
+
+  @media (max-width: 30rem) {
+    .site-header__para {
+      display: none;
+    }
   }
 
   @media (min-width: 40rem) {
@@ -268,11 +280,6 @@ const pendientes = model.pendientes
     letter-spacing: var(--title-long-tracking);
   }
 
-  .site-header__brand img {
-    block-size: 2rem;
-    inline-size: auto;
-  }
-
   .site-header :global(.site-header__recipient) {
     color: var(--color-text-muted);
     text-align: end;
@@ -297,15 +304,4 @@ const pendientes = model.pendientes
     outline: none;
   }
 
-  .site-footer {
-    display: grid;
-    gap: var(--space-2xs);
-    padding-block: var(--space-xl) max(var(--space-xl), env(safe-area-inset-bottom));
-    padding-inline: max(var(--space-m), env(safe-area-inset-left)) max(var(--space-m), env(safe-area-inset-right));
-    background: var(--color-surface);
-  }
-
-  .site-footer__credit {
-    margin-block-start: var(--space-s);
-  }
 </style>

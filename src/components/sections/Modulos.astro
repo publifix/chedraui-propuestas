@@ -1,0 +1,49 @@
+---
+// 11 · Módulos: experiencias propias de la plaza (marina, park, eventos…).
+import Headline from '../Headline.astro'
+import PlazaImage from '../PlazaImage.astro'
+import Screen from '../Screen.astro'
+import { SECTION_IDS } from '../../lib/sections'
+import type { SectionProps } from './types'
+
+type Props = SectionProps
+
+const { model, kind } = Astro.props
+const { plaza } = model
+const modulos = plaza.modulos ?? []
+---
+{modulos.length > 0 && (
+  <Screen section={SECTION_IDS.Modulos} labelledby="modulos-titulo" align="start">
+    <Headline id="modulos-titulo" text="Más que compras" />
+    <ul class="modulos">
+      {modulos.map((m, i) => (
+        <li class="modulo">
+          <PlazaImage plaza={plaza.slug} ruta={m.imagen} alt={m.titulo} ratio="3/2" sizes="(min-width: 48rem) 50vw, 100vw" kind={kind} falta={`modulos.${i}.imagen`} />
+          <Headline as="h3" class="modulo__titulo" text={m.titulo} />
+          <p>{m.texto}</p>
+        </li>
+      ))}
+    </ul>
+  </Screen>
+)}
+
+<style>
+  .modulos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    gap: var(--space-xl) var(--space-l);
+    margin-block-start: var(--space-xl);
+    padding: 0;
+    list-style: none;
+  }
+
+  .modulo {
+    display: grid;
+    align-content: start;
+    gap: var(--space-xs);
+  }
+
+  .modulo :global(.modulo__titulo) {
+    margin-block-start: var(--space-xs);
+  }
+</style>

@@ -1,0 +1,158 @@
+---
+// 9 · Condiciones: tarjeta tipo estado de cuenta por local, con todos los montos calculados en
+// src/lib/calc y la indicación de qué incluye IVA.
+import Headline from '../Headline.astro'
+import Label from '../Label.astro'
+import Screen from '../Screen.astro'
+import { deposito, formatAmount, formatMoney, formatPercent, vatLabel } from '../../lib/calc'
+import { SECTION_IDS } from '../../lib/sections'
+import type { SectionProps } from './types'
+
+type Props = SectionProps
+
+const { model, kind } = Astro.props
+---
+<Screen section={SECTION_IDS.Condiciones} labelledby="condiciones-titulo" align="start">
+  <Headline id="condiciones-titulo" text="Condiciones del local" />
+  <div class="cards">
+    {model.locales.map((local) => {
+      const c = local.calculos
+      const iva = formatPercent(local.condiciones.iva)
+      const pdfRule = deposito({ ...local.condiciones, deposito: { ...local.condiciones.deposito, incluye_mantenimiento: true, incluye_iva: true } })
+      const id = `estado-${local.clave.replace(/\W+/g, '-').toLowerCase()}`
+      return (
+        <article class="estado" aria-labelledby={id}>
+          <header class="estado__header">
+            <Label id={id} as="p" text={`Local ${local.clave}`} />
+            <p class="t-meta">{local.area_m2.toLocaleString('es-MX')} m²</p>
+          </header>
+          <dl class="estado__rows">
+            <div><dt>Renta mensual</dt><dd>{formatAmount(local.condiciones.renta_mensual)} {vatLabel('excluded')}</dd></div>
+            <div><dt>Mantenimiento mensual</dt><dd>{formatAmount(local.condiciones.mantenimiento_mensual)} {vatLabel('excluded')}</dd></div>
+            <div class="estado__subtotal"><dt>Subtotal</dt><dd>{formatMoney(c.subtotalMensual)}</dd></div>
+            <div><dt>IVA ({iva})</dt><dd>{formatAmount(c.ivaMensual.amount)}</dd></div>
+            <div class="estado__total">
+              <dt>Total mensual</dt>
+              <dd><span class="t-figure">{formatAmount(c.totalMensual.amount)}</span><span class="t-meta">{vatLabel('included')}</span></dd>
+            </div>
+          </dl>
+          <dl class="estado__rows estado__rows--extra">
+            <div>
+              <dt>Depósito en garantía<span class="estado__detalle t-meta">{c.deposito.assumptions.join(', ')}</span></dt>
+              <dd class="estado__apilado">{formatAmount(c.deposito.amount)}<span class="t-meta">{vatLabel(c.deposito.vat)}</span></dd>
+            </div>
+            <div><dt>Renta por m²</dt><dd>{formatMoney(c.rentaPorM2)}</dd></div>
+            <div><dt>Mantenimiento por m²</dt><dd>{formatMoney(c.mantenimientoPorM2)}</dd></div>
+          </dl>
+          <p class="estado__nota t-meta">
+            Renta y mantenimiento se expresan antes de IVA. El total mensual y el depósito incluyen IVA del {iva}. Montos en pesos mexicanos.
+          </p>
+          {kind === 'revision' && (
+            <p class="todo estado__revision">
+              Regla del depósito pendiente de confirmar con Chedraui: el PDF dice "renta + mantenimiento + IVA" ({formatAmount(pdfRule.amount)}), pero su monto ({formatAmount(c.deposito.amount)}) equivale solo a la renta con IVA, que es la regla configurada.
+            </p>
+          )}
+        </article>
+      )
+    })}
+  </div>
+</Screen>
+
+<style>
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 38rem));
+    gap: var(--space-l);
+    margin-block-start: var(--space-xl);
+  }
+
+  .estado {
+    display: grid;
+    gap: var(--space-m);
+    padding: var(--space-l) var(--space-m);
+    background: var(--color-surface);
+    border: var(--line-width) solid var(--color-line);
+    border-radius: var(--radius-m);
+    box-shadow: 0 var(--space-3xs) var(--space-l) color-mix(in srgb, var(--color-text) 6%, transparent);
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+
+  .estado__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-s);
+    padding-block-end: var(--space-s);
+    border-block-end: calc(var(--line-width) * 2) solid var(--color-accent);
+  }
+
+  .estado__rows {
+    display: grid;
+  }
+
+  .estado__rows div {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-s);
+    padding-block: var(--space-xs);
+    border-block-end: var(--line-width) solid var(--color-line);
+  }
+
+  .estado__rows dt {
+    color: var(--color-text-muted);
+  }
+
+  .estado__rows dd {
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  .estado__subtotal dt,
+  .estado__subtotal dd {
+    color: var(--color-text);
+    font-weight: var(--strong-weight);
+  }
+
+  .estado__total {
+    padding-block: var(--space-s) !important;
+    border-block-end: 0 !important;
+  }
+
+  .estado__total dt {
+    color: var(--color-text) !important;
+    font-weight: var(--strong-weight);
+  }
+
+  .estado__total dd {
+    display: grid;
+    justify-items: end;
+  }
+
+  .estado__total .t-figure {
+    font-size: calc(var(--step-4) * var(--figure-size));
+  }
+
+  .estado__rows--extra dt {
+    white-space: normal;
+  }
+
+  .estado__detalle {
+    display: block;
+  }
+
+  .estado__apilado {
+    display: grid;
+    justify-items: end;
+  }
+
+  .estado__rows--extra div:last-child {
+    border-block-end: 0;
+  }
+
+  .estado__revision {
+    display: block;
+    padding: var(--space-xs);
+    line-height: 1.4;
+  }
+</style>

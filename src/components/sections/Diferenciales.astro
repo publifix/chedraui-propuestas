@@ -1,0 +1,60 @@
+---
+// 4 · Diferenciales: una pantalla por diferencial, dividida texto / imagen.
+import Headline from '../Headline.astro'
+import PlazaImage from '../PlazaImage.astro'
+import Screen from '../Screen.astro'
+import { SECTION_IDS } from '../../lib/sections'
+import type { SectionProps } from './types'
+
+type Props = SectionProps
+
+const { model, kind } = Astro.props
+const { plaza } = model
+---
+<div data-section={SECTION_IDS.Diferenciales}>
+  {plaza.diferenciales.map((d, i) => (
+    <Screen labelledby={`diferencial-${i}`}>
+      <article class:list={['split', i % 2 === 1 && 'split--reverse']}>
+        <div class="split__media">
+          <PlazaImage
+            plaza={plaza.slug}
+            ruta={d.imagen}
+            alt={d.titulo}
+            ratio="4/3"
+            sizes="(min-width: 48rem) 50vw, 100vw"
+            kind={kind}
+            falta={`diferenciales.${i}.imagen`}
+          />
+        </div>
+        <div class="split__text">
+          <Headline id={`diferencial-${i}`} text={d.titulo} />
+          <p class="t-lead">{d.texto}</p>
+        </div>
+      </article>
+    </Screen>
+  ))}
+</div>
+
+<style>
+  .split {
+    display: grid;
+    gap: var(--space-l);
+    align-items: center;
+  }
+
+  .split__text {
+    display: grid;
+    gap: var(--space-s);
+  }
+
+  @media (min-width: 48rem) {
+    .split {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-2xl);
+    }
+
+    .split--reverse .split__media {
+      order: 2;
+    }
+  }
+</style>

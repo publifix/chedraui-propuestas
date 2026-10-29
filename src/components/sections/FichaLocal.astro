@@ -1,0 +1,150 @@
+---
+// 7 · FichaLocal: clave, área, nivel, ficha técnica, vecinos y fotos de cada local.
+import Headline from '../Headline.astro'
+import Label from '../Label.astro'
+import PlazaImage from '../PlazaImage.astro'
+import Screen from '../Screen.astro'
+import { SECTION_IDS } from '../../lib/sections'
+import type { SectionProps } from './types'
+
+type Props = SectionProps
+
+const { model, kind } = Astro.props
+const { plaza } = model
+const si = (v: boolean | undefined) => (v === undefined ? undefined : v ? 'Sí' : 'No')
+---
+<div data-section={SECTION_IDS.FichaLocal}>
+  {model.locales.map((local) => {
+    const nivel = plaza.niveles.find((n) => n.id === local.nivel)?.nombre ?? local.nivel
+    const ft = local.ficha_tecnica
+    const ficha = ft
+      ? [
+          ['Frente', ft.frente_m && `${ft.frente_m} m`],
+          ['Altura', ft.altura_m && `${ft.altura_m} m`],
+          ['Agua', si(ft.agua)],
+          ['Gas', si(ft.gas)],
+          ['Carga eléctrica', ft.carga_electrica],
+          ['Extracción', si(ft.extraccion)],
+        ].filter((row): row is [string, string] => Boolean(row[1]))
+      : []
+    const fotos = local.media?.fotos ?? []
+    const id = `local-${local.clave.replace(/\W+/g, '-').toLowerCase()}`
+    return (
+      <Screen labelledby={id} align="start">
+        <Headline id={id} size="display" text={`Local ${local.clave}`} />
+        <dl class="datos">
+          <div>
+            <dt><Label as="span" text="Área" /></dt>
+            <dd class="t-figure">{local.area_m2.toLocaleString('es-MX')} m²</dd>
+          </div>
+          <div>
+            <dt><Label as="span" text="Nivel" /></dt>
+            <dd class="datos__texto">{nivel}</dd>
+          </div>
+          <div>
+            <dt><Label as="span" text="Estado" /></dt>
+            <dd class="datos__texto">{local.estado === 'disponible' ? 'Disponible' : 'Apartado'}</dd>
+          </div>
+        </dl>
+
+        {ficha.length > 0 ? (
+          <dl class="ficha">
+            {ficha.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}
+          </dl>
+        ) : kind === 'revision' && (
+          <p class="todo pendiente">Ficha técnica pendiente (ficha_tecnica en el archivo del local)</p>
+        )}
+
+        {local.vecinos && local.vecinos.length > 0 && (
+          <div class="vecinos">
+            <Label text="Vecinos" />
+            <ul>{local.vecinos.map((v) => <li>{v}</li>)}</ul>
+          </div>
+        )}
+
+        <div class="fotos">
+          {fotos.length > 0
+            ? fotos.map((foto, i) => (
+                <PlazaImage plaza={plaza.slug} ruta={foto} alt={`Local ${local.clave}, foto ${i + 1}`} ratio="4/3" sizes="(min-width: 48rem) 33vw, 100vw" kind={kind} falta={`media.fotos.${i}`} />
+              ))
+            : <PlazaImage plaza={plaza.slug} ruta={undefined} alt="" ratio="4/3" sizes="100vw" kind={kind} falta={`fotos del local ${local.clave} (media.fotos)`} />}
+        </div>
+      </Screen>
+    )
+  })}
+</div>
+
+<style>
+  .datos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-l) var(--space-2xl);
+    margin-block: var(--space-xl);
+  }
+
+  .datos > div {
+    display: grid;
+    gap: var(--space-3xs);
+  }
+
+  .datos dt {
+    color: var(--color-text-muted);
+  }
+
+  .datos__texto {
+    font-size: var(--step-2);
+    line-height: 1.1;
+    padding-block-start: var(--space-2xs);
+  }
+
+  .ficha {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    gap: 0 var(--space-l);
+    margin-block-end: var(--space-xl);
+  }
+
+  .ficha div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-s);
+    padding-block: var(--space-xs);
+    border-block-end: var(--line-width) solid var(--color-line);
+  }
+
+  .ficha dt {
+    color: var(--color-text-muted);
+  }
+
+  .pendiente {
+    display: inline-block;
+    margin-block-end: var(--space-xl);
+  }
+
+  .vecinos {
+    display: grid;
+    gap: var(--space-xs);
+    margin-block-end: var(--space-xl);
+  }
+
+  .vecinos ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+    padding: 0;
+    list-style: none;
+  }
+
+  .vecinos li {
+    padding: var(--space-3xs) var(--space-xs);
+    border: var(--line-width) solid var(--color-line);
+    border-radius: var(--radius-s);
+    font-size: var(--step--1);
+  }
+
+  .fotos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: var(--space-s);
+  }
+</style>

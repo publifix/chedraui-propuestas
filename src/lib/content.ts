@@ -6,6 +6,7 @@ import { checkContrast } from './theme/contrast'
 import { fontNames, isFont } from './theme/font-roles'
 import type * as z from 'zod'
 import {
+  isTodo,
   asesorSchema,
   formatIssue,
   formatIssues,
@@ -74,11 +75,13 @@ export function readContentFiles(dir: string): Map<string, string> {
   const files = new Map<string, string>()
   for (const entry of readdirSync(dir, { recursive: true, encoding: 'utf8' })) {
     const rel = entry.split(path.sep).join('/')
-    if (!/\.(ya?ml|svg)$/i.test(rel)) continue
-    files.set(rel, readFileSync(path.join(dir, entry), 'utf8'))
+    if (IMAGE_FILE.test(rel)) files.set(rel, '') // solo importa que exista
+    else if (/\.(ya?ml|svg)$/i.test(rel)) files.set(rel, readFileSync(path.join(dir, entry), 'utf8'))
   }
   return files
 }
+
+const IMAGE_FILE = /\.(jpe?g|png|webp|avif)$/i
 
 const PLAZA_FILE = /^plazas\/([^/]+)\/plaza\.ya?ml$/
 const LOCAL_FILE = /^plazas\/([^/]+)\/locales\/[^/]+\.ya?ml$/
@@ -116,7 +119,7 @@ export function buildContent(files: Map<string, string>, label = 'content'): Con
   const localFiles: Array<{ rel: string; plazaSlug: string }> = []
 
   for (const rel of [...files.keys()].sort()) {
-    if (rel.endsWith('.svg')) continue
+    if (rel.endsWith('.svg') || IMAGE_FILE.test(rel)) continue
     todos.push(...findTodos(where(rel), files.get(rel) ?? ''))
 
     const plazaMatch = PLAZA_FILE.exec(rel)
@@ -131,7 +134,10 @@ export function buildContent(files: Map<string, string>, label = 'content'): Con
         errors.push(formatIssue(where(rel), ['slug'], `debe coincidir con el nombre de la carpeta ("${folder}")`))
         continue
       }
-      const themeErrors = validateTheme(where(rel), plaza)
+      const themeErrors = [
+        ...validateTheme(where(rel), plaza),
+        ...validateImages(where(rel), plazaImageFields(plaza), folder, files),
+      ]
       if (themeErrors.length > 0) {
         errors.push(...themeErrors)
         continue
@@ -171,6 +177,16 @@ export function buildContent(files: Map<string, string>, label = 'content'): Con
     }
     if (entry.locales.has(local.clave)) {
       errors.push(formatIssue(where(rel), ['clave'], `el local "${local.clave}" ya está definido en ${entry.locales.get(local.clave)!.file}`))
+      continue
+    }
+    const imageErrors = validateImages(
+      where(rel),
+      (local.media?.fotos ?? []).map((ruta, i) => ({ path: ['media', 'fotos', i], ruta })),
+      plazaSlug,
+      files,
+    )
+    if (imageErrors.length > 0) {
+      errors.push(...imageErrors)
       continue
     }
     const nivel = entry.plaza.niveles.find((n) => n.id === local.nivel)
@@ -252,6 +268,36 @@ export function validateTheme(file: string, plaza: Plaza): string[] {
     }
   }
   return errors
+}
+
+interface ImageField {
+  path: PropertyKey[]
+  ruta: string | undefined
+}
+
+/** Campos de plaza.yaml que apuntan a imágenes de su carpeta media/. */
+export function plazaImageFields(plaza: Plaza): ImageField[] {
+  return [
+    { path: ['tema', 'logo'], ruta: plaza.tema.logo },
+    { path: ['tema', 'icono'], ruta: plaza.tema.icono },
+    { path: ['hero', 'imagen'], ruta: plaza.hero.imagen },
+    ...plaza.diferenciales.map((d, i) => ({ path: ['diferenciales', i, 'imagen'], ruta: d.imagen })),
+    ...(plaza.modulos ?? []).map((m, i) => ({ path: ['modulos', i, 'imagen'], ruta: m.imagen })),
+    ...plaza.anclas.map((a, i) => ({ path: ['anclas', i, 'logo'], ruta: a.logo })),
+    ...(plaza.directorio ?? []).map((d, i) => ({ path: ['directorio', i, 'logo'], ruta: d.logo })),
+  ]
+}
+
+/** Toda imagen citada (que no esté en TODO) debe existir en la carpeta de la plaza. */
+export function validateImages(file: string, fields: ImageField[], plazaSlug: string, files: Map<string, string>): string[] {
+  return fields.flatMap(({ path: field, ruta }) => {
+    if (ruta === undefined || isTodo(ruta)) return []
+    if (!IMAGE_FILE.test(ruta)) {
+      return [formatIssue(file, field, `"${ruta}" no es una imagen (jpg, png, webp o avif)`)]
+    }
+    const key = path.posix.normalize(`plazas/${plazaSlug}/${ruta}`)
+    return files.has(key) ? [] : [formatIssue(file, field, `no existe la imagen "${ruta}" en la carpeta de la plaza`)]
+  })
 }
 
 /** Ids de los elementos de un SVG. */

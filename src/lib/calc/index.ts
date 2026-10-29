@@ -1,4 +1,5 @@
-import { isTodo, type CondicionesBase, type Giro, type Presentacion } from '../../schemas'
+import type { CondicionesBase, Giro, Presentacion } from '../../schemas'
+import { isTodo } from '../todo'
 import {
   costoAnual,
   costoOcupacionPct,

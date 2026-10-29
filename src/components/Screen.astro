@@ -1,17 +1,21 @@
 ---
 // Una idea por pantalla: cada sección del visor (paso 5) se monta dentro de un Screen.
 interface Props {
-  /** Nombre de la sección (CLAUDE.md §9); se usa para tracking y anclas. */
-  section: string
+  /** Identificador estable (src/lib/sections.ts) para data-section y el tracking del paso 9. */
+  section?: string
   labelledby?: string
   align?: 'start' | 'center'
   /** brand: sección a sangre en el color de marca de la plaza. */
   tone?: 'default' | 'brand'
+  /** Sin márgenes laterales ni ancho máximo, para imágenes a sangre. */
+  bleed?: boolean
+  /** Sin alto mínimo de pantalla, para bloques que siguen a otra pantalla. */
+  compact?: boolean
 }
 
-const { section, labelledby, align = 'center', tone = 'default' } = Astro.props
+const { section, labelledby, align = 'center', tone = 'default', bleed = false, compact = false } = Astro.props
 ---
-<section class:list={['screen', `screen--${align}`, tone === 'brand' && 'surface-brand']} data-section={section} aria-labelledby={labelledby}>
+<section class:list={['screen', `screen--${align}`, tone === 'brand' && 'surface-brand', bleed && 'screen--bleed', compact && 'screen--compact']} data-section={section} aria-labelledby={labelledby}>
   <div class="screen__inner" data-reveal>
     <slot />
   </div>
@@ -32,6 +36,19 @@ const { section, labelledby, align = 'center', tone = 'default' } = Astro.props
 
   .screen--start {
     align-items: start;
+  }
+
+  .screen--bleed {
+    padding-inline: 0;
+    padding-block: 0;
+  }
+
+  .screen--bleed .screen__inner {
+    max-inline-size: none;
+  }
+
+  .screen--compact {
+    min-block-size: 0;
   }
 
   .screen__inner {

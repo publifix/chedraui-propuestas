@@ -1,0 +1,300 @@
+---
+// 10 · BusinessCase: costo de ocupación de los tres escenarios contra el rango sano del giro,
+// ventas de equilibrio y un simulador de ventas mensuales. Todo sale de src/lib/calc, también
+// en el navegador: el simulador importa las mismas funciones, sin duplicar fórmulas.
+import Headline from '../Headline.astro'
+import Label from '../Label.astro'
+import Screen from '../Screen.astro'
+import { evaluarRango, formatAmount, formatMoney, formatPercent, type RangoResult } from '../../lib/calc'
+import { SECTION_IDS } from '../../lib/sections'
+import type { SectionProps } from './types'
+
+type Props = SectionProps
+
+const { model, kind } = Astro.props
+const { giro } = model
+const { min, max } = giro.costo_ocupacion_objetivo
+const rango = typeof min === 'number' && typeof max === 'number' ? { min, max } : undefined
+
+const ESTADOS: Record<RangoResult['estado'], string> = {
+  below: 'Por debajo del rango sano: costo holgado',
+  within: 'Dentro del rango sano del giro',
+  above: 'Por encima del rango sano del giro',
+}
+const PENDIENTE = kind === 'revision' ? 'Pendiente' : 'Sin dato'
+const pendienteMin = PENDIENTE.toLowerCase()
+const pct = (n: number) => `${Math.min(100, n * 100)}%`
+---
+<Screen section={SECTION_IDS.BusinessCase} labelledby="business-titulo" align="start">
+  <Headline id="business-titulo" text="Costo de ocupación por escenario" />
+  <p class="t-lead intro">
+    Renta y mantenimiento como porcentaje de las ventas mensuales, frente al rango sano para {giro.nombre.toLowerCase()}.
+    Escenarios ilustrativos.
+  </p>
+
+  {model.locales.map((local) => {
+    const c = local.calculos
+    const escenarios = c.escenarios.map((e) => ({ ...e, rango: evaluarRango(e.costoOcupacion, giro) }))
+    const valores = escenarios.flatMap((e) => (e.costoOcupacion.kind === 'ratio' ? [e.costoOcupacion.value] : []))
+    const escala = Math.max(0.2, (rango?.max ?? 0) * 1.3, ...valores.map((v) => v * 1.15))
+    const subtotal = c.subtotalMensual.amount
+    const base = escenarios.find((e) => e.ventasMensuales.kind === 'money')
+    const inicial = Math.round(
+      (base?.ventasMensuales.kind === 'money' ? base.ventasMensuales.amount : c.ventasEquilibrio.kind === 'money' ? c.ventasEquilibrio.amount * 1.2 : subtotal * 10) / 1000,
+    ) * 1000
+    const sliderMin = Math.ceil((subtotal * 3) / 1000) * 1000
+    const sliderMax = Math.ceil((subtotal * 40) / 1000) * 1000
+    const config = JSON.stringify({
+      renta_mensual: local.condiciones.renta_mensual,
+      mantenimiento_mensual: local.condiciones.mantenimiento_mensual,
+      iva: local.condiciones.iva,
+      min: rango?.min ?? null,
+      max: rango?.max ?? null,
+      escala,
+      pendiente: PENDIENTE,
+      estados: ESTADOS,
+      rangoPendiente: kind === 'revision' ? 'Rango sano del giro pendiente de validar' : 'Sin rango de referencia del giro',
+    })
+    const id = `sim-${local.clave.replace(/\W+/g, '-').toLowerCase()}`
+    return (
+      <div class="caso">
+        {model.locales.length > 1 && <Label class="caso__local" text={`Local ${local.clave}`} />}
+
+        <div class="barras" role="list" style={rango ? `--rango-desde:${pct(rango.min / escala)};--rango-hasta:${pct(rango.max / escala)}` : undefined}>
+          {escenarios.map((e) => (
+            <div class="barra" role="listitem">
+              <div class="barra__head">
+                <span class="barra__nombre">{e.nombre}</span>
+                <span class="barra__ventas t-meta tabular">Ventas: {e.ventasMensuales.kind === 'money' ? formatMoney(e.ventasMensuales, { withVat: false }) : pendienteMin}</span>
+              </div>
+              <div class:list={['barra__track', e.costoOcupacion.kind === 'pending' && 'barra__track--pendiente']} aria-hidden="true">
+                {rango && <span class="barra__rango"></span>}
+                {e.costoOcupacion.kind === 'ratio' && <span class="barra__valor" style={`inline-size:${pct(e.costoOcupacion.value / escala)}`}></span>}
+              </div>
+              <p class="barra__pie">
+                <strong class="tabular">{e.costoOcupacion.kind === 'ratio' ? formatPercent(e.costoOcupacion, 1) : <span class={kind === 'revision' ? 'todo' : undefined}>{PENDIENTE}</span>}</strong>
+                {e.rango.kind === 'range' && <span class="t-meta"> · {ESTADOS[e.rango.estado]}</span>}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <ul class="leyenda t-meta" aria-label="Leyenda">
+          <li><span class="leyenda__key leyenda__key--valor"></span>Costo de ocupación del escenario</li>
+          <li>
+            <span class="leyenda__key leyenda__key--rango"></span>
+            Rango sano del giro: {rango ? `${formatPercent(rango.min)} a ${formatPercent(rango.max)}` : <span class={kind === 'revision' ? 'todo' : undefined}>{kind === 'revision' ? 'pendiente de validar' : 'sin dato'}</span>}
+          </li>
+        </ul>
+
+        <p class="equilibrio">
+          <Label as="span" text="Ventas de equilibrio" />
+          <span class="t-figure">{c.ventasEquilibrio.kind === 'money' ? formatMoney(c.ventasEquilibrio, { withVat: false }) : <span class={kind === 'revision' ? 'todo' : undefined}>{PENDIENTE}</span>}</span>
+          <span class="t-meta">Ventas mensuales mínimas para no rebasar el rango sano, con renta y mantenimiento de {formatMoney(c.subtotalMensual)}.</span>
+        </p>
+
+        <div class="simulador" data-simulator={config}>
+          <label class="simulador__label" for={id}><Label as="span" text="Simula tus ventas mensuales" /></label>
+          <output class="simulador__ventas t-figure" for={id} data-ventas>{formatAmount(inicial)}</output>
+          <input id={id} class="simulador__input" type="range" min={sliderMin} max={sliderMax} step="500" value={inicial} aria-describedby={`${id}-resultado`} />
+          <div class="simulador__escala t-meta tabular" aria-hidden="true"><span>{formatAmount(sliderMin)}</span><span>{formatAmount(sliderMax)}</span></div>
+          <div class="barra__track simulador__track" aria-hidden="true" style={rango ? `--rango-desde:${pct(rango.min / escala)};--rango-hasta:${pct(rango.max / escala)}` : undefined}>
+            {rango && <span class="barra__rango"></span>}
+            <span class="barra__valor" data-bar></span>
+          </div>
+          <p id={`${id}-resultado`} class="simulador__resultado" aria-live="polite">
+            Costo de ocupación <strong class="tabular" data-pct>–</strong><span class="t-meta" data-estado></span>
+          </p>
+          <noscript><p class="t-meta">El simulador necesita JavaScript.</p></noscript>
+        </div>
+      </div>
+    )
+  })}
+</Screen>
+
+<script>
+  import { costoOcupacionPct, evaluarRango } from '../../lib/calc/calc'
+  import { formatAmount, formatPercent } from '../../lib/calc/format'
+
+  interface Config {
+    renta_mensual: number
+    mantenimiento_mensual: number
+    iva: number
+    min: number | null
+    max: number | null
+    escala: number
+    estados: Record<'below' | 'within' | 'above', string>
+    rangoPendiente: string
+  }
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-simulator]')) {
+    const config = JSON.parse(root.dataset.simulator!) as Config
+    const input = root.querySelector<HTMLInputElement>('input[type=range]')!
+    const ventas = root.querySelector<HTMLElement>('[data-ventas]')!
+    const pctEl = root.querySelector<HTMLElement>('[data-pct]')!
+    const estadoEl = root.querySelector<HTMLElement>('[data-estado]')!
+    const bar = root.querySelector<HTMLElement>('[data-bar]')!
+    const giro = { costo_ocupacion_objetivo: { min: config.min ?? 'TODO', max: config.max ?? 'TODO' } }
+
+    const update = () => {
+      const monto = Number(input.value)
+      const costo = costoOcupacionPct(config, monto)
+      const rango = evaluarRango(costo, giro)
+      ventas.textContent = formatAmount(monto)
+      input.setAttribute('aria-valuetext', `${formatAmount(monto)} de ventas mensuales`)
+      if (costo.kind === 'ratio') {
+        pctEl.textContent = formatPercent(costo, 1)
+        bar.style.inlineSize = `${Math.min(100, (costo.value / config.escala) * 100)}%`
+      }
+      estadoEl.textContent = ` · ${rango.kind === 'range' ? config.estados[rango.estado] : config.rangoPendiente}`
+      root.dataset.rango = rango.kind === 'range' ? rango.estado : 'pending'
+    }
+    input.addEventListener('input', update)
+    update()
+  }
+</script>
+
+<style>
+  .intro {
+    margin-block: var(--space-s) var(--space-xl);
+  }
+
+  .caso {
+    display: grid;
+    gap: var(--space-xl);
+    max-inline-size: 52rem;
+  }
+
+  .caso + .caso {
+    margin-block-start: var(--space-3xl);
+  }
+
+  .barras {
+    display: grid;
+    gap: var(--space-l);
+  }
+
+  .barra {
+    display: grid;
+    gap: var(--space-2xs);
+  }
+
+  .barra__head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-3xs) var(--space-s);
+  }
+
+  .barra__nombre {
+    font-weight: var(--strong-weight);
+  }
+
+  .barra__track {
+    position: relative;
+    block-size: var(--space-l);
+    overflow: hidden;
+    background: var(--color-surface);
+    border: var(--line-width) solid var(--color-line);
+    border-radius: var(--radius-s);
+  }
+
+  /* Sin dato: trazo discontinuo para que no se confunda con un campo de formulario. */
+  .barra__track--pendiente {
+    background: transparent;
+    border-style: dashed;
+  }
+
+  /* Dos tonos: rango sano del giro en acento suave y costo del escenario en acento. */
+  .barra__rango {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: var(--rango-desde);
+    inline-size: calc(var(--rango-hasta) - var(--rango-desde));
+    background: var(--color-accent-soft);
+    opacity: 0.55;
+  }
+
+  .barra__valor {
+    position: absolute;
+    inset-block: 25%;
+    inset-inline-start: 0;
+    inline-size: 0;
+    background: var(--color-accent);
+    border-radius: 0 var(--radius-s) var(--radius-s) 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .barra__valor {
+      transition: inline-size var(--duration-fast) var(--ease-out);
+    }
+  }
+
+  .leyenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs) var(--space-l);
+    padding: 0;
+    list-style: none;
+  }
+
+  .leyenda li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs);
+  }
+
+  .leyenda__key {
+    flex: none;
+    inline-size: var(--space-s);
+    block-size: var(--space-s);
+    border-radius: var(--radius-s);
+  }
+
+  .leyenda__key--valor {
+    background: var(--color-accent);
+  }
+
+  .leyenda__key--rango {
+    background: var(--color-accent-soft);
+  }
+
+  .equilibrio {
+    display: grid;
+    gap: var(--space-2xs);
+    padding-block: var(--space-m);
+    border-block: var(--line-width) solid var(--color-line);
+  }
+
+  .simulador {
+    display: grid;
+    gap: var(--space-s);
+    padding: var(--space-l) var(--space-m);
+    background: var(--color-surface);
+    border: var(--line-width) solid var(--color-line);
+    border-radius: var(--radius-m);
+  }
+
+  .simulador__input {
+    inline-size: 100%;
+    min-block-size: 44px;
+    accent-color: var(--color-accent);
+    cursor: pointer;
+  }
+
+  .simulador__escala {
+    display: flex;
+    justify-content: space-between;
+    margin-block-start: calc(-1 * var(--space-xs));
+  }
+
+  .simulador__resultado strong {
+    font-size: var(--step-2);
+  }
+
+  .simulador[data-rango='above'] .simulador__resultado strong {
+    text-decoration: underline;
+    text-decoration-thickness: calc(var(--line-width) * 2);
+    text-underline-offset: 0.2em;
+  }
+</style>

@@ -9,7 +9,7 @@ interface Props {
   as?: 'h1' | 'h2' | 'h3' | 'p'
   size?: 'display' | 'heading'
   id?: string
-  class?: string
+  class?: string | undefined
 }
 
 const { text, as: Tag = 'h2', size = 'heading', id, class: className } = Astro.props

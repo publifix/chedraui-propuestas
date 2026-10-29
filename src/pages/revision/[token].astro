@@ -1,7 +1,7 @@
 ---
 // Link de revisión: mismo contenido que el de envío, con franja interna y sin tracking.
 import PresentationLayout from '../../layouts/PresentationLayout.astro'
-import PendingSections from '../../components/PendingSections.astro'
+import Sections from '../../components/sections/Sections.astro'
 import { staticPaths, type RouteEntry } from '../../lib/site'
 
 export function getStaticPaths() {
@@ -11,5 +11,5 @@ export function getStaticPaths() {
 const { model } = Astro.props as RouteEntry['props']
 ---
 <PresentationLayout model={model} kind="revision">
-  <PendingSections model={model} />
+  <Sections model={model} kind="revision" />
 </PresentationLayout>

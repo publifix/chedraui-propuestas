@@ -1,0 +1,106 @@
+---
+// 3 · Métricas: cifras de la plaza con fuente y periodo siempre visibles (CLAUDE.md §4.6).
+// Los números suben al entrar en pantalla; sin JS o con movimiento reducido se ven ya completos.
+import Field from '../Field.astro'
+import Headline from '../Headline.astro'
+import Label from '../Label.astro'
+import Screen from '../Screen.astro'
+import { SECTION_IDS } from '../../lib/sections'
+import type { SectionProps } from './types'
+
+type Props = SectionProps
+
+const { model } = Astro.props
+
+/** "+600 mil" → { prefix: "+", value: 600, suffix: " mil", decimals: 0 }. */
+function parseValor(valor: string) {
+  const match = /^(\D*?)(\d[\d,]*(?:\.\d+)?)(.*)$/.exec(valor)
+  if (!match) return undefined
+  const [, prefix = '', digits = '', suffix = ''] = match
+  return { prefix, value: Number(digits.replace(/,/g, '')), suffix, decimals: digits.split('.')[1]?.length ?? 0 }
+}
+
+const metricas = model.plaza.metricas.map((m) => ({ ...m, parsed: parseValor(m.valor) }))
+---
+<Screen section={SECTION_IDS.Metricas} labelledby="metricas-titulo" align="start">
+  <Headline id="metricas-titulo" text="La plaza en cifras" />
+  <dl class="metricas">
+    {metricas.map((m) => (
+      <div class="metrica">
+        <dt class="metrica__etiqueta"><Label as="span" text={m.etiqueta} /></dt>
+        <dd class="metrica__valor t-figure">
+          {m.parsed ? (
+            <>
+              <span class="visually-hidden">{m.valor}</span>
+              <span aria-hidden="true" data-counter={m.parsed.value} data-decimals={m.parsed.decimals}>{m.parsed.prefix}<span class="metrica__num">{m.parsed.value.toLocaleString('es-MX', { minimumFractionDigits: m.parsed.decimals })}</span>{m.parsed.suffix}</span>
+            </>
+          ) : m.valor}
+        </dd>
+        <dd class="metrica__fuente t-meta">
+          Fuente: <Field value={m.fuente} /> · Periodo: <Field value={m.periodo} />
+        </dd>
+      </div>
+    ))}
+  </dl>
+</Screen>
+
+<script>
+  // Cuenta de 0 al valor final cuando la cifra entra en pantalla (ease-out, ~1.2 s).
+  const counters = document.querySelectorAll<HTMLElement>('[data-counter]')
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
+  if (!reduce && 'IntersectionObserver' in window && counters.length > 0) {
+    const run = (el: HTMLElement) => {
+      const target = Number(el.dataset.counter)
+      const decimals = Number(el.dataset.decimals ?? 0)
+      const num = el.querySelector<HTMLElement>('.metrica__num')
+      if (!num) return
+      const format = (n: number) => n.toLocaleString('es-MX', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
+      const start = performance.now()
+      const step = (now: number) => {
+        const t = Math.min(1, (now - start) / 1200)
+        num.textContent = format(target * (1 - (1 - t) ** 3))
+        if (t < 1) requestAnimationFrame(step)
+      }
+      num.textContent = format(0)
+      requestAnimationFrame(step)
+    }
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue
+        run(entry.target as HTMLElement)
+        observer.unobserve(entry.target)
+      }
+    }, { threshold: 0.6 })
+    counters.forEach((el) => observer.observe(el))
+  }
+</script>
+
+<style>
+  .metricas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: var(--space-xl) var(--space-l);
+    margin-block-start: var(--space-xl);
+  }
+
+  .metrica {
+    display: grid;
+    align-content: start;
+    gap: var(--space-2xs);
+    padding-block-start: var(--space-s);
+    border-block-start: var(--line-width) solid var(--color-line);
+  }
+
+  .metrica__etiqueta {
+    order: 2;
+    color: var(--color-text-muted);
+  }
+
+  .metrica__valor {
+    order: 1;
+  }
+
+  .metrica__fuente {
+    order: 3;
+  }
+</style>

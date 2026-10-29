@@ -128,6 +128,8 @@ Leyenda: **O** = obligatorio, **Op** = opcional.
 | `contacto_general` | objeto | O | `web`, `correo`, `telefono` |
 | `legales` | objeto | O | `aviso_privacidad_url`, `leyenda_imagenes` |
 
+**Imágenes:** las rutas de `plaza.yaml` (logo, icono, hero, diferenciales, módulos, anclas, directorio) y de `media.fotos` del local son relativas a la carpeta de la plaza (`media/<archivo>`), con nombres en minúsculas y guiones. El build falla si una imagen citada no existe; `TODO` se acepta. Se sirven con el pipeline de Astro (`src/lib/media.ts` con el alias `@content` → `CONTENT_DIR`, `src/components/PlazaImage.astro`): AVIF/WebP en anchos de 360 a 1440 px con `sizes` y respaldo JPG. Una imagen que falta se muestra con `MediaPlaceholder.astro` en su proporción; en revisión dice cuál falta.
+
 #### 7.1.1 Tema
 
 - **Colores:** hex. `marca` es el fondo de las secciones a sangre (clase `surface-brand` o `Screen tone="brand"`, que redefine los tokens de color en su ámbito) y `texto_marca` su texto. `acento_suave` es el segundo tono de gráficas y rangos (barras de dos tonos con `acento`). El build falla si no se cumple WCAG AA (`src/lib/theme/contrast.ts`): **texto 4.5:1** para texto, texto_suave y acento sobre fondo y superficie, superficie sobre acento, texto_marca sobre marca y superficie sobre acento_suave; **gráficas 3:1** (criterio 1.4.11) para acento_suave sobre fondo y superficie.
@@ -264,6 +266,12 @@ Una sección = un componente en `src/components/sections`. Cada una recibe el mo
 | 13 | `Cierre` | Frase de cierre, botón de WhatsApp al asesor, vigencia de la oferta |
 | — | `Footer` | Aviso de privacidad, leyenda de imágenes, crédito discreto de Publifix |
 
+Implementación (paso 5): cada sección es un componente de `src/components/sections/` que recibe solo `{ model, kind }` (modelo resuelto con sus cálculos y tipo de link). `Sections.astro` las monta en el orden de `secciones` o el de esta tabla; `PlanoInteractivo` llega en el paso 6 (en revisión deja un aviso). Ritmo: la mayoría en fondo claro; **Portada, Pivote y Cierre a sangre en el color de marca**. Cada sección lleva `data-section` con un id estable de `src/lib/sections.ts` (`portada`, `hero-plaza`, `metricas`, `diferenciales`, `anclas`, `plano-interactivo`, `ficha-local`, `pivote`, `condiciones`, `business-case`, `modulos`, `directorio`, `cierre`, `footer`) que usará el tracking: no cambiarlos. Detalles:
+- `Metricas`: contadores que suben al entrar en pantalla (valor final para lectores de pantalla y con movimiento reducido), con fuente y periodo siempre visibles.
+- `Condiciones`: tarjeta tipo estado de cuenta por local; en revisión explica el caso pendiente del depósito.
+- `BusinessCase`: barras de dos tonos (rango sano en `acento_suave`, escenario en `acento`), ventas de equilibrio y simulador con control deslizante. El script del navegador importa `src/lib/calc` (`costoOcupacionPct`, `evaluarRango`); `src/lib/todo.ts` y los cálculos no dependen de Zod para que el navegador no lo cargue.
+- `Cierre`: WhatsApp al asesor con mensaje prellenado (`src/lib/whatsapp.ts`), vigencia y estado de propuesta vencida comprobado en el navegador (`src/lib/vigencia.ts`).
+
 Layout base (`src/layouts/PresentationLayout.astro`): encabezado fijo con fondo, barra de progreso de lectura, `<main>` donde cada sección va dentro de `src/components/Screen.astro` (una idea por pantalla), footer con aviso de privacidad, leyenda de imágenes y crédito de Publifix, franja "Vista previa interna · sin registro" con la lista de pendientes solo en revisión, `noindex` y Open Graph desde `seo`, márgenes seguros (`env(safe-area-inset-*)`) y entrada sutil que respeta `prefers-reduced-motion`. Los valores en `TODO` se muestran con `src/components/Field.astro`. La muestra de tokens de cada plaza vive en `/revision/<token_revision>/tokens/`.
 
 Reglas tipográficas (`src/lib/typography.ts`, `Headline.astro`, `Label.astro`):
@@ -343,6 +351,7 @@ Datos tomados de la presentación PDF actual de Chedraui (junio 2026).
 - Planta baja: 43 locales, 9 restaurantes.
 - Anclas: Liverpool (28,000 m²), Chedraui Selecto (10,706 m²). Otras marcas: Forever 21, Steve Madden, Smart Fit, Sonora Grill, Coppel, Cinépolis, Cinépolis VIP, Pandora, Starbucks, adidas, Shasa, Sally Beauty, Petco, Telcel, Santander, Banregio, entre otras.
 - Contacto general: centrocomercialeldorado.mx · administracion@centrocomercialeldorado.mx · (229) 986 11 96 / 41 23.
+- Imágenes (`content/plazas/el-dorado/media/`, paso 5): `logo-el-dorado.png` (logo vertical), `icono-velero.png` (velero recortado del logo, favicon), `fachada-marina.jpg` (hero), `acceso-nocturno.jpg` (diferencial Legorreta; 662×302 px, **reemplazar por una de mayor resolución**), `marina-panoramica.png` (diferencial marina), `terraza-marina.jpg` (diferencial terrazas). `compras-stock.png` es una foto de stock que no muestra la plaza: no se usa. Pendientes: imágenes de los diferenciales "160 mil m²" y "El Dorado Park", de los módulos, fotos del local y logos de anclas y directorio. Confirmar derechos de uso de las fotos antes de publicar (el repo es público).
 - Identidad: morado con velero blanco; hashtag #ExperienciaElDorado. Morado de marca `#660066` (tomado del PDF de disponibilidad, junio 2026). El logo es una sans en mayúsculas con espaciado amplio y toda su comunicación es sans: la dirección tipográfica es sans, no serif. Aprobado en el paso 4: paleta de `plaza.yaml`, Archivo como única familia (expandido en mayúsculas para etiquetas, nombre de plaza y titulares cortos; condensado para titulares largos) y Newsreader itálica solo en la cita pivote. `acento_suave` `#9a579a` = `#660066` al 66 % sobre blanco, como en el PDF.
 
 **Local A25+A26**

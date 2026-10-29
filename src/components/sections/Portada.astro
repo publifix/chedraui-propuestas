@@ -1,0 +1,50 @@
+---
+// 1 · Portada, a sangre en el color de marca: destinatario y marca, frase principal de la plaza,
+// local y plaza.
+import Headline from '../Headline.astro'
+import Label from '../Label.astro'
+import Screen from '../Screen.astro'
+import { Image } from 'astro:assets'
+import { plazaImage } from '../../lib/media'
+import { SECTION_IDS } from '../../lib/sections'
+import type { SectionProps } from './types'
+
+type Props = SectionProps
+
+const { model } = Astro.props
+const { plaza, prospecto, locales } = model
+const logo = await plazaImage(plaza.slug, plaza.tema.logo)
+const niveles = [...new Set(locales.map((l) => plaza.niveles.find((n) => n.id === l.nivel)?.nombre ?? l.nivel))]
+const claves = locales.map((l) => l.clave).join(' y ')
+---
+<Screen section={SECTION_IDS.Portada} tone="brand" labelledby="portada-titulo">
+  <div class="portada">
+    {logo && <Image src={logo} alt={plaza.nombre} width={240} densities={[1, 2]} class="portada__logo" loading="eager" />}
+    <Label class="portada__para" text={`Para ${prospecto.destinatario} · ${prospecto.marca}`} />
+    <Headline as="h1" size="display" id="portada-titulo" text={plaza.frase_principal} />
+    <p class="portada__local t-lead">
+      {locales.length > 1 ? 'Locales' : 'Local'} {claves} · {niveles.join(' y ')} · {plaza.nombre_completo ?? plaza.nombre}
+    </p>
+  </div>
+</Screen>
+
+<style>
+  .portada {
+    display: grid;
+    gap: var(--space-m);
+    justify-items: start;
+  }
+
+  /* El logo es morado sobre transparente: sobre el fondo de marca se muestra en el color del texto de marca. */
+  .portada__logo {
+    inline-size: clamp(7rem, 30vw, 10rem);
+    block-size: auto;
+    margin-block-end: var(--space-l);
+    filter: brightness(0) invert(1);
+  }
+
+  .portada__local {
+    color: var(--color-text);
+    max-inline-size: 36ch;
+  }
+</style>
