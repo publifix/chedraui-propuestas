@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { parse } from 'yaml'
 import { resolvePresentation } from './resolve'
-import { AA_NORMAL_TEXT, checkContrast } from './theme/contrast'
+import { checkContrast } from './theme/contrast'
 import { fontNames, isFont } from './theme/font-roles'
 import type * as z from 'zod'
 import {
@@ -233,10 +233,11 @@ export function buildContent(files: Map<string, string>, label = 'content'): Con
 export function validateTheme(file: string, plaza: Plaza): string[] {
   const errors: string[] = []
   const { colores, tipografias } = plaza.tema
-  for (const { texto, fondo, ratio, pasa } of checkContrast(colores)) {
+  for (const { texto, fondo, tipo, ratio, minimo, pasa } of checkContrast(colores)) {
     if (pasa) continue
+    const uso = tipo === 'texto' ? '' : ' (gráfica)'
     errors.push(
-      formatIssue(file, ['tema', 'colores', texto], `contraste ${ratio.toFixed(2)}:1 sobre "${fondo}"; WCAG AA exige ${AA_NORMAL_TEXT}:1`),
+      formatIssue(file, ['tema', 'colores', texto], `contraste ${ratio.toFixed(2)}:1 sobre "${fondo}"${uso}; WCAG AA exige ${minimo}:1`),
     )
   }
   const fonts = [

@@ -66,16 +66,16 @@ b {
   font-weight: var(--strong-weight);
 }
 
-/* Titulares: familia y tratamiento del catálogo (mayúsculas, tracking, peso, ancho). */
+/* Titulares sin clase: estilo largo (mayúsculas y minúsculas), que nunca rompe la regla de 5 palabras. */
 h1,
 h2,
 h3 {
   font-family: var(--font-display);
-  font-weight: var(--display-weight);
-  font-stretch: var(--display-stretch);
-  text-transform: var(--display-transform);
-  letter-spacing: var(--display-tracking);
-  line-height: var(--display-leading);
+  font-weight: var(--title-long-weight);
+  font-stretch: var(--title-long-stretch);
+  text-transform: var(--title-long-transform);
+  letter-spacing: var(--title-long-tracking);
+  line-height: var(--title-long-leading);
   text-wrap: balance;
 }
 
@@ -85,32 +85,63 @@ p {
 
 /* Roles tipográficos */
 
+/*
+ * Titulares (CLAUDE.md §9). Headline.astro elige el estilo por número de palabras:
+ * .is-short (hasta 5 palabras): ancho expandido, mayúsculas, tracking amplio.
+ * .is-long (más de 5 palabras): condensado, mayúsculas y minúsculas.
+ */
 .t-display,
 .t-heading {
   font-family: var(--font-display);
-  font-weight: var(--display-weight);
-  font-stretch: var(--display-stretch);
-  text-transform: var(--display-transform);
-  letter-spacing: var(--display-tracking);
-  line-height: var(--display-leading);
   text-wrap: balance;
+  overflow-wrap: break-word;
 }
 
-.t-display {
-  font-size: calc(var(--step-6) * var(--display-size));
+.t-display.is-short,
+.t-heading.is-short {
+  font-weight: var(--title-short-weight);
+  font-stretch: var(--title-short-stretch);
+  text-transform: var(--title-short-transform);
+  letter-spacing: var(--title-short-tracking);
+  line-height: var(--title-short-leading);
 }
 
-.t-heading {
-  font-size: calc(var(--step-4) * var(--display-size));
+.t-display.is-long,
+.t-heading.is-long,
+.t-display:not(.is-short),
+.t-heading:not(.is-short) {
+  font-weight: var(--title-long-weight);
+  font-stretch: var(--title-long-stretch);
+  text-transform: var(--title-long-transform);
+  letter-spacing: var(--title-long-tracking);
+  line-height: var(--title-long-leading);
 }
 
-/* Cita pivote: serif itálica opcional; sin ella, la familia de display sin mayúsculas. */
+.t-display.is-short {
+  font-size: calc(var(--step-6) * var(--title-short-size));
+}
+
+.t-display:not(.is-short) {
+  font-size: calc(var(--step-6) * var(--title-long-size));
+}
+
+.t-heading.is-short {
+  font-size: calc(var(--step-4) * var(--title-short-size));
+}
+
+.t-heading:not(.is-short) {
+  font-size: calc(var(--step-4) * var(--title-long-size));
+}
+
+/* Cita pivote: único lugar con serif (itálica); siempre en mayúsculas y minúsculas. */
 .t-quote {
   font-family: var(--font-quote);
   font-style: var(--quote-style);
   font-weight: var(--quote-weight);
+  font-stretch: var(--quote-stretch);
   font-size: var(--step-4);
   line-height: 1.15;
+  text-transform: none;
   text-wrap: balance;
   max-inline-size: 24ch;
 }
@@ -127,7 +158,8 @@ p {
   max-inline-size: 38ch;
 }
 
-/* Etiquetas en mayúsculas con tracking amplio (CLAUDE.md §9). */
+/* Etiquetas en mayúsculas con tracking amplio (CLAUDE.md §9), solo hasta 5 palabras.
+   Label.astro aplica .is-long a textos más largos: mismas proporciones, sin mayúsculas. */
 .t-label {
   font-family: var(--font-body);
   font-size: var(--step--1);
@@ -138,14 +170,20 @@ p {
   text-transform: uppercase;
 }
 
-/* Cifras grandes: siempre con números tabulares para que los montos alineen. */
+.t-label.is-long {
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+/* Cifras grandes: ancho normal (no condensado) y números tabulares para que los montos alineen. */
 .t-figure {
   font-family: var(--font-display);
-  font-weight: var(--display-weight);
-  font-stretch: var(--display-stretch);
+  font-weight: var(--figure-weight);
+  font-stretch: var(--figure-stretch);
   font-size: calc(var(--step-5) * var(--figure-size));
   line-height: 1;
   letter-spacing: 0;
+  text-transform: none;
   font-variant-numeric: lining-nums tabular-nums;
 }
 

@@ -3,7 +3,7 @@ import type { Plaza } from '../../schemas'
 import { readYaml, SEED, seedFiles } from '../test-utils'
 import { checkContrast, contrastRatio, luminance } from './contrast'
 import { fontNames, isFont } from './font-roles'
-import { family, fontFaceCss, fontStack, preloadUrls, FONT_PAIRINGS } from './fonts'
+import { family, fontFaceCss, fontStack, preloadUrls } from './fonts'
 import { colorScheme, DEFAULT_MEDIDAS, fluid, resolveMedidas, SPACE_STEPS, themeCss, themeFonts, themeVariables, typeStep, TYPE_STEPS, typographyVariables } from './tokens'
 
 const tema = readYaml(seedFiles(), SEED.plaza)['tema'] as Plaza['tema']
@@ -19,7 +19,7 @@ describe('contraste WCAG', () => {
 
   it('los colores provisionales de El Dorado cumplen AA en todos los pares', () => {
     const results = checkContrast(tema.colores)
-    expect(results).toHaveLength(8)
+    expect(results).toHaveLength(11)
     expect(results.filter((r) => !r.pasa)).toEqual([])
   })
 
@@ -34,45 +34,57 @@ describe('contraste WCAG', () => {
     expect(failing.map((r) => `${r.texto}/${r.fondo}`)).toEqual(['texto_marca/marca'])
   })
 
-  it('el morado de marca de El Dorado es el del PDF de Chedraui', () => {
+  it('el morado de marca y el acento suave de El Dorado salen del PDF de Chedraui', () => {
     expect(tema.colores.marca).toBe('#660066')
+    // #660066 al 66 % de opacidad sobre blanco.
+    expect(tema.colores.acento_suave).toBe('#9a579a')
+  })
+
+  it('valida el acento suave como texto blanco encima (4.5:1) y como gráfica sobre la página (3:1)', () => {
+    const soft = checkContrast(tema.colores).filter((r) => r.texto === 'acento_suave' || r.fondo === 'acento_suave')
+    expect(soft.map((r) => [r.texto, r.fondo, r.minimo, r.pasa])).toEqual([
+      ['superficie', 'acento_suave', 4.5, true],
+      ['acento_suave', 'fondo', 3, true],
+      ['acento_suave', 'superficie', 3, true],
+    ])
+    const tooLight = checkContrast({ ...tema.colores, acento_suave: '#e7c6e7' }).filter((r) => !r.pasa)
+    expect(tooLight.map((r) => `${r.texto}/${r.fondo}/${r.tipo}`)).toEqual([
+      'superficie/acento_suave/texto',
+      'acento_suave/fondo/grafica',
+      'acento_suave/superficie/grafica',
+    ])
   })
 })
 
 describe('catálogo de fuentes', () => {
-  it('distingue fuentes de display, cuerpo y cita', () => {
-    expect(isFont('Unbounded', 'display')).toBe(true)
-    expect(isFont('Unbounded', 'body')).toBe(false)
-    expect(isFont('Archivo', 'display') && isFont('Archivo', 'body')).toBe(true)
-    expect(isFont('Instrument Serif', 'quote')).toBe(true)
-    expect(isFont('Instrument Serif', 'display')).toBe(false)
-    expect(isFont('Inter', 'body')).toBe(false)
-    expect(fontNames('body')).toEqual(['Archivo', 'Figtree', 'Public Sans'])
+  it('sirve solo Archivo (display y cuerpo) y Newsreader (cita)', () => {
+    expect(fontNames('display')).toEqual(['Archivo'])
+    expect(fontNames('body')).toEqual(['Archivo'])
+    expect(fontNames('quote')).toEqual(['Newsreader'])
+    expect(isFont('Newsreader', 'display')).toBe(false)
+    expect(isFont('Unbounded', 'display')).toBe(false)
   })
 
-  it('las tres combinaciones son sans, con cita serif opcional, y usan fuentes del catálogo', () => {
-    expect(FONT_PAIRINGS.map((p) => p.display)).toEqual(['Unbounded', 'Barlow Condensed', 'Archivo'])
-    for (const p of FONT_PAIRINGS) {
-      expect(isFont(p.display, 'display')).toBe(true)
-      expect(isFont(p.body, 'body')).toBe(true)
-      expect(isFont(p.cita, 'quote')).toBe(true)
-      expect(family(p.display).fallback).toMatch(/sans-serif$/)
-      expect(family(p.cita).files.every((f) => f.style === 'italic')).toBe(true)
-    }
+  it('la cita es el único lugar con serif, en itálica', () => {
+    expect(family('Archivo').fallback).toMatch(/sans-serif$/)
+    expect(family('Newsreader').fallback).toMatch(/serif$/)
+    expect(family('Newsreader').files.every((f) => f.style === 'italic')).toBe(true)
   })
 
-  it('declara @font-face solo de las familias pedidas, con swap y woff2 local', () => {
-    const css = fontFaceCss(['Unbounded', 'Figtree', 'Figtree'])
-    expect(css.match(/@font-face/g)).toHaveLength(3)
-    expect(css).toContain('font-family:"Unbounded";font-style:normal;font-weight:500;font-display:swap')
-    expect(css).toContain('font-family:"Figtree";font-style:normal;font-weight:600')
-    expect(css).not.toContain('Archivo')
-    expect(css).not.toMatch(/fonts\.googleapis|fonts\.gstatic/)
+  it('Archivo: titular corto expandido en mayúsculas, largo condensado, cifras en ancho normal', () => {
+    const { short, long, figure } = family('Archivo').display!
+    expect(short).toMatchObject({ transform: 'uppercase', stretch: '125%', size: 0.7 })
+    expect(long).toMatchObject({ transform: 'none', stretch: '70%' })
+    expect(figure.stretch).toBe('100%')
+    expect(family('Archivo').text!.labelStretch).toBe('125%')
+  })
+
+  it('declara la fuente variable con sus rangos de peso y ancho, con swap y woff2 local', () => {
+    const css = fontFaceCss(['Archivo', 'Archivo'])
+    expect(css.match(/@font-face/g)).toHaveLength(1)
+    expect(css).toContain('font-weight:100 900;font-stretch:62% 125%;font-display:swap')
     expect(css).toMatch(/format\("woff2"\)/)
-  })
-
-  it('declara la fuente variable con sus rangos de peso y ancho', () => {
-    expect(fontFaceCss(['Archivo'])).toContain('font-weight:100 900;font-stretch:62% 125%')
+    expect(css).not.toMatch(/fonts\.googleapis|fonts\.gstatic/)
   })
 
   it('declara la cita como itálica', () => {
@@ -80,12 +92,11 @@ describe('catálogo de fuentes', () => {
   })
 
   it('precarga un archivo por familia', () => {
-    expect(preloadUrls(['Unbounded', 'Figtree'])).toHaveLength(2)
     expect(preloadUrls(['Archivo', 'Archivo'])).toHaveLength(1)
   })
 
   it('incluye la pila de respaldo y rechaza fuentes fuera del catálogo', () => {
-    expect(fontStack('Figtree')).toMatch(/^"Figtree", ui-sans-serif/)
+    expect(fontStack('Archivo')).toMatch(/^"Archivo", ui-sans-serif/)
     expect(() => fontStack('Comic Sans')).toThrow('no está en el catálogo')
   })
 })
@@ -99,40 +110,34 @@ describe('tokens', () => {
     expect(vars['--color-on-accent']).toBe(tema.colores.superficie)
     expect(vars['--color-brand']).toBe('#660066')
     expect(vars['--color-on-brand']).toBe(tema.colores.texto_marca)
-    expect(vars['--font-display']).toBe(fontStack('Unbounded'))
+    expect(vars['--color-accent-soft']).toBe('#9a579a')
+    expect(vars['--font-display']).toBe(fontStack('Archivo'))
+    expect(vars['--font-quote']).toBe(fontStack('Newsreader'))
   })
 
-  it('aplica el tratamiento del catálogo: mayúsculas y tracking amplio en la display ancha', () => {
-    expect(typographyVariables({ display: 'Unbounded', cuerpo: 'Figtree' })).toMatchObject({
-      '--display-transform': 'uppercase',
-      '--display-tracking': '0.06em',
-      '--display-size': '0.62',
-      '--figure-size': '0.82',
-      '--label-stretch': 'normal',
-    })
-  })
-
-  it('una sola familia variable cambia de ancho entre titulares y etiquetas', () => {
-    expect(typographyVariables({ display: 'Archivo', cuerpo: 'Archivo' })).toMatchObject({
-      '--display-stretch': '68%',
+  it('expone los estilos de titular corto, largo, cifras y etiquetas', () => {
+    expect(typographyVariables(tema.tipografias)).toMatchObject({
+      '--title-short-transform': 'uppercase',
+      '--title-short-stretch': '125%',
+      '--title-long-transform': 'none',
+      '--title-long-stretch': '70%',
+      '--figure-stretch': '100%',
       '--label-stretch': '125%',
-    })
-  })
-
-  it('la cita usa la serif itálica si existe y si no la display sin mayúsculas', () => {
-    expect(typographyVariables({ display: 'Barlow Condensed', cuerpo: 'Public Sans', cita: 'Newsreader' })).toMatchObject({
-      '--font-quote': fontStack('Newsreader'),
       '--quote-style': 'italic',
     })
-    expect(typographyVariables({ display: 'Barlow Condensed', cuerpo: 'Public Sans' })).toMatchObject({
-      '--font-quote': fontStack('Barlow Condensed'),
+  })
+
+  it('sin cita, la cita usa el estilo largo de la display, sin serif', () => {
+    expect(typographyVariables({ display: 'Archivo', cuerpo: 'Archivo' })).toMatchObject({
+      '--font-quote': fontStack('Archivo'),
       '--quote-style': 'normal',
+      '--quote-stretch': '70%',
     })
   })
 
   it('carga solo las familias del tema', () => {
-    expect(themeFonts({ display: 'Unbounded', cuerpo: 'Figtree' })).toEqual(['Unbounded', 'Figtree'])
-    expect(themeFonts({ display: 'Unbounded', cuerpo: 'Figtree', cita: 'Instrument Serif' })).toHaveLength(3)
+    expect(themeFonts(tema.tipografias)).toEqual(['Archivo', 'Archivo', 'Newsreader'])
+    expect(themeFonts({ display: 'Archivo', cuerpo: 'Archivo' })).toEqual(['Archivo', 'Archivo'])
   })
 
   it('genera la escala tipográfica y de espacios completas, fluidas con clamp', () => {

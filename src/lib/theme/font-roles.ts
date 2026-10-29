@@ -3,14 +3,8 @@
 export type FontRole = 'display' | 'body' | 'quote'
 
 export const FONT_ROLES = {
-  Unbounded: ['display'],
-  'Barlow Condensed': ['display'],
   Archivo: ['display', 'body'],
-  Figtree: ['body'],
-  'Public Sans': ['body'],
-  'Instrument Serif': ['quote'],
   Newsreader: ['quote'],
-  Fraunces: ['quote'],
 } as const satisfies Record<string, readonly FontRole[]>
 
 export type FontName = keyof typeof FONT_ROLES

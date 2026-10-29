@@ -1,6 +1,6 @@
 import type { Plaza } from '../../schemas'
 import { luminance } from './contrast'
-import { family, fontStack } from './fonts'
+import { family, fontStack, type TitleStyle } from './fonts'
 
 type Tema = Plaza['tema']
 export type Medidas = { [K in keyof NonNullable<Tema['medidas']>]-?: number }
@@ -67,6 +67,7 @@ export function themeVariables(tema: Tema): Record<string, string> {
     '--color-accent': c.acento,
     '--color-on-accent': c.superficie,
     '--color-line': c.linea,
+    '--color-accent-soft': c.acento_suave,
     '--color-brand': c.marca,
     '--color-on-brand': c.texto_marca,
     ...typographyVariables(tema.tipografias),
@@ -91,25 +92,32 @@ export function themeVariables(tema: Tema): Record<string, string> {
 }
 
 /**
- * Familias y su tratamiento (mayúsculas, tracking, peso, ancho, factor de tamaño) según el
- * catálogo. Sin `cita`, la cita pivote usa la familia de display sin mayúsculas.
+ * Familias y sus estilos del catálogo: titular corto (mayúsculas, ancho expandido), titular
+ * largo (condensado), cifras (ancho normal) y etiquetas. Sin `cita`, la cita usa el estilo largo.
  */
 export function typographyVariables(t: Tema['tipografias']): Record<string, string> {
-  const display = family(t.display).display!
+  const { short, long, figure } = family(t.display).display!
   const text = family(t.cuerpo).text!
+  const style = (prefix: string, s: TitleStyle) => ({
+    [`--${prefix}-transform`]: s.transform,
+    [`--${prefix}-tracking`]: s.tracking,
+    [`--${prefix}-weight`]: String(s.weight),
+    [`--${prefix}-stretch`]: s.stretch,
+    [`--${prefix}-size`]: String(s.size),
+    [`--${prefix}-leading`]: String(s.leading),
+  })
   return {
     '--font-display': fontStack(t.display),
     '--font-body': fontStack(t.cuerpo),
     '--font-quote': fontStack(t.cita ?? t.display),
     '--quote-style': t.cita ? 'italic' : 'normal',
-    '--quote-weight': t.cita ? '400' : String(display.weight),
-    '--display-transform': display.transform,
-    '--display-tracking': display.tracking,
-    '--display-weight': String(display.weight),
-    '--display-stretch': display.stretch,
-    '--display-size': String(display.size),
-    '--figure-size': String(display.figureSize),
-    '--display-leading': String(display.leading),
+    '--quote-weight': t.cita ? '400' : String(long.weight),
+    '--quote-stretch': t.cita ? 'normal' : long.stretch,
+    ...style('title-short', short),
+    ...style('title-long', long),
+    '--figure-weight': String(figure.weight),
+    '--figure-stretch': figure.stretch,
+    '--figure-size': String(figure.size),
     '--body-weight': String(text.weight),
     '--strong-weight': String(text.strongWeight),
     '--label-weight': String(text.labelWeight),

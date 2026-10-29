@@ -35,6 +35,8 @@ const { section, labelledby, align = 'center', tone = 'default' } = Astro.props
   }
 
   .screen__inner {
+    /* Un titular o una palabra larga nunca ensancha la pantalla más allá del viewport. */
+    min-inline-size: 0;
     inline-size: 100%;
     max-inline-size: 72rem;
     margin-inline: auto;
