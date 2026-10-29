@@ -7,4 +7,4 @@ pnpm install
 pnpm dev
 ```
 
-Publicado en https://publifix.github.io/chedraui-propuestas/
+Publicado en https://publifix.github.io/chedraui-propuestas/ (cada push a `main`).

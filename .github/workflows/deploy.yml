@@ -1,9 +1,9 @@
 name: Deploy to GitHub Pages
 
-# Cada push a main o a una rama de trabajo claude/** publica el sitio.
+# Cada push a main publica el sitio; también se puede lanzar a mano desde Actions.
 on:
   push:
-    branches: [main, 'claude/**']
+    branches: [main]
   workflow_dispatch:
 
 permissions:

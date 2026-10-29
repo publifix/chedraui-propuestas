@@ -312,11 +312,33 @@ Datos tomados de la presentación PDF actual de Chedraui (junio 2026).
 
 **Pendientes de información** (usar marcadores `TODO` visibles solo en el link de revisión): plazo mínimo, incremento anual, meses de gracia, giros permitidos, ficha técnica del local, fotos de buena calidad, plano vectorial, fuente de las métricas, asesor responsable, aviso de privacidad, rango de costo de ocupación por giro.
 
-## 15. Ambiente y publicación
+## 15. Skills de diseño
+
+El proyecto tiene instaladas las skills **UI UX Pro Max** (`.claude/skills/ui-ux-pro-max`) e **Impeccable** (`.claude/skills/impeccable`). Se usan como guía de calidad de interfaz: jerarquía, espaciado, ritmo vertical, estados de interacción, accesibilidad, responsive y revisión final.
+
+Orden de prioridad cuando haya conflicto:
+
+1. La dirección visual de la sección 9 de este documento.
+2. Los tokens de diseño de cada plaza (`plaza.yaml` → `tema`).
+3. Las recomendaciones de las skills.
+
+Las skills **no definen colores, tipografías ni estilos fijos**: todo valor visual sale de variables CSS alimentadas por la plaza. Si una skill sugiere una paleta, una fuente o un estilo concreto, se ignora esa parte y se conserva solo el criterio de calidad.
+
+Se aplican especialmente en los pasos 4, 5 y 10 del plan de trabajo (sección 12). Antes de dar por terminada cualquier sección del visor, hay que revisarla con ambas skills y reportar los ajustes hechos.
+
+## 16. Repositorio público y contenido
+
+- El repositorio `publifix/chedraui-propuestas` es **público**.
+- Durante la demo solo se usan datos ya públicos de Chedraui y prospectos de demostración.
+- En operación real, el contenido (carpeta `content/` con plazas, locales, presentaciones y tokens) se moverá a un **repositorio privado** que el workflow de GitHub Actions descargará en cada build mediante una deploy key.
+- Por eso todo el código debe leer el contenido **únicamente desde una ruta configurable** (variable `CONTENT_DIR`, por defecto `content/`), sin asumir que el contenido vive en este repositorio.
+
+## 17. Ambiente y publicación
 
 - Node 24 (`.nvmrc`) y pnpm 10 (`packageManager`). TypeScript 6: `astro check` aún no soporta TS 7.
 - Comandos: `pnpm dev`, `pnpm test`, `pnpm build` (incluye `astro check`), `pnpm preview`.
-- Cada push a `main` o a una rama `claude/**` ejecuta `.github/workflows/deploy.yml`: pruebas, build y despliegue a GitHub Pages.
-- Sitio: https://publifix.github.io/chedraui-propuestas/ (mientras no haya dominio personalizado; al conectarlo, ajustar `site` y `base` en `astro.config.mjs` y las rutas de `public/robots.txt`).
-- **Al terminar cada ronda de trabajo:** correr `pnpm test` y `pnpm build`, hacer commit y push para que el avance quede publicado, y confirmar que el workflow terminó en verde.
+- Cada push a `main` ejecuta `.github/workflows/deploy.yml`: pruebas, build y despliegue a GitHub Pages. También se puede lanzar a mano desde la pestaña Actions.
+- Sitio: https://publifix.github.io/chedraui-propuestas/. `site` y `base` están en `astro.config.mjs`; toda ruta interna o asset se construye con `withBase()` (`src/lib/paths.ts`), nunca con rutas absolutas escritas a mano. Al conectar el dominio personalizado, ajustar `site`, `base` y las rutas de `public/robots.txt`.
+- Variables de entorno: ver `.env.example`. Los valores reales de Supabase viven solo en `.env` local y en los secrets del repo; nunca en código ni en el chat.
+- **Al terminar cada ronda de trabajo:** correr `pnpm test` y `pnpm build`, hacer commit y push, y confirmar que el workflow terminó en verde.
 - El hook `.claude/hooks/session-start.sh` prepara Node 24 y las dependencias en sesiones en la nube.

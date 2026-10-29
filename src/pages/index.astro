@@ -1,16 +1,22 @@
 ---
-// Página temporal: confirma que el despliegue funciona. Se reemplaza en pasos posteriores.
+// Página temporal del paso 1: confirma que el build y el deploy funcionan.
+import { withBase } from '../lib/paths'
+
+const builtAt = new Date().toISOString()
 ---
 <html lang="es">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>Ambiente listo</title>
+    <link rel="icon" type="image/svg+xml" href={withBase('favicon.svg')} />
+    <title>Deploy activo</title>
   </head>
-  <body style="font-family: system-ui, sans-serif; padding: 16px; max-width: 640px; margin: 0 auto;">
-    <h1>Ambiente listo</h1>
-    <p>Motor de presentaciones comerciales · Publifix × Inmobiliaria Chedraui</p>
-    <p>Build: {new Date().toISOString()}</p>
+  <body>
+    <main>
+      <h1>Deploy activo</h1>
+      <p>Motor de presentaciones comerciales · Publifix × Inmobiliaria Chedraui</p>
+      <p>Build: <time datetime={builtAt}>{builtAt}</time></p>
+    </main>
   </body>
 </html>
