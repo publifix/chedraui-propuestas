@@ -1,17 +1,8 @@
 // Fuentes autoalojadas (paquetes @fontsource, licencia OFL-1.1). Solo el subset latin,
-// que cubre el español, y solo los pesos que usa el visor. Vite copia los .woff2 al sitio:
-// nada se descarga de Google Fonts en tiempo de carga. Todas las familias de display y
-// cuerpo traen cifras tabulares (feature tnum), verificado sobre los archivos.
-import unbounded500 from '@fontsource/unbounded/files/unbounded-latin-500-normal.woff2?url'
-import barlowCondensed600 from '@fontsource/barlow-condensed/files/barlow-condensed-latin-600-normal.woff2?url'
+// que cubre el español. Vite copia los .woff2 al sitio: nada se descarga de Google Fonts
+// en tiempo de carga. Archivo trae cifras tabulares (feature tnum), verificado sobre el archivo.
 import archivoVariable from '@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2?url'
-import figtree400 from '@fontsource/figtree/files/figtree-latin-400-normal.woff2?url'
-import figtree600 from '@fontsource/figtree/files/figtree-latin-600-normal.woff2?url'
-import publicSans400 from '@fontsource/public-sans/files/public-sans-latin-400-normal.woff2?url'
-import publicSans600 from '@fontsource/public-sans/files/public-sans-latin-600-normal.woff2?url'
-import instrumentSerifItalic from '@fontsource/instrument-serif/files/instrument-serif-latin-400-italic.woff2?url'
 import newsreaderItalic from '@fontsource/newsreader/files/newsreader-latin-400-italic.woff2?url'
-import frauncesItalic from '@fontsource/fraunces/files/fraunces-latin-400-italic.woff2?url'
 import { FONT_ROLES, type FontName } from './font-roles'
 
 interface FontFile {
@@ -23,20 +14,30 @@ interface FontFile {
   stretch?: readonly [number, number]
 }
 
-/** Cómo se usa la familia en titulares y cifras grandes. */
-export interface DisplayTreatment {
+/** Tratamiento de un estilo de titular. */
+export interface TitleStyle {
   transform: 'none' | 'uppercase'
   tracking: string
   weight: number
   stretch: string
-  /** Factor sobre la escala tipográfica: una ancha en mayúsculas necesita menos tamaño. */
+  /** Factor sobre la escala tipográfica. */
   size: number
-  /** Factor para cifras grandes: los números no van en mayúsculas y aguantan más tamaño. */
-  figureSize: number
   leading: number
 }
 
-/** Cómo se usa la familia en cuerpo y etiquetas. */
+/**
+ * Estilos de una familia de display (CLAUDE.md §9):
+ * short: textos de hasta 5 palabras (etiquetas grandes, nombre de plaza, titulares cortos), en mayúsculas;
+ * long: titulares de más de 5 palabras, en mayúsculas y minúsculas;
+ * figure: cifras grandes, siempre con números tabulares.
+ */
+export interface DisplayTreatment {
+  short: TitleStyle
+  long: TitleStyle
+  figure: { weight: number; stretch: string; size: number }
+}
+
+/** Cuerpo y etiquetas. */
 export interface TextTreatment {
   weight: number
   strongWeight: number
@@ -55,67 +56,19 @@ const SANS_FALLBACK = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans
 const SERIF_FALLBACK = 'Georgia, "Times New Roman", serif'
 
 export const FONTS: Record<FontName, FontFamily> = {
-  Unbounded: {
-    fallback: SANS_FALLBACK,
-    files: [{ url: unbounded500, weight: 500, style: 'normal' }],
-    display: { transform: 'uppercase', tracking: '0.06em', weight: 500, stretch: 'normal', size: 0.62, figureSize: 0.82, leading: 1.08 },
-  },
-  'Barlow Condensed': {
-    fallback: SANS_FALLBACK,
-    files: [{ url: barlowCondensed600, weight: 600, style: 'normal' }],
-    display: { transform: 'none', tracking: '0', weight: 600, stretch: 'normal', size: 1, figureSize: 1, leading: 0.94 },
-  },
   Archivo: {
     fallback: SANS_FALLBACK,
     files: [{ url: archivoVariable, weight: [100, 900], stretch: [62, 125], style: 'normal' }],
-    display: { transform: 'none', tracking: '-0.01em', weight: 780, stretch: '68%', size: 1, figureSize: 1, leading: 0.94 },
+    display: {
+      // size 0.70: "PERFUMERÍA" en el paso 6 a 360 px mide 437 px con factor 1 y el ancho útil es 312 px.
+      short: { transform: 'uppercase', tracking: '0.06em', weight: 640, stretch: '125%', size: 0.7, leading: 1.02 },
+      long: { transform: 'none', tracking: '-0.01em', weight: 760, stretch: '70%', size: 1, leading: 0.96 },
+      figure: { weight: 640, stretch: '100%', size: 1 },
+    },
     text: { weight: 400, strongWeight: 600, labelWeight: 600, labelStretch: '125%' },
   },
-  Figtree: {
-    fallback: SANS_FALLBACK,
-    files: [
-      { url: figtree400, weight: 400, style: 'normal' },
-      { url: figtree600, weight: 600, style: 'normal' },
-    ],
-    text: { weight: 400, strongWeight: 600, labelWeight: 600, labelStretch: 'normal' },
-  },
-  'Public Sans': {
-    fallback: SANS_FALLBACK,
-    files: [
-      { url: publicSans400, weight: 400, style: 'normal' },
-      { url: publicSans600, weight: 600, style: 'normal' },
-    ],
-    text: { weight: 400, strongWeight: 600, labelWeight: 600, labelStretch: 'normal' },
-  },
-  'Instrument Serif': { fallback: SERIF_FALLBACK, files: [{ url: instrumentSerifItalic, weight: 400, style: 'italic' }] },
   Newsreader: { fallback: SERIF_FALLBACK, files: [{ url: newsreaderItalic, weight: 400, style: 'italic' }] },
-  Fraunces: { fallback: SERIF_FALLBACK, files: [{ url: frauncesItalic, weight: 400, style: 'italic' }] },
 }
-
-/** Combinaciones propuestas para revisión, con una serif itálica opcional solo para la cita pivote. */
-export const FONT_PAIRINGS = [
-  {
-    id: '1',
-    display: 'Unbounded',
-    body: 'Figtree',
-    cita: 'Instrument Serif',
-    nota: 'Geométrica ancha en mayúsculas con tracking amplio, en el espíritu del logo; cuerpo geométrico muy legible.',
-  },
-  {
-    id: '2',
-    display: 'Barlow Condensed',
-    body: 'Public Sans',
-    cita: 'Newsreader',
-    nota: 'Grotesca condensada para titulares grandes; cuerpo neutro pensado para pantallas pequeñas.',
-  },
-  {
-    id: '3',
-    display: 'Archivo',
-    body: 'Archivo',
-    cita: 'Fraunces',
-    nota: 'Una sola familia variable: titulares condensados y gruesos, etiquetas expandidas, cuerpo en ancho normal.',
-  },
-] as const satisfies ReadonlyArray<{ id: string; display: FontName; body: FontName; cita: FontName; nota: string }>
 
 // Rango del subset latin de Google Fonts / Fontsource.
 const LATIN_RANGE =

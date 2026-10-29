@@ -3,21 +3,30 @@ import type { Plaza } from '../../schemas'
 type Colores = Plaza['tema']['colores']
 export type ColorName = keyof Colores
 
-/** Pares de texto sobre fondo que el tema debe cumplir (WCAG 2.x, AA texto normal = 4.5:1). */
-export const CONTRAST_PAIRS: ReadonlyArray<{ texto: ColorName; fondo: ColorName }> = [
-  { texto: 'texto', fondo: 'fondo' },
-  { texto: 'texto', fondo: 'superficie' },
-  { texto: 'texto_suave', fondo: 'fondo' },
-  { texto: 'texto_suave', fondo: 'superficie' },
-  { texto: 'acento', fondo: 'fondo' },
-  { texto: 'acento', fondo: 'superficie' },
-  // Texto sobre bandas y botones de acento.
-  { texto: 'superficie', fondo: 'acento' },
-  // Secciones a sangre en el color de marca.
-  { texto: 'texto_marca', fondo: 'marca' },
-]
-
+/** WCAG 2.x AA: texto normal 4.5:1; elementos gráficos (barras, rangos) 3:1 (criterio 1.4.11). */
 export const AA_NORMAL_TEXT = 4.5
+export const AA_GRAPHIC = 3
+
+export type PairKind = 'texto' | 'grafica'
+
+/** Pares que el tema debe cumplir: texto sobre fondo y gráficas sobre fondo. */
+export const CONTRAST_PAIRS: ReadonlyArray<{ texto: ColorName; fondo: ColorName; tipo: PairKind }> = [
+  { texto: 'texto', fondo: 'fondo', tipo: 'texto' },
+  { texto: 'texto', fondo: 'superficie', tipo: 'texto' },
+  { texto: 'texto_suave', fondo: 'fondo', tipo: 'texto' },
+  { texto: 'texto_suave', fondo: 'superficie', tipo: 'texto' },
+  { texto: 'acento', fondo: 'fondo', tipo: 'texto' },
+  { texto: 'acento', fondo: 'superficie', tipo: 'texto' },
+  // Texto sobre bandas y botones de acento.
+  { texto: 'superficie', fondo: 'acento', tipo: 'texto' },
+  // Secciones a sangre en el color de marca.
+  { texto: 'texto_marca', fondo: 'marca', tipo: 'texto' },
+  // Etiquetas dentro de barras en acento suave.
+  { texto: 'superficie', fondo: 'acento_suave', tipo: 'texto' },
+  // Barras y rangos en acento suave sobre la página.
+  { texto: 'acento_suave', fondo: 'fondo', tipo: 'grafica' },
+  { texto: 'acento_suave', fondo: 'superficie', tipo: 'grafica' },
+]
 
 function channel(value: number): number {
   const c = value / 255
@@ -40,13 +49,16 @@ export function contrastRatio(a: string, b: string): number {
 export interface ContrastResult {
   texto: ColorName
   fondo: ColorName
+  tipo: PairKind
   ratio: number
+  minimo: number
   pasa: boolean
 }
 
 export function checkContrast(colores: Colores): ContrastResult[] {
-  return CONTRAST_PAIRS.map(({ texto, fondo }) => {
+  return CONTRAST_PAIRS.map(({ texto, fondo, tipo }) => {
     const ratio = contrastRatio(colores[texto], colores[fondo])
-    return { texto, fondo, ratio, pasa: ratio >= AA_NORMAL_TEXT }
+    const minimo = tipo === 'texto' ? AA_NORMAL_TEXT : AA_GRAPHIC
+    return { texto, fondo, tipo, ratio, minimo, pasa: ratio >= minimo }
   })
 }

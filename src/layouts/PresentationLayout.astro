@@ -1,10 +1,12 @@
 ---
 import '../styles/base.css'
 import Field from '../components/Field.astro'
+import Label from '../components/Label.astro'
 import type { ResolvedPresentation } from '../lib/resolve'
 import { withBase } from '../lib/paths'
 import { fontFaceCss, preloadUrls, themeCss, themeFonts } from '../lib/theme'
 import { isTodo } from '../schemas'
+import { isShortText } from '../lib/typography'
 
 interface Props {
   model: ResolvedPresentation
@@ -62,7 +64,7 @@ const pendientes = model.pendientes
     <div class="chrome">
       {isRevision && (
         <div class="review-banner">
-          <span class="t-label">Vista previa interna · sin registro</span>
+          <Label as="span" text="Vista previa interna · sin registro" />
           {pendientes.length > 0 && (
             <details class="review-banner__todos">
               <summary class="t-label">{pendientes.length} pendientes</summary>
@@ -78,10 +80,10 @@ const pendientes = model.pendientes
         </div>
       )}
       <header class="site-header">
-        <span class="site-header__brand">
+        <span class:list={['site-header__brand', isShortText(plaza.nombre) ? 'is-short' : 'is-long']}>
           {isTodo(tema.logo) ? plaza.nombre : <img src={withBase(tema.logo)} alt={plaza.nombre} />}
         </span>
-        <span class="site-header__recipient t-label">Propuesta para {prospecto.marca}</span>
+        <Label as="span" class="site-header__recipient" text={`Propuesta para ${prospecto.marca}`} />
         <div class="progress" aria-hidden="true"><span class="progress__bar"></span></div>
       </header>
     </div>
@@ -247,13 +249,23 @@ const pendientes = model.pendientes
 
   .site-header__brand {
     font-family: var(--font-display);
-    font-weight: var(--display-weight);
-    font-stretch: var(--display-stretch);
-    text-transform: var(--display-transform);
-    letter-spacing: var(--display-tracking);
-    font-size: calc(var(--step-2) * var(--display-size));
+    font-size: var(--step-1);
     line-height: 1;
     white-space: nowrap;
+  }
+
+  /* Nombre de plaza: mayúsculas con ancho expandido solo si tiene hasta 5 palabras. */
+  .site-header__brand.is-short {
+    font-weight: var(--title-short-weight);
+    font-stretch: var(--title-short-stretch);
+    text-transform: var(--title-short-transform);
+    letter-spacing: var(--title-short-tracking);
+  }
+
+  .site-header__brand.is-long {
+    font-weight: var(--title-long-weight);
+    font-stretch: var(--title-long-stretch);
+    letter-spacing: var(--title-long-tracking);
   }
 
   .site-header__brand img {
@@ -261,7 +273,7 @@ const pendientes = model.pendientes
     inline-size: auto;
   }
 
-  .site-header__recipient {
+  .site-header :global(.site-header__recipient) {
     color: var(--color-text-muted);
     text-align: end;
   }

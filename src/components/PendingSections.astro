@@ -1,5 +1,7 @@
 ---
 // Marcador del paso 4: las secciones de contenido se construyen en el paso 5.
+import Headline from './Headline.astro'
+import Label from './Label.astro'
 import Screen from './Screen.astro'
 import type { ResolvedPresentation } from '../lib/resolve'
 
@@ -11,13 +13,13 @@ const { model } = Astro.props
 const [local] = model.locales
 ---
 <Screen section="Portada" labelledby="pendiente-titulo">
-  <h1 id="pendiente-titulo" class="t-display">Para {model.prospecto.marca}</h1>
-  <p class="t-label meta">{model.plaza.nombre} · {local?.clave}</p>
+  <Headline as="h1" size="display" id="pendiente-titulo" text={`Para ${model.prospecto.marca}`} />
+  <Label class="meta" text={`${model.plaza.nombre} · ${local?.clave}`} />
   <p class="t-lead">Layout base listo. Las secciones de contenido se construyen en el paso 5.</p>
 </Screen>
 
 <style>
-  .meta {
+  :global(.meta) {
     margin-block: var(--space-s) var(--space-m);
     color: var(--color-accent);
   }

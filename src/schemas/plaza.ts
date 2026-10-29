@@ -15,6 +15,8 @@ const tema = z.strictObject({
     texto: cssColor,
     texto_suave: cssColor,
     acento: cssColor,
+    // Tono claro del acento para gráficas y rangos (barras de dos tonos).
+    acento_suave: cssColor,
     linea: cssColor,
     // Fondo de marca para secciones a sangre y el texto que va sobre él.
     marca: cssColor,

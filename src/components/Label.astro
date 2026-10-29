@@ -1,0 +1,14 @@
+---
+// Etiqueta en mayúsculas con tracking amplio, solo si tiene hasta 5 palabras (CLAUDE.md §9).
+import { isShortText } from '../lib/typography'
+
+interface Props {
+  text: string
+  as?: 'p' | 'span' | 'figcaption' | 'dt'
+  id?: string
+  class?: string
+}
+
+const { text, as: Tag = 'p', id, class: className } = Astro.props
+---
+<Tag id={id} class:list={['t-label', !isShortText(text) && 'is-long', className]}>{text}</Tag>

@@ -213,6 +213,17 @@ describe('estado "lista"', () => {
 })
 
 describe('tema de la plaza', () => {
+  it('falla el build si el acento suave no cumple como gráfica', () => {
+    const files = editYaml(seedFiles(), SEED.plaza, (d) => (d['tema'].colores.acento_suave = '#e7c6e7'))
+    expect(errorsOf(files)).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(
+          /^content\/plazas\/el-dorado\/plaza\.yaml › tema\.colores\.acento_suave: contraste \d\.\d\d:1 sobre "fondo" \(gráfica\); WCAG AA exige 3:1$/,
+        ),
+      ]),
+    )
+  })
+
   it('falla el build si un par de texto sobre fondo no cumple WCAG AA', () => {
     const files = editYaml(seedFiles(), SEED.plaza, (d) => (d['tema'].colores.texto_suave = '#a89fb0'))
     const errors = errorsOf(files)
@@ -224,15 +235,15 @@ describe('tema de la plaza', () => {
 
   it('falla si la tipografía no está en el catálogo o tiene otro rol', () => {
     const files = editYaml(seedFiles(), SEED.plaza, (d) => {
-      d['tema'].tipografias.display = 'Figtree'
+      d['tema'].tipografias.display = 'Newsreader'
       d['tema'].tipografias.cuerpo = 'Inter'
-      d['tema'].tipografias.cita = 'Unbounded'
+      d['tema'].tipografias.cita = 'Archivo'
     })
     const errors = errorsOf(files)
     expect(errors).toContain(
-      'content/plazas/el-dorado/plaza.yaml › tema.tipografias.display: "Figtree" no está en el catálogo de fuentes (disponibles: "Unbounded", "Barlow Condensed", "Archivo")',
+      'content/plazas/el-dorado/plaza.yaml › tema.tipografias.display: "Newsreader" no está en el catálogo de fuentes (disponibles: "Archivo")',
     )
     expect(errors.some((e) => e.includes('tema.tipografias.cuerpo: "Inter"'))).toBe(true)
-    expect(errors.some((e) => e.includes('tema.tipografias.cita: "Unbounded"'))).toBe(true)
+    expect(errors.some((e) => e.includes('tema.tipografias.cita: "Archivo"'))).toBe(true)
   })
 })

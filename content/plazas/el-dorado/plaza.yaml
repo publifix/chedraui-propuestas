@@ -11,20 +11,23 @@ ubicacion:
 
 tema:
   # Morado de marca #660066 tomado del PDF de disponibilidad de Chedraui (junio 2026);
-  # el resto de tonos se deriva de él. TODO: confirmar valores oficiales con la marca.
+  # el resto de tonos se deriva de él. Paleta aprobada en el paso 4.
   colores:
     fondo: "#f9f5f8"
     superficie: "#ffffff"
     texto: "#22101f"
     texto_suave: "#6a5466"
     acento: "#660066"
+    # Morado claro del PDF: #660066 al 66 % sobre blanco. Para gráficas y rangos.
+    acento_suave: "#9a579a"
     linea: "#e8dce5"
     marca: "#660066"
     texto_marca: "#ffffff"
-  # Provisional (combinación 1 del paso 4); se elige en la página de muestra de tokens.
+  # Aprobada en el paso 4: Archivo como única familia; Newsreader itálica solo en la cita pivote.
   tipografias:
-    display: Unbounded
-    cuerpo: Figtree
+    display: Archivo
+    cuerpo: Archivo
+    cita: Newsreader
   logo: "TODO: logo de El Dorado en media/"
   icono: "TODO: icono del velero en media/"
 

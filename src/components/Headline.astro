@@ -1,0 +1,20 @@
+---
+// Titular que aplica la regla de CLAUDE.md §9: hasta 5 palabras va en mayúsculas con ancho
+// expandido; más de 5, condensado en mayúsculas y minúsculas. Un TODO se muestra como pendiente.
+import Field from './Field.astro'
+import { isShortText } from '../lib/typography'
+
+interface Props {
+  text: string
+  as?: 'h1' | 'h2' | 'h3' | 'p'
+  size?: 'display' | 'heading'
+  id?: string
+  class?: string
+}
+
+const { text, as: Tag = 'h2', size = 'heading', id, class: className } = Astro.props
+const short = isShortText(text)
+---
+<Tag id={id} class:list={[size === 'display' ? 't-display' : 't-heading', short ? 'is-short' : 'is-long', className]}>
+  <Field value={text} />
+</Tag>

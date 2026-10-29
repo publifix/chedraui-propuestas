@@ -2,131 +2,155 @@
 // Muestra de los tokens de diseño de la plaza, para revisión interna. Solo existe bajo
 // el token de revisión de cada presentación y hereda noindex del layout.
 import PresentationLayout from '../../../layouts/PresentationLayout.astro'
+import Headline from '../../../components/Headline.astro'
+import Label from '../../../components/Label.astro'
 import Screen from '../../../components/Screen.astro'
-import { formatAmount, formatMoney } from '../../../lib/calc'
+import { formatAmount, formatMoney, formatPercent } from '../../../lib/calc'
 import { staticPaths, type RouteEntry } from '../../../lib/site'
-import {
-  checkContrast,
-  FONT_PAIRINGS,
-  resolveMedidas,
-  SPACE_STEPS,
-  typeStep,
-  TYPE_STEPS,
-  typographyVariables,
-  type ColorName,
-} from '../../../lib/theme'
+import { checkContrast, resolveMedidas, SPACE_STEPS, typeStep, TYPE_STEPS, type ColorName } from '../../../lib/theme'
+import { MAX_UPPERCASE_WORDS } from '../../../lib/typography'
 
 export function getStaticPaths() {
   return staticPaths('revision')
 }
 
 const { model } = Astro.props as RouteEntry['props']
-const { tema } = model.plaza
+const { plaza } = model
+const { tema } = plaza
 const medidas = resolveMedidas(tema)
 const [local] = model.locales
 const calc = local!.calculos
+const { renta_mensual: renta, mantenimiento_mensual: mantenimiento } = local!.condiciones
+const subtotal = calc.subtotalMensual.amount
 
 const swatches: Array<{ name: ColorName; variable: string; uso: string }> = [
   { name: 'fondo', variable: '--color-bg', uso: 'Fondo de página' },
   { name: 'superficie', variable: '--color-surface', uso: 'Tarjetas, footer y texto sobre acento' },
   { name: 'texto', variable: '--color-text', uso: 'Titulares y cuerpo' },
   { name: 'texto_suave', variable: '--color-text-muted', uso: 'Texto secundario y metadatos' },
-  { name: 'acento', variable: '--color-accent', uso: 'Etiquetas, progreso, foco y bandas' },
+  { name: 'acento', variable: '--color-accent', uso: 'Etiquetas, progreso, foco y gráficas' },
+  { name: 'acento_suave', variable: '--color-accent-soft', uso: 'Segundo tono de gráficas y rangos' },
   { name: 'linea', variable: '--color-line', uso: 'Líneas finas y separadores' },
   { name: 'marca', variable: '--color-brand', uso: 'Fondo de secciones a sangre' },
   { name: 'texto_marca', variable: '--color-on-brand', uso: 'Texto sobre el fondo de marca' },
 ]
 const contrast = checkContrast(tema.colores)
-
-const style = (vars: Record<string, string>) =>
-  Object.entries(vars)
-    .map(([k, v]) => `${k}:${v}`)
-    .join(';')
-
-const pairings = FONT_PAIRINGS.map((p) => ({
-  ...p,
-  provisional: p.display === tema.tipografias.display && p.body === tema.tipografias.cuerpo,
-  sinCita: style(typographyVariables({ display: p.display, cuerpo: p.body })),
-  conCita: style(typographyVariables({ display: p.display, cuerpo: p.body, cita: p.cita })),
-}))
-const extraFonts = FONT_PAIRINGS.flatMap((p) => [p.display, p.body, p.cita])
-const parrafo = model.plaza.diferenciales.slice(0, 3).map((d) => d.texto).join(' ')
+const nombreCompleto = plaza.nombre_completo ?? plaza.nombre
+const titularLargo = plaza.diferenciales[0]?.texto ?? ''
+const parrafo = plaza.diferenciales.slice(0, 3).map((d) => d.texto).join(' ')
 const citaMuestra = 'El lugar donde la Riviera Veracruzana ya viene a comprar, a comer y a pasear.'
+const pct = (n: number) => `${(n / subtotal) * 100}%`
 const px = (n: number) => `${Math.round(n * 10) / 10}px`
 ---
-<PresentationLayout model={model} kind="revision" extraFonts={extraFonts} title={`Tokens de diseño · ${model.plaza.nombre}`}>
+<PresentationLayout model={model} kind="revision" title={`Tokens de diseño · ${plaza.nombre}`}>
   <Screen section="TokensPaleta" labelledby="paleta" align="start">
-    <h1 id="paleta" class="t-heading">Paleta y contraste</h1>
-    <p class="t-label accent intro">Tokens de diseño · {model.plaza.nombre} · morado de marca tomado del PDF de Chedraui</p>
+    <Headline as="h1" id="paleta" text="Paleta y contraste" />
+    <Label class="accent intro" text={`Tokens · ${plaza.nombre}`} />
     <ul class="swatches">
       {swatches.map((s) => (
         <li class="swatch">
           <span class="swatch__chip" style={`background:var(${s.variable})`}></span>
-          <span class="t-label">{s.name}</span>
+          <Label as="span" text={s.name} />
           <code class="t-meta">{tema.colores[s.name]}</code>
           <span class="t-meta">{s.uso}</span>
         </li>
       ))}
     </ul>
-    <h2 class="sub">Pares de texto sobre fondo · WCAG AA (4.5:1)</h2>
+    <Headline class="sub" text="Pares WCAG AA" />
+    <p class="t-meta">Texto: 4.5:1. Gráficas (barras y rangos): 3:1, criterio 1.4.11.</p>
     <ul class="pairs">
       {contrast.map((c) => (
-        <li class="pair" style={`background:${tema.colores[c.fondo]};color:${tema.colores[c.texto]}`}>
-          <span class="pair__sample">Aa</span>
-          <span>{c.texto} sobre {c.fondo}</span>
-          <strong class="tabular">{c.ratio.toFixed(2)}:1 · {c.pasa ? 'Cumple AA' : 'No cumple'}</strong>
+        <li class="pair" style={c.tipo === 'texto' ? `background:${tema.colores[c.fondo]};color:${tema.colores[c.texto]}` : `background:${tema.colores[c.fondo]};color:${tema.colores.texto}`}>
+          {c.tipo === 'texto'
+            ? <span class="pair__sample">Aa</span>
+            : <span class="pair__bar" style={`background:${tema.colores[c.texto]}`}></span>}
+          <span>{c.texto} sobre {c.fondo}{c.tipo === 'grafica' && ' · gráfica'}</span>
+          <strong class="tabular">{c.ratio.toFixed(2)}:1 · {c.pasa ? `Cumple ${c.minimo}:1` : 'No cumple'}</strong>
         </li>
       ))}
     </ul>
   </Screen>
 
-  {pairings.map((p) => (
-    <Screen section={`TokensTipografia${p.id}`} labelledby={`tipo-${p.id}`} align="start">
-      <div class="pairing" style={p.sinCita}>
-        <h2 id={`tipo-${p.id}`} class="t-display">Para {model.prospecto.marca}</h2>
-        <p class="t-label accent">
-          Combinación {p.id} · {p.display}{p.display !== p.body && ` + ${p.body}`}{p.provisional && ' · provisional'}
-        </p>
-        <p class="t-meta">{p.nota}</p>
-        <hr class="rule" />
-        <div class="pairing__grid">
-          <div>
-            <h3 class="t-heading">{model.plaza.diferenciales[0]?.titulo}</h3>
-            <p class="t-body">{parrafo}</p>
-          </div>
-          <div class="pairing__figure">
-            <p class="t-label">Total mensual</p>
-            <p class="t-figure">{formatAmount(calc.totalMensual.amount)}</p>
-            <p class="t-meta">IVA incluido · {local!.clave} · {local!.area_m2} m²</p>
-          </div>
+  <Screen section="TokensTipografia" labelledby="tipografia" align="start">
+    <Headline id="tipografia" text="Tipografía" />
+    <Label class="accent intro" text="Archivo · Newsreader itálica" />
+
+    <div class="roles">
+      <div class="role">
+        <Label class="role__name" text="Titular corto · expandido" />
+        <Headline as="p" size="display" text={`Para ${model.prospecto.marca}`} />
+        <Headline as="p" size="display" text={nombreCompleto} />
+        <p class="t-meta">Hasta {MAX_UPPERCASE_WORDS} palabras: mayúsculas, ancho 125 %, tracking amplio. Paso más grande de la escala.</p>
+      </div>
+
+      <div class="role">
+        <Label class="role__name" text="Titular largo · condensado" />
+        <Headline as="p" size="display" text={titularLargo} />
+        <p class="t-meta">Más de {MAX_UPPERCASE_WORDS} palabras: mayúsculas y minúsculas, ancho 70 %.</p>
+      </div>
+
+      <div class="role role--grid">
+        <div>
+          <Label class="role__name" text="Cuerpo y etiquetas" />
+          <p class="t-body">{parrafo}</p>
+          <Label class="accent sample-label" text="Renta mensual" />
+          <Label class="sample-label" text="Etiqueta de más de cinco palabras pasa a minúsculas" />
         </div>
-        <hr class="rule" />
-        <div class="quotes">
-          <figure class="quote">
-            <blockquote class="t-quote">{citaMuestra}</blockquote>
-            <figcaption class="t-label">Cita pivote · {p.display}, sin serif</figcaption>
-          </figure>
-          <figure class="quote" style={p.conCita}>
-            <blockquote class="t-quote">{citaMuestra}</blockquote>
-            <figcaption class="t-label">Variante opcional · {p.cita} itálica</figcaption>
-          </figure>
+        <div>
+          <Label class="role__name" text="Cifras · ancho normal" />
+          <p class="t-figure">{formatAmount(calc.totalMensual.amount)}</p>
+          <p class="t-meta">Total mensual IVA incluido · números tabulares</p>
+          <p class="t-figure figures-stack">{formatAmount(renta)}<br />{formatAmount(mantenimiento)}<br />{formatAmount(calc.ivaMensual.amount)}</p>
         </div>
       </div>
-    </Screen>
-  ))}
+
+      <figure class="role">
+        <Label as="figcaption" class="role__name" text="Cita pivote · Newsreader" />
+        <blockquote class="t-quote">{citaMuestra}</blockquote>
+        <p class="t-meta">Único lugar con serif, siempre en mayúsculas y minúsculas. Texto de muestra.</p>
+      </figure>
+    </div>
+  </Screen>
+
+  <Screen section="TokensGraficas" labelledby="graficas" align="start">
+    <Headline id="graficas" text="Gráficas de dos tonos" />
+    <Label class="accent intro" text="Acento y acento suave" />
+
+    <figure class="chart">
+      <figcaption class="chart__title">Subtotal mensual de {local!.clave}: {formatMoney(calc.subtotalMensual)}</figcaption>
+      <div class="stack" role="img" aria-label={`Renta ${formatAmount(renta)} y mantenimiento ${formatAmount(mantenimiento)}, sin IVA`}>
+        <span class="stack__seg stack__seg--strong" style={`inline-size:${pct(renta)}`}>
+          <span class="stack__value tabular">{formatPercent(renta / subtotal)}</span>
+        </span>
+        <span class="stack__seg stack__seg--soft" style={`inline-size:${pct(mantenimiento)}`}></span>
+      </div>
+      <ul class="legend">
+        <li><span class="legend__key legend__key--strong"></span><span>Renta · <span class="tabular">{formatAmount(renta)}</span></span></li>
+        <li><span class="legend__key legend__key--soft"></span><span>Mantenimiento · <span class="tabular">{formatAmount(mantenimiento)}</span></span></li>
+      </ul>
+    </figure>
+
+    <figure class="chart">
+      <figcaption class="chart__title">Forma de un rango con su valor actual</figcaption>
+      <div class="range" role="img" aria-label="Ejemplo visual de rango, sin valores">
+        <span class="range__band"></span>
+        <span class="range__mark"></span>
+      </div>
+      <p class="t-meta">Ejemplo de forma, sin valores: el rango de costo de ocupación del giro sigue pendiente de validar.</p>
+    </figure>
+  </Screen>
 
   <Screen section="TokensSeccionClara" labelledby="seccion-clara">
-    <h2 id="seccion-clara" class="t-heading">Sección clara</h2>
-    <p class="t-label accent intro">Ejemplo · fondo, texto y acento del tema</p>
-    <p class="t-lead">{model.plaza.diferenciales[3]?.texto}</p>
+    <Headline id="seccion-clara" text="Sección clara" />
+    <p class="t-lead">{plaza.diferenciales[3]?.texto}</p>
     <div class="figure-row">
       <div>
-        <p class="t-label">Renta mensual</p>
-        <p class="t-figure">{formatAmount(local!.condiciones.renta_mensual)}</p>
+        <Label text="Renta mensual" />
+        <p class="t-figure">{formatAmount(renta)}</p>
         <p class="t-meta">+ IVA</p>
       </div>
       <div>
-        <p class="t-label">Área</p>
+        <Label text="Área" />
         <p class="t-figure">{local!.area_m2}</p>
         <p class="t-meta">m²</p>
       </div>
@@ -134,17 +158,16 @@ const px = (n: number) => `${Math.round(n * 10) / 10}px`
   </Screen>
 
   <Screen section="TokensSeccionMarca" labelledby="seccion-marca" tone="brand">
-    <h2 id="seccion-marca" class="t-heading">Sección en morado de marca</h2>
-    <p class="t-label intro">Ejemplo · fondo de marca a sangre con su texto</p>
-    <p class="t-lead">{model.plaza.diferenciales[3]?.texto}</p>
+    <Headline id="seccion-marca" text="Sección de marca" />
+    <p class="t-lead">{plaza.diferenciales[3]?.texto}</p>
     <div class="figure-row">
       <div>
-        <p class="t-label">Renta mensual</p>
-        <p class="t-figure">{formatAmount(local!.condiciones.renta_mensual)}</p>
+        <Label text="Renta mensual" />
+        <p class="t-figure">{formatAmount(renta)}</p>
         <p class="t-meta">+ IVA</p>
       </div>
       <div>
-        <p class="t-label">Área</p>
+        <Label text="Área" />
         <p class="t-figure">{local!.area_m2}</p>
         <p class="t-meta">m²</p>
       </div>
@@ -152,14 +175,14 @@ const px = (n: number) => `${Math.round(n * 10) / 10}px`
   </Screen>
 
   <Screen section="TokensEscala" labelledby="escala" align="start">
-    <h2 id="escala" class="t-heading">Escala tipográfica fluida</h2>
-    <p class="t-label accent intro">De 360 a 1280 px de ancho · razón {medidas.escala} en escritorio</p>
+    <Headline id="escala" text="Escala tipográfica fluida" />
+    <Label class="accent intro" text={`De 360 a 1280 px`} />
     <ol class="steps">
       {[...TYPE_STEPS].reverse().map((step) => {
         const { minPx, maxPx } = typeStep(step, medidas.escala)
         return (
           <li class="step">
-            <code class="t-meta">--step-{step} · {px(minPx)} a {px(maxPx)}</code>
+            <code class="t-meta">step {step} · {px(minPx)} a {px(maxPx)}</code>
             <span class:list={['step__sample', step >= 1 && 'step__sample--display']} style={`font-size:var(--step-${step})`}>
               {step >= 1 ? 'Riviera' : 'Texto de cuerpo y etiquetas'}
             </span>
@@ -170,22 +193,23 @@ const px = (n: number) => `${Math.round(n * 10) / 10}px`
   </Screen>
 
   <Screen section="TokensEspacios" labelledby="espacios" align="start">
-    <h2 id="espacios" class="t-heading">Espacios, línea y tarjeta</h2>
-    <p class="t-label accent intro">Base {medidas.espacio_base} px · radio {medidas.radio} px · línea {medidas.linea} px · movimiento {medidas.duracion_ms} ms</p>
+    <Headline id="espacios" text="Espacios, línea y tarjeta" />
+    <Label class="accent intro" text={`Base ${medidas.espacio_base} px`} />
     <ul class="spaces">
       {Object.entries(SPACE_STEPS).map(([name, factor]) => (
         <li class="space">
-          <code class="t-meta">--space-{name} · {px(medidas.espacio_base * factor)}</code>
+          <code class="t-meta">space {name} · {px(medidas.espacio_base * factor)}</code>
           <span class="space__bar" style={`inline-size:var(--space-${name})`}></span>
         </li>
       ))}
     </ul>
+    <p class="t-meta">Radio {medidas.radio} px · línea {medidas.linea} px · movimiento {medidas.duracion_ms} ms</p>
     <hr class="rule" />
     <article class="card" aria-labelledby="tarjeta">
-      <p id="tarjeta" class="t-label">Ejemplo de tarjeta · {local!.clave}</p>
+      <Label id="tarjeta" text={`Tarjeta · ${local!.clave}`} />
       <dl class="card__rows">
-        <div><dt>Renta mensual</dt><dd>{formatAmount(local!.condiciones.renta_mensual)} + IVA</dd></div>
-        <div><dt>Mantenimiento</dt><dd>{formatAmount(local!.condiciones.mantenimiento_mensual)} + IVA</dd></div>
+        <div><dt>Renta mensual</dt><dd>{formatAmount(renta)} + IVA</dd></div>
+        <div><dt>Mantenimiento</dt><dd>{formatAmount(mantenimiento)} + IVA</dd></div>
         <div><dt>IVA</dt><dd>{formatMoney(calc.ivaMensual)}</dd></div>
         <div class="card__total"><dt>Total mensual</dt><dd class="t-figure">{formatAmount(calc.totalMensual.amount)}</dd></div>
       </dl>
@@ -195,26 +219,22 @@ const px = (n: number) => `${Math.round(n * 10) / 10}px`
 </PresentationLayout>
 
 <style>
-  .accent {
+  /* Clases que reciben componentes hijos (Headline, Label): se declaran globales dentro de la página. */
+  :global(.accent) {
     color: var(--color-accent);
   }
 
-  .t-heading {
-    margin-block-end: var(--space-xs);
+  :global(.intro) {
+    margin-block: var(--space-xs) var(--space-xl);
   }
 
-  .intro {
-    margin-block-end: var(--space-xl);
-  }
-
-  .sub {
-    margin-block: var(--space-2xl) var(--space-m);
-    font-size: calc(var(--step-2) * var(--display-size));
+  :global(.sub) {
+    margin-block: var(--space-2xl) var(--space-2xs);
   }
 
   .swatches {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr));
     gap: var(--space-l) var(--space-m);
     padding: 0;
     list-style: none;
@@ -234,8 +254,9 @@ const px = (n: number) => `${Math.round(n * 10) / 10}px`
 
   .pairs {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
     gap: var(--space-s);
+    margin-block-start: var(--space-m);
     padding: 0;
     list-style: none;
   }
@@ -251,69 +272,149 @@ const px = (n: number) => `${Math.round(n * 10) / 10}px`
 
   .pair__sample {
     font-family: var(--font-display);
-    font-weight: var(--display-weight);
+    font-weight: var(--title-long-weight);
     font-size: var(--step-3);
     line-height: 1;
   }
 
-  /* Las familias se reasignan aquí: font-family se hereda ya calculada desde body. */
-  .pairing,
-  .quote {
-    font-family: var(--font-body);
-    font-weight: var(--body-weight);
+  .pair__bar {
+    display: block;
+    block-size: var(--space-s);
+    margin-block: var(--space-2xs);
+    border-radius: var(--radius-s);
   }
 
-  .pairing .t-display {
-    margin-block-end: var(--space-s);
-  }
-
-  .pairing .t-label {
-    margin-block-end: var(--space-3xs);
-  }
-
-  .pairing .rule {
-    margin-block: var(--space-xl);
-  }
-
-  .pairing__grid,
-  .quotes {
+  .roles {
     display: grid;
-    gap: var(--space-xl);
+    gap: var(--space-2xl);
   }
 
-  .pairing__grid .t-heading {
-    margin-block: 0 var(--space-s);
-    font-size: calc(var(--step-3) * var(--display-size));
-  }
-
-  .pairing__figure {
-    display: grid;
-    align-content: start;
-    gap: var(--space-2xs);
-  }
-
-  .quote {
+  .role {
     display: grid;
     gap: var(--space-s);
+    padding-block-start: var(--space-m);
+    border-block-start: var(--line-width) solid var(--color-line);
   }
 
-  .quote .t-quote {
-    font-size: var(--step-3);
-  }
-
-  .quote figcaption {
+  .role :global(.role__name) {
     color: var(--color-text-muted);
   }
 
-  @media (min-width: 48rem) {
-    .pairing__grid {
-      grid-template-columns: 3fr 2fr;
-      align-items: end;
-    }
+  .role--grid {
+    gap: var(--space-xl);
+  }
 
-    .quotes {
-      grid-template-columns: 1fr 1fr;
+  .role--grid > div {
+    display: grid;
+    align-content: start;
+    gap: var(--space-s);
+  }
+
+  .role :global(.sample-label) {
+    margin-block-start: var(--space-2xs);
+  }
+
+  .figures-stack {
+    margin-block-start: var(--space-s);
+    font-size: calc(var(--step-3) * var(--figure-size));
+    line-height: 1.15;
+    text-align: end;
+    justify-self: start;
+  }
+
+  @media (min-width: 48rem) {
+    .role--grid {
+      grid-template-columns: 3fr 2fr;
     }
+  }
+
+  .chart {
+    display: grid;
+    gap: var(--space-s);
+    max-inline-size: 40rem;
+    margin-block-end: var(--space-2xl);
+  }
+
+  .chart__title {
+    font-weight: var(--strong-weight);
+  }
+
+  .stack,
+  .range {
+    position: relative;
+    display: flex;
+    block-size: var(--space-xl);
+    overflow: hidden;
+    border-radius: var(--radius-s);
+    background: var(--color-surface);
+  }
+
+  .stack__seg {
+    display: flex;
+    align-items: center;
+    padding-inline: var(--space-xs);
+  }
+
+  .stack__seg--strong {
+    background: var(--color-accent);
+  }
+
+  .stack__seg--soft {
+    background: var(--color-accent-soft);
+  }
+
+  .stack__value {
+    color: var(--color-surface);
+    font-size: var(--step--1);
+    font-weight: var(--strong-weight);
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs) var(--space-l);
+    padding: 0;
+    list-style: none;
+    font-size: var(--step--1);
+  }
+
+  .legend li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs);
+  }
+
+  .legend__key {
+    inline-size: var(--space-s);
+    block-size: var(--space-s);
+    border-radius: var(--radius-s);
+  }
+
+  .legend__key--strong {
+    background: var(--color-accent);
+  }
+
+  .legend__key--soft {
+    background: var(--color-accent-soft);
+  }
+
+  .range {
+    border: var(--line-width) solid var(--color-line);
+  }
+
+  .range__band {
+    position: absolute;
+    inset-block: 0;
+    inset-inline: 30% 25%;
+    background: var(--color-accent-soft);
+  }
+
+  .range__mark {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 58%;
+    inline-size: calc(var(--line-width) * 3);
+    background: var(--color-accent);
   }
 
   .figure-row {
@@ -325,6 +426,10 @@ const px = (n: number) => `${Math.round(n * 10) / 10}px`
 
   .figure-row .t-meta {
     margin-block-start: var(--space-3xs);
+  }
+
+  .t-lead {
+    margin-block-start: var(--space-m);
   }
 
   .steps,
@@ -349,15 +454,15 @@ const px = (n: number) => `${Math.round(n * 10) / 10}px`
 
   .step__sample--display {
     font-family: var(--font-display);
-    font-weight: var(--display-weight);
-    font-stretch: var(--display-stretch);
-    text-transform: var(--display-transform);
-    letter-spacing: var(--display-tracking);
+    font-weight: var(--title-short-weight);
+    font-stretch: var(--title-short-stretch);
+    text-transform: var(--title-short-transform);
+    letter-spacing: var(--title-short-tracking);
   }
 
   .space {
     display: grid;
-    grid-template-columns: minmax(0, 14rem) 1fr;
+    grid-template-columns: minmax(0, 12rem) 1fr;
     align-items: center;
     gap: var(--space-s);
   }
@@ -368,7 +473,11 @@ const px = (n: number) => `${Math.round(n * 10) / 10}px`
     border-radius: var(--radius-s);
   }
 
-  .spaces + .rule {
+  .spaces + .t-meta {
+    margin-block-start: var(--space-m);
+  }
+
+  .rule {
     margin-block: var(--space-2xl);
   }
 
