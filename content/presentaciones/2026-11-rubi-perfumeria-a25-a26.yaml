@@ -1,0 +1,39 @@
+id: 2026-11-rubi-perfumeria-a25-a26
+
+# Generados con crypto.randomBytes(12).toString('base64url').
+tokens:
+  envio: "-LVqzlD3b5b80Ps0"
+  revision: qlJayOag7vK0Yncs
+
+plaza: el-dorado
+locales:
+  - A25+A26
+
+prospecto:
+  marca: Rubí Perfumería
+  # TODO: destinatario real (valor de demostración).
+  destinatario: Equipo Rubí Perfumería
+  giro: perfumeria
+
+vigencia: 2026-11-30
+
+# Escenarios ilustrativos. TODO: definir ventas mensuales de cada escenario.
+escenarios_venta:
+  - nombre: Conservador
+    ventas_mensuales: "TODO: ventas mensuales"
+  - nombre: Base
+    ventas_mensuales: "TODO: ventas mensuales"
+  - nombre: Optimista
+    ventas_mensuales: "TODO: ventas mensuales"
+
+narrativa:
+  apertura: "TODO: redactar apertura"
+  pivote: "TODO: redactar cita pivote"
+  cierre: "TODO: redactar cierre"
+
+asesor: demo
+
+seo:
+  titulo: Propuesta para Rubí Perfumería · El Dorado
+  descripcion: Local A25+A26 en planta baja de El Dorado Centro Comercial & Marina, Boca del Río.
+  imagen_og: "TODO: imagen Open Graph de 1200×630"
