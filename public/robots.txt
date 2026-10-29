@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /chedraui-propuestas/p/
+Disallow: /chedraui-propuestas/revision/
