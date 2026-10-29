@@ -242,9 +242,10 @@ export function validateTheme(file: string, plaza: Plaza): string[] {
   const fonts = [
     ['display', tipografias.display, 'display'],
     ['cuerpo', tipografias.cuerpo, 'body'],
+    ['cita', tipografias.cita, 'quote'],
   ] as const
   for (const [campo, nombre, role] of fonts) {
-    if (!isFont(nombre, role)) {
+    if (nombre !== undefined && !isFont(nombre, role)) {
       const disponibles = fontNames(role).map((n) => `"${n}"`).join(', ')
       errors.push(formatIssue(file, ['tema', 'tipografias', campo], `"${nombre}" no está en el catálogo de fuentes (disponibles: ${disponibles})`))
     }

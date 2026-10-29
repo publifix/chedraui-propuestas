@@ -116,7 +116,7 @@ Leyenda: **O** = obligatorio, **Op** = opcional.
 | `nombre` | string | O | Nombre comercial |
 | `nombre_completo` | string | Op | p. ej. "El Dorado Centro Comercial & Marina" |
 | `ubicacion` | objeto | O | `ciudad`, `estado`, `direccion`, `zona` |
-| `tema` | objeto | O | `colores` (fondo, superficie, texto, texto_suave, acento, linea), `tipografias` (display, cuerpo), `logo`, `icono`, `medidas` (op). Ver 7.1.1 |
+| `tema` | objeto | O | `colores` (fondo, superficie, texto, texto_suave, acento, linea, marca, texto_marca), `tipografias` (display, cuerpo, cita op), `logo`, `icono`, `medidas` (op). Ver 7.1.1 |
 | `frase_principal` | string | O | Titular de apertura de la plaza |
 | `hero` | objeto | O | `imagen`, `alt` |
 | `metricas` | lista | O | Cada una: `valor`, `etiqueta`, `fuente`, `periodo` |
@@ -130,8 +130,9 @@ Leyenda: **O** = obligatorio, **Op** = opcional.
 
 #### 7.1.1 Tema
 
-- **Colores:** hex. El build falla si un par de texto sobre fondo no cumple WCAG AA (4.5:1): texto, texto_suave y acento sobre fondo y superficie, y superficie sobre acento (`src/lib/theme/contrast.ts`).
-- **Tipografías:** nombres del catálogo autoalojado de `src/lib/theme/fonts.ts` (OFL, subset latin, solo pesos 400/500, `font-display: swap`; nada se carga de Google Fonts). Display: Instrument Serif, Gloock, Bodoni Moda. Cuerpo: Jost, Outfit, Urbanist. Para agregar una familia, se suma al catálogo y a `font-roles.ts`.
+- **Colores:** hex. `marca` es el fondo de las secciones a sangre (clase `surface-brand` o `Screen tone="brand"`, que redefine los tokens de color en su ámbito) y `texto_marca` su texto. El build falla si un par de texto sobre fondo no cumple WCAG AA (4.5:1): texto, texto_suave y acento sobre fondo y superficie, superficie sobre acento y texto_marca sobre marca (`src/lib/theme/contrast.ts`).
+- **Tipografías:** nombres del catálogo autoalojado de `src/lib/theme/fonts.ts` (OFL, subset latin, solo los pesos usados, `font-display: swap`; nada se carga de Google Fonts). Todas las de display y cuerpo traen cifras tabulares (`tnum`). Display: Unbounded, Barlow Condensed, Archivo (variable). Cuerpo: Figtree, Public Sans, Archivo. `cita` (opcional, solo para la cita pivote): Instrument Serif, Newsreader o Fraunces en itálica; sin ella la cita usa la display sin mayúsculas. Cada familia de display trae en el catálogo su tratamiento (mayúsculas, tracking, peso, ancho, factor de tamaño para titulares y cifras) y cada familia de cuerpo el de etiquetas; se exponen como variables (`--display-*`, `--figure-size`, `--label-*`). Para agregar una familia, se suma al catálogo y a `font-roles.ts`.
+- **Cifras:** las cifras grandes (`.t-figure`) y la tarjeta de condiciones usan `font-variant-numeric: tabular-nums`; para otros montos, la clase `.tabular`.
 - **Medidas (opcional):** `escala` (razón tipográfica en escritorio, 1.1–1.6), `espacio_base` (px), `radio` (px), `linea` (px), `duracion_ms`. Sin ellas se usan los valores del motor (`DEFAULT_MEDIDAS`).
 - `src/lib/theme/tokens.ts` convierte el tema en variables CSS (`--color-*`, `--font-*`, `--step-*` fluidos con `clamp()` de 360 a 1280 px, `--space-*`, `--radius-*`, `--line-width`, `--duration*`) que el layout inyecta en `:root`. Ningún componente usa valores visuales propios.
 - El tema no cambia con el modo claro u oscuro del dispositivo: `color-scheme` queda fijo según el fondo de la plaza.
@@ -265,7 +266,7 @@ Una sección = un componente en `src/components/sections`. Cada una recibe el mo
 
 Layout base (`src/layouts/PresentationLayout.astro`): encabezado fijo con fondo, barra de progreso de lectura, `<main>` donde cada sección va dentro de `src/components/Screen.astro` (una idea por pantalla), footer con aviso de privacidad, leyenda de imágenes y crédito de Publifix, franja "Vista previa interna · sin registro" con la lista de pendientes solo en revisión, `noindex` y Open Graph desde `seo`, márgenes seguros (`env(safe-area-inset-*)`) y entrada sutil que respeta `prefers-reduced-motion`. Los valores en `TODO` se muestran con `src/components/Field.astro`. La muestra de tokens de cada plaza vive en `/revision/<token_revision>/tokens/`.
 
-Dirección visual: titulares en serif display condensada, cuerpo en sans geométrica, etiquetas en mayúsculas con tracking amplio, líneas finas como separadores, una idea por pantalla, mucho espacio. El encabezado fijo debe tener fondo para que los titulares no se encimen al hacer scroll. Sin sonido. Animaciones de entrada sutiles y respetando `prefers-reduced-motion`.
+Dirección visual: titulares en la familia de display de la plaza, alineada con su identidad (El Dorado: sans, ver §14; la serif queda solo como variante opcional de la cita pivote), cuerpo en sans muy legible en celular, cifras con números tabulares, etiquetas en mayúsculas con tracking amplio, líneas finas como separadores, una idea por pantalla, mucho espacio. El encabezado fijo debe tener fondo para que los titulares no se encimen al hacer scroll. Sin sonido. Animaciones de entrada sutiles y respetando `prefers-reduced-motion`.
 
 ## 10. Links, vigencia y SEO
 
@@ -335,7 +336,7 @@ Datos tomados de la presentación PDF actual de Chedraui (junio 2026).
 - Planta baja: 43 locales, 9 restaurantes.
 - Anclas: Liverpool (28,000 m²), Chedraui Selecto (10,706 m²). Otras marcas: Forever 21, Steve Madden, Smart Fit, Sonora Grill, Coppel, Cinépolis, Cinépolis VIP, Pandora, Starbucks, adidas, Shasa, Sally Beauty, Petco, Telcel, Santander, Banregio, entre otras.
 - Contacto general: centrocomercialeldorado.mx · administracion@centrocomercialeldorado.mx · (229) 986 11 96 / 41 23.
-- Identidad: morado con velero blanco; hashtag #ExperienciaElDorado.
+- Identidad: morado con velero blanco; hashtag #ExperienciaElDorado. Morado de marca `#660066` (tomado del PDF de disponibilidad, junio 2026). El logo es una sans en mayúsculas con espaciado amplio y toda su comunicación es sans: la dirección tipográfica es sans, no serif.
 
 **Local A25+A26**
 - Nivel: PB. Área: 77.76 m².

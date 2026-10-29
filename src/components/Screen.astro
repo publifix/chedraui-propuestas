@@ -5,11 +5,13 @@ interface Props {
   section: string
   labelledby?: string
   align?: 'start' | 'center'
+  /** brand: sección a sangre en el color de marca de la plaza. */
+  tone?: 'default' | 'brand'
 }
 
-const { section, labelledby, align = 'center' } = Astro.props
+const { section, labelledby, align = 'center', tone = 'default' } = Astro.props
 ---
-<section class:list={['screen', `screen--${align}`]} data-section={section} aria-labelledby={labelledby}>
+<section class:list={['screen', `screen--${align}`, tone === 'brand' && 'surface-brand']} data-section={section} aria-labelledby={labelledby}>
   <div class="screen__inner" data-reveal>
     <slot />
   </div>

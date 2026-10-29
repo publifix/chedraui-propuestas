@@ -10,18 +10,21 @@ ubicacion:
   zona: Riviera Veracruzana
 
 tema:
-  # TODO: confirmar los valores oficiales de la identidad (morado con velero blanco); colores provisionales.
+  # Morado de marca #660066 tomado del PDF de disponibilidad de Chedraui (junio 2026);
+  # el resto de tonos se deriva de él. TODO: confirmar valores oficiales con la marca.
   colores:
-    fondo: "#f6f3f8"
+    fondo: "#f9f5f8"
     superficie: "#ffffff"
-    texto: "#1f1529"
-    texto_suave: "#5d5068"
-    acento: "#562a82"
-    linea: "#ddd4e4"
-  # Provisional (combinación A del paso 4); se elige en la página de muestra de tokens.
+    texto: "#22101f"
+    texto_suave: "#6a5466"
+    acento: "#660066"
+    linea: "#e8dce5"
+    marca: "#660066"
+    texto_marca: "#ffffff"
+  # Provisional (combinación 1 del paso 4); se elige en la página de muestra de tokens.
   tipografias:
-    display: Instrument Serif
-    cuerpo: Jost
+    display: Unbounded
+    cuerpo: Figtree
   logo: "TODO: logo de El Dorado en media/"
   icono: "TODO: icono del velero en media/"
 

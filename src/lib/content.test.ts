@@ -224,13 +224,15 @@ describe('tema de la plaza', () => {
 
   it('falla si la tipografía no está en el catálogo o tiene otro rol', () => {
     const files = editYaml(seedFiles(), SEED.plaza, (d) => {
-      d['tema'].tipografias.display = 'Jost'
+      d['tema'].tipografias.display = 'Figtree'
       d['tema'].tipografias.cuerpo = 'Inter'
+      d['tema'].tipografias.cita = 'Unbounded'
     })
     const errors = errorsOf(files)
     expect(errors).toContain(
-      'content/plazas/el-dorado/plaza.yaml › tema.tipografias.display: "Jost" no está en el catálogo de fuentes (disponibles: "Instrument Serif", "Gloock", "Bodoni Moda")',
+      'content/plazas/el-dorado/plaza.yaml › tema.tipografias.display: "Figtree" no está en el catálogo de fuentes (disponibles: "Unbounded", "Barlow Condensed", "Archivo")',
     )
     expect(errors.some((e) => e.includes('tema.tipografias.cuerpo: "Inter"'))).toBe(true)
+    expect(errors.some((e) => e.includes('tema.tipografias.cita: "Unbounded"'))).toBe(true)
   })
 })

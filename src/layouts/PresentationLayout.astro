@@ -3,7 +3,7 @@ import '../styles/base.css'
 import Field from '../components/Field.astro'
 import type { ResolvedPresentation } from '../lib/resolve'
 import { withBase } from '../lib/paths'
-import { fontFaceCss, preloadUrls, themeCss } from '../lib/theme'
+import { fontFaceCss, preloadUrls, themeCss, themeFonts } from '../lib/theme'
 import { isTodo } from '../schemas'
 
 interface Props {
@@ -19,7 +19,7 @@ const { plaza, seo, prospecto } = model
 const { tema, legales } = plaza
 const isRevision = kind === 'revision'
 
-const fonts = [tema.tipografias.display, tema.tipografias.cuerpo, ...extraFonts]
+const fonts = [...themeFonts(tema.tipografias), ...extraFonts]
 const pageTitle = title ?? seo.titulo
 const ogImage = isTodo(seo.imagen_og) ? undefined : new URL(withBase(seo.imagen_og), Astro.site).href
 const favicon = isTodo(tema.icono) ? withBase('favicon.svg') : withBase(tema.icono)
@@ -43,7 +43,7 @@ const pendientes = model.pendientes
     {ogImage && <meta property="og:image:height" content="630" />}
     <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
     <link rel="icon" href={favicon} />
-    {preloadUrls(fonts).map((href) => <link rel="preload" href={href} as="font" type="font/woff2" crossorigin />)}
+    {preloadUrls([tema.tipografias.display, tema.tipografias.cuerpo]).map((href) => <link rel="preload" href={href} as="font" type="font/woff2" crossorigin />)}
     <style is:inline set:html={fontFaceCss(fonts)} />
     <style is:inline set:html={themeCss(tema)} />
     <script is:inline>
@@ -247,7 +247,11 @@ const pendientes = model.pendientes
 
   .site-header__brand {
     font-family: var(--font-display);
-    font-size: var(--step-2);
+    font-weight: var(--display-weight);
+    font-stretch: var(--display-stretch);
+    text-transform: var(--display-transform);
+    letter-spacing: var(--display-tracking);
+    font-size: calc(var(--step-2) * var(--display-size));
     line-height: 1;
     white-space: nowrap;
   }
