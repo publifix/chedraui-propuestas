@@ -17,6 +17,9 @@ export const giroSchema = z.strictObject({
       { message: 'min no puede ser mayor que max', path: ['min'] },
     ),
   angulos_narrativos: z.array(text).optional(),
+  // Giros de la plaza que conviven bien con este (capa "giros afines" del plano). Se comparan
+  // con el giro de cada ocupante sin distinguir mayúsculas ni acentos.
+  giros_afines: z.array(text).optional(),
 })
 
 export type Giro = z.infer<typeof giroSchema>

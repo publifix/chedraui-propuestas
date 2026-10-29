@@ -70,10 +70,22 @@ const marcaDirectorio = z.strictObject({
   giro: text,
 })
 
+// Quién ocupa cada local visible del plano (marca y giro según la fuente; TODO si no se lee).
+const ocupante = z.strictObject({
+  clave: text,
+  marca: text,
+  giro: text,
+  area_m2: z.number().positive().optional(),
+  // restaurante y servicio alimentan las capas del plano interactivo; por defecto, tienda.
+  categoria: z.enum(['tienda', 'restaurante', 'servicio']).optional(),
+})
+
 const nivel = z.strictObject({
   id: text,
   nombre: text,
+  // SVG del nivel que cumple el contrato de CLAUDE.md §7.1.2, o TODO mientras no exista.
   plano: text,
+  ocupantes: z.array(ocupante).optional(),
 })
 
 const modulo = z.strictObject({
@@ -98,6 +110,8 @@ export const plazaSchema = z
     directorio: z.array(marcaDirectorio).optional(),
     niveles: z.array(nivel).min(1, 'debe tener al menos un nivel'),
     modulos: z.array(modulo).optional(),
+    // Mapa ilustrativo de la región para la secuencia de zoom (CLAUDE.md §7.1.2).
+    region: z.strictObject({ mapa: text }).optional(),
     contacto_general: z.strictObject({
       web: text,
       correo: z.email('debe ser un correo válido'),
@@ -115,7 +129,15 @@ export const plazaSchema = z
         ctx.addIssue({ code: 'custom', path: ['niveles', i, 'id'], message: `el nivel "${nivel.id}" está repetido` })
       }
       seen.add(nivel.id)
+      const claves = new Set<string>()
+      nivel.ocupantes?.forEach((o, j) => {
+        if (claves.has(o.clave)) {
+          ctx.addIssue({ code: 'custom', path: ['niveles', i, 'ocupantes', j, 'clave'], message: `el local "${o.clave}" está repetido` })
+        }
+        claves.add(o.clave)
+      })
     })
   })
 
 export type Plaza = z.infer<typeof plazaSchema>
+export type Ocupante = z.infer<typeof ocupante>

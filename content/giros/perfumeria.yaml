@@ -10,3 +10,9 @@ costo_ocupacion_objetivo:
 angulos_narrativos:
   - Convivencia con marcas de moda, joyería y belleza (Liverpool, Pandora, Sally Beauty, Forever 21).
   - Flujo de visitantes de una plaza ancla de la Riviera Veracruzana.
+
+# Giros de la plaza que conviven con perfumería (capa "giros afines" del plano).
+giros_afines:
+  - Belleza
+  - Cosméticos
+  - Moda

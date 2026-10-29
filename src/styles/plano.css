@@ -1,0 +1,109 @@
+/*
+ * Estilos de los planos SVG (contrato de CLAUDE.md §7.1.2). Las capas se seleccionan por
+ * data-capa y todos los colores salen de los tokens de la plaza.
+ */
+
+.plano-svg {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+  overflow: visible;
+}
+
+.plano-svg [data-capa='marina'] > * {
+  fill: color-mix(in srgb, var(--color-accent-soft) 22%, var(--color-surface));
+}
+
+.plano-svg [data-capa='estacionamiento'] > * {
+  fill: color-mix(in srgb, var(--color-text) 5%, var(--color-bg));
+  stroke: var(--color-line);
+  stroke-width: 2;
+  stroke-dasharray: 8 6;
+}
+
+.plano-svg [data-capa='contorno'] > * {
+  fill: var(--color-surface);
+  stroke: var(--color-text);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+
+.plano-svg [data-capa='pasillos'] > * {
+  fill: color-mix(in srgb, var(--color-text) 4%, var(--color-surface));
+}
+
+.plano-svg [data-capa='anclas'] > * {
+  fill: color-mix(in srgb, var(--color-accent-soft) 35%, var(--color-surface));
+  stroke: var(--color-accent-soft);
+  stroke-width: 2;
+}
+
+.plano-svg [data-capa='locales'] > * {
+  fill: var(--color-surface);
+  stroke: var(--color-text-muted);
+  stroke-width: 1.5;
+}
+
+.plano-svg [data-capa='accesos'] > * {
+  fill: var(--color-text);
+}
+
+.plano-svg [data-capa='rutas'] > * {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+}
+
+.plano-svg [data-capa='etiquetas'] text {
+  fill: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: var(--strong-weight);
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.plano-svg [data-capa='etiquetas'] text[data-leyenda] {
+  fill: var(--color-text-muted);
+  font-size: 18px;
+  font-weight: var(--body-weight);
+  text-anchor: start;
+}
+
+/* Local de la presentación: resaltado con el acento de la plaza. */
+.plano-svg .is-target {
+  fill: var(--color-accent);
+  stroke: var(--color-accent);
+}
+
+.plano-svg [data-capa='etiquetas'] text.is-target-label {
+  fill: var(--color-on-accent);
+}
+
+/* Mapa de región. */
+.plano-svg [data-capa='tierra'] > * {
+  fill: var(--color-surface);
+  stroke: var(--color-line);
+  stroke-width: 2;
+}
+
+.plano-svg [data-capa='agua'] > * {
+  fill: color-mix(in srgb, var(--color-accent-soft) 22%, var(--color-surface));
+}
+
+.plano-svg [data-capa='rio'] > * {
+  stroke: color-mix(in srgb, var(--color-accent-soft) 45%, var(--color-surface));
+}
+
+.plano-svg [data-ref='plaza'] {
+  fill: var(--color-accent);
+  stroke: var(--color-surface);
+  stroke-width: 4;
+}
+
+.plano-svg text {
+  font-family: var(--font-body);
+}

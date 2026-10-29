@@ -18,6 +18,7 @@ const CAMPOS_POR_SECCION: Partial<Record<Seccion, string[]>> = {
   BusinessCase: ['escenarios_venta', 'giro.costo_ocupacion_objetivo'],
   Modulos: ['plaza.modulos'],
   Directorio: ['plaza.directorio'],
+  PlanoInteractivo: ['plaza.niveles', 'plaza.region', 'locales.*.ruta'],
 }
 
 /** Valores TODO que vería el prospecto, según las secciones activas. */
@@ -25,9 +26,14 @@ export function findVisibleTodos(model: unknown, secciones: readonly Seccion[]):
   const hidden = Object.entries(CAMPOS_POR_SECCION)
     .filter(([seccion]) => !secciones.includes(seccion as Seccion))
     .flatMap(([, campos]) => campos)
-  return findTodoValues(model).filter(
-    ({ path }) => !hidden.some((prefix) => path === prefix || path.startsWith(`${prefix}.`)),
-  )
+  return findTodoValues(model).filter(({ path }) => !hidden.some((prefix) => matchesPrefix(path, prefix)))
+}
+
+/** "locales.0.ruta.texto" coincide con el prefijo "locales.*.ruta" ("*" = un segmento cualquiera). */
+function matchesPrefix(path: string, prefix: string): boolean {
+  const p = path.split('.')
+  const q = prefix.split('.')
+  return q.length <= p.length && q.every((seg, i) => seg === '*' || seg === p[i])
 }
 
 /** Todos los valores de texto que empiezan con TODO, con su ruta. */

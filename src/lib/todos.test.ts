@@ -20,3 +20,11 @@ describe('TODO en el modelo', () => {
     expect(findVisibleTodos(model, ['Directorio']).map((t) => t.path)).toContain('plaza.directorio.0.logo')
   })
 })
+
+describe('comodines en las rutas de sección', () => {
+  it('locales.*.ruta oculta los TODO de la ruta de cualquier local si el plano está desactivado', () => {
+    const m = { locales: [{ ruta: { texto: 'TODO: cercanía' } }] }
+    expect(findVisibleTodos(m, ['Portada'])).toEqual([])
+    expect(findVisibleTodos(m, ['PlanoInteractivo']).map((t) => t.path)).toEqual(['locales.0.ruta.texto'])
+  })
+})

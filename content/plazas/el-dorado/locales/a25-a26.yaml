@@ -22,6 +22,11 @@ condiciones_base:
 
 # TODO: ficha técnica del local (frente, altura, agua, gas, carga eléctrica, extracción).
 
+# Ruta del plano interactivo. El PDF no da distancias ni tiempos: no inventarlos.
+ruta:
+  desde: estacionamiento-norte
+  texto: "TODO: cercanía desde el estacionamiento (sin dato en el PDF)"
+
 vecinos:
   - A23
   - A22

@@ -1,0 +1,39 @@
+---
+// 6 · PlanoInteractivo: secuencia de zoom de la región al local y plano interactivo del nivel.
+import '../../styles/plano.css'
+import Headline from '../Headline.astro'
+import Screen from '../Screen.astro'
+import PlanoNivel from '../plano/PlanoNivel.astro'
+import ZoomUbicacion from '../plano/ZoomUbicacion.astro'
+import { SECTION_IDS } from '../../lib/sections'
+import type { SectionProps } from './types'
+
+type Props = SectionProps
+
+const { model, kind } = Astro.props
+const plan = model.planos[0]
+---
+{plan ? (
+  <div data-section={SECTION_IDS.PlanoInteractivo}>
+    <Screen labelledby="ubicacion-titulo" align="start">
+      <Headline id="ubicacion-titulo" text="De la región a tu local" />
+      <p class="t-lead intro">Dónde está la plaza y dónde está el local dentro de ella.</p>
+      <ZoomUbicacion model={model} plan={plan} />
+    </Screen>
+    <Screen labelledby="plano-titulo" align="start">
+      <Headline id="plano-titulo" text={`Tu local en ${plan.nivel.nombre.toLowerCase()}`} />
+      <p class="t-lead intro">Toca un local para ver quién lo ocupa y activa las capas para ubicar anclas, accesos y giros afines.</p>
+      {model.planos.map((p) => <PlanoNivel model={model} plan={p} kind={kind} />)}
+    </Screen>
+  </div>
+) : kind === 'revision' && (
+  <Screen section={SECTION_IDS.PlanoInteractivo} compact>
+    <p class="todo">PlanoInteractivo: el nivel del local no tiene plano todavía (niveles[].plano).</p>
+  </Screen>
+)}
+
+<style>
+  .intro {
+    margin-block: var(--space-s) var(--space-xl);
+  }
+</style>
