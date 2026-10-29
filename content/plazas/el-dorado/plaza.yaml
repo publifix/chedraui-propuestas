@@ -102,10 +102,197 @@ directorio:
   - { marca: Banregio, logo: "TODO: logo", giro: Banco }
 
 niveles:
-  # TODO: plano vectorial de planta baja (planos/pb.svg); mientras no exista, no se valida plano_ref.
   - id: PB
     nombre: Planta baja
+    # Plano esquemático (contrato de CLAUDE.md §7.1.2) dibujado a partir de la lámina 6 del PDF.
     plano: planos/pb.svg
+    # Marca y giro de cada local visible según el PDF de disponibilidad (junio 2026).
+    # Las marcas salen de los logos y rótulos del plano; los giros, de la marca. TODO donde no se lee con certeza.
+    # A25+A26 no va aquí: tiene su propio archivo de local.
+    ocupantes:
+      # A24: logo turquesa; el área no se lee completa.
+      - clave: "A24"
+        marca: "TODO: marca no legible en el PDF"
+        giro: "TODO: giro"
+      # A23: logo verde.
+      - clave: "A23"
+        marca: "TODO: marca no legible en el PDF"
+        giro: "TODO: giro"
+        area_m2: 41.31
+      - clave: "A22"
+        marca: "TODO: sin logo en el PDF; confirmar si está disponible"
+        giro: "TODO: giro"
+        area_m2: 42.94
+      # A21: lectura probable: el logo y la clave comparten el recuadro.
+      - clave: "A21"
+        marca: Sally Beauty
+        giro: Belleza
+        area_m2: 95.63
+      - clave: "A16+A17"
+        marca: B3 Studio
+        giro: "TODO: giro"
+        area_m2: 137.9
+      - clave: "A18"
+        marca: "TODO: sin logo en el PDF"
+        giro: "TODO: giro"
+        area_m2: 186.95
+      - clave: "A19"
+        marca: Innvictus
+        giro: Calzado deportivo
+        area_m2: 145.72
+      # A20: logo oscuro redondo.
+      - clave: "A20"
+        marca: "TODO: marca no legible en el PDF"
+        giro: "TODO: giro"
+        area_m2: 65.56
+      - clave: "A14+A15"
+        marca: Pandora
+        giro: Joyería
+        area_m2: 130.1
+      # A1+A2: logo circular con "R".
+      - clave: "A1+A2"
+        marca: "TODO: marca no legible en el PDF"
+        giro: "TODO: giro"
+        area_m2: 621.35
+      - clave: "A3+A4"
+        marca: Be Dance
+        giro: "TODO: giro"
+        area_m2: 351.31
+      - clave: "A5+A6"
+        marca: "Ben & Frank"
+        giro: Óptica
+        area_m2: 85.96
+      - clave: "A7+A8"
+        marca: Steve Madden
+        giro: Calzado
+        area_m2: 119.31
+      - clave: "SA1A"
+        marca: Shasa
+        giro: Moda
+        area_m2: 590.15
+      - clave: "SA1B"
+        marca: "TODO: sin logo en el PDF"
+        giro: "TODO: giro"
+        area_m2: 252.58
+      - clave: "SA1C"
+        marca: Forever 21
+        giro: Moda
+        area_m2: 753.45
+      - clave: "SA1D"
+        marca: Urban Store
+        giro: Moda
+        area_m2: 528.9
+      - clave: "C1+C2+C3+D1"
+        marca: Las Acamayas
+        giro: Restaurante
+        area_m2: 427.8
+        categoria: restaurante
+      - clave: "C4+C6+D2"
+        marca: "TODO: sin logo en el PDF"
+        giro: "TODO: giro"
+        area_m2: 886.0
+      # C7+D3: lectura probable del logo.
+      - clave: "C7+D3"
+        marca: Sushi Itto
+        giro: Restaurante
+        area_m2: 240.58
+        categoria: restaurante
+      - clave: "C8"
+        marca: "TODO: marca no legible en el PDF"
+        giro: "TODO: giro"
+        area_m2: 50.63
+      - clave: "C9"
+        marca: "TODO: marca no legible en el PDF"
+        giro: "TODO: giro"
+        area_m2: 52.38
+      # C10+D4: logo naranja.
+      - clave: "C10+D4"
+        marca: "TODO: marca no legible en el PDF"
+        giro: "TODO: giro"
+        area_m2: 230.34
+      - clave: "C11"
+        marca: Jean Pierre
+        giro: "TODO: giro"
+        area_m2: 49.81
+      - clave: "C12+C13+D5"
+        marca: Domo Sushi Bar
+        giro: Restaurante
+        area_m2: 458.46
+        categoria: restaurante
+      - clave: "D6"
+        marca: "TODO: marca no legible en el PDF (logo de asadero)"
+        giro: Restaurante
+        area_m2: 317.63
+        categoria: restaurante
+      - clave: "C14"
+        marca: "TODO: marca no legible en el PDF"
+        giro: "TODO: giro"
+        area_m2: 52.0
+      - clave: "C15+C16+D7"
+        marca: "TODO: marca no legible en el PDF"
+        giro: "TODO: giro"
+        area_m2: 287.47
+      - clave: "C17"
+        marca: "TODO: marca no legible en el PDF"
+        giro: "TODO: giro"
+        area_m2: 74.32
+      - clave: "C18+D8"
+        marca: Starbucks
+        giro: Cafetería
+        area_m2: 175.96
+        categoria: restaurante
+      - clave: "C19"
+        marca: "TODO: marca no legible en el PDF"
+        giro: "TODO: giro"
+        area_m2: 50.63
+      # C20: logo rojo.
+      - clave: "C20"
+        marca: "TODO: marca no legible en el PDF"
+        giro: "TODO: giro"
+        area_m2: 50.63
+      - clave: "C21"
+        marca: Bizzarro
+        giro: "TODO: giro"
+        area_m2: 50.63
+      - clave: "D9+D10+C22"
+        marca: "TODO: marca no legible en el PDF"
+        giro: "TODO: giro"
+        area_m2: 567.44
+      - clave: "C24"
+        marca: "TODO: sin logo en el PDF"
+        giro: "TODO: giro"
+        area_m2: 157.82
+      - clave: "C23"
+        marca: "TODO: sin logo en el PDF"
+        giro: "TODO: giro"
+        area_m2: 201.3
+      # D11: logo rosa.
+      - clave: "D11"
+        marca: "TODO: marca no legible en el PDF"
+        giro: "TODO: giro"
+        area_m2: 422.65
+      - clave: "(B1-B4)+(B17+B21)"
+        marca: Petco
+        giro: Mascotas
+        area_m2: 350.05
+      - clave: "B16"
+        marca: Mobo
+        giro: "TODO: giro"
+        area_m2: 42.52
+      - clave: "(B5-B8)+(B14-B15)"
+        marca: Telcel
+        giro: Telefonía
+        area_m2: 315.65
+        categoria: servicio
+      - clave: "B9-B13"
+        marca: Santander
+        giro: Banco
+        area_m2: 274.4
+        categoria: servicio
+
+# Mapa ilustrativo de Boca del Río para la secuencia de zoom (no a escala).
+region:
+  mapa: planos/region.svg
 
 modulos:
   - id: marina

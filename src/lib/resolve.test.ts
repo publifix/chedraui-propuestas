@@ -88,39 +88,41 @@ describe('resolvePresentation', () => {
 function comparativa(condiciones?: unknown) {
   const files = seedFiles()
   const segundo = readYaml(files, SEED.local)
-  segundo['clave'] = 'A27'
-  segundo['plano_ref'] = 'local-a27'
+  // A22 está dibujado en el plano de la semilla; su archivo de local sustituye al ocupante.
+  segundo['clave'] = 'A22'
+  segundo['plano_ref'] = 'local-a22'
+  delete segundo['ruta']
   segundo['area_m2'] = 60
   segundo['condiciones_base'].renta_mensual = 14000
-  files.set('plazas/el-dorado/locales/a27.yaml', JSON.stringify(segundo))
+  files.set('plazas/el-dorado/locales/a22.yaml', JSON.stringify(segundo))
   return editYaml(files, SEED.presentacion, (d) => {
-    d['locales'] = ['A25+A26', 'A27']
+    d['locales'] = ['A25+A26', 'A22']
     if (condiciones !== undefined) d['condiciones'] = condiciones
   })
 }
 
 describe('condiciones por local (comparativa)', () => {
   it('aplica a cada local solo las condiciones de su clave', () => {
-    const files = comparativa({ 'A25+A26': { renta_mensual: 16000 }, A27: { meses_gracia: 2 } })
-    const [a25, a27] = resolvePresentation(buildContent(files), ID).locales
+    const files = comparativa({ 'A25+A26': { renta_mensual: 16000 }, A22: { meses_gracia: 2 } })
+    const [a25, a22] = resolvePresentation(buildContent(files), ID).locales
     expect(a25!.condiciones.renta_mensual).toBe(16000)
     expect(a25!.condiciones.meses_gracia).toBeUndefined()
-    expect(a27!.condiciones.renta_mensual).toBe(14000)
-    expect(a27!.condiciones.meses_gracia).toBe(2)
+    expect(a22!.condiciones.renta_mensual).toBe(14000)
+    expect(a22!.condiciones.meses_gracia).toBe(2)
   })
 
   it('un local sin clave en condiciones conserva sus condiciones base', () => {
-    const files = comparativa({ A27: { renta_mensual: 13000 } })
-    const [a25, a27] = resolvePresentation(buildContent(files), ID).locales
+    const files = comparativa({ A22: { renta_mensual: 13000 } })
+    const [a25, a22] = resolvePresentation(buildContent(files), ID).locales
     expect(a25!.condiciones).toEqual(a25!.condiciones_base)
-    expect(a27!.condiciones.renta_mensual).toBe(13000)
+    expect(a22!.condiciones.renta_mensual).toBe(13000)
   })
 
   it('calcula los montos de cada local con sus propias condiciones', () => {
-    const files = comparativa({ A27: { renta_mensual: 13000 } })
-    const [a25, a27] = resolvePresentation(buildContent(files), ID).locales
+    const files = comparativa({ A22: { renta_mensual: 13000 } })
+    const [a25, a22] = resolvePresentation(buildContent(files), ID).locales
     expect(a25!.calculos.subtotalMensual.amount).toBe(19550)
-    expect(a27!.calculos.subtotalMensual.amount).toBe(15550)
+    expect(a22!.calculos.subtotalMensual.amount).toBe(15550)
   })
 })
 

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+  <title>Boca del Río, Veracruz · mapa ilustrativo</title>
+  <desc>Mapa estilizado de la costa de Boca del Río con el río y la ubicación aproximada de El Dorado. Ilustrativo, no a escala; no sustituye un mapa real.</desc>
+  <g id="tierra">
+    <path d="M 0 0 L 392 0 C 380 70 402 120 384 180 C 368 236 396 268 380 318 C 366 362 352 410 360 462 C 366 512 344 560 352 600 L 0 600 Z"/>
+  </g>
+  <g id="agua">
+    <path d="M 392 0 L 600 0 L 600 600 L 352 600 C 344 560 366 512 360 462 C 352 410 366 362 380 318 C 396 268 368 236 384 180 C 402 120 380 70 392 0 Z"/>
+  </g>
+  <g id="rio">
+    <path d="M 0 352 C 70 330 120 372 182 352 C 238 334 270 300 318 312 C 346 319 362 316 384 300" fill="none" stroke-width="12" stroke-linecap="round"/>
+  </g>
+  <g id="etiquetas">
+    <text x="470" y="250" data-para="agua">Golfo de México</text>
+    <text x="150" y="335" data-para="rio">Río Jamapa</text>
+    <text x="290" y="120">Veracruz</text>
+    <text x="300" y="282">Boca del Río</text>
+    <text x="250" y="545">Antón Lizardo</text>
+    <text x="16" y="588" data-leyenda="">Mapa ilustrativo, no a escala</text>
+  </g>
+  <circle id="plaza" data-nombre="El Dorado" cx="336" cy="372" r="11"/>
+</svg>

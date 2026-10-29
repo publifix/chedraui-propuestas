@@ -1,6 +1,7 @@
 import type { Content } from './content'
 import { calcularLocal, type LocalCalculations } from './calc'
 import { findVisibleTodos, type TodoValue } from './todos'
+import type { FloorPlanInfo, RegionMapInfo } from './plano/svg'
 import {
   condicionesDeLocal,
   SECCIONES,
@@ -9,6 +10,7 @@ import {
   type CondicionesOverride,
   type Giro,
   type Local,
+  type Ocupante,
   type Plaza,
   type Presentacion,
   type Seccion,
@@ -30,8 +32,21 @@ export interface ResolvedPresentation
   giro: Giro
   asesor: Asesor & { slug: string }
   secciones: Seccion[]
+  /** Plano de cada nivel donde están los locales de la presentación (si ya existe). */
+  planos: ResolvedFloorPlan[]
+  /** Mapa ilustrativo de la región, para la secuencia de zoom. */
+  region?: { svg: string; info: RegionMapInfo }
   /** Valores TODO que vería el prospecto. Se muestran solo en el link de revisión. */
   pendientes: TodoValue[]
+}
+
+export interface ResolvedFloorPlan {
+  nivel: { id: string; nombre: string }
+  svg: string
+  info: FloorPlanInfo
+  ocupantes: Ocupante[]
+  /** Claves de los locales de la presentación en este nivel. */
+  claves: string[]
 }
 
 /**
@@ -72,6 +87,13 @@ export function resolvePresentation(content: Content, id: string): ResolvedPrese
     giro,
     asesor: { ...asesor, slug: p.asesor },
     secciones,
+    planos: plazaEntry.plaza.niveles.flatMap((nivel) => {
+      const plan = plazaEntry.planos.get(nivel.id)
+      const claves = p.locales.filter((clave) => plazaEntry.locales.get(clave)!.local.nivel === nivel.id)
+      if (!plan || claves.length === 0) return []
+      return [{ nivel: { id: nivel.id, nombre: nivel.nombre }, svg: plan.svg, info: plan.info, ocupantes: nivel.ocupantes ?? [], claves }]
+    }),
+    ...(plazaEntry.region && { region: { svg: plazaEntry.region.svg, info: plazaEntry.region.info } }),
   }
   return { ...model, pendientes: findVisibleTodos(model, secciones) }
 }

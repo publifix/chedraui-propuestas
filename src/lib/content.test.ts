@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { buildContent, ContentValidationError, findTodos, loadContent, resolveContentDir, svgIds } from './content'
+import { buildContent, ContentValidationError, findTodos, loadContent, resolveContentDir } from './content'
 import { editYaml, readYaml, SEED, seedFiles } from './test-utils'
 
 /** Errores de validación de `files`; falla si la validación pasa. */
@@ -82,24 +82,42 @@ describe('referencias del local', () => {
     expect(errorsOf(files)).toContain('content/plazas/el-dorado/locales/a25-a26.yaml › nivel: el nivel "N1" no existe en la plaza (niveles: "PB")')
   })
 
-  it('no valida plano_ref mientras el SVG del nivel no exista', () => {
-    expect(seedFiles().has(SVG)).toBe(false)
-    expect(() => buildContent(seedFiles())).not.toThrow()
+  it('exige que plano_ref siga el contrato del plano', () => {
+    const files = editYaml(seedFiles(), SEED.local, (d) => (d['plano_ref'] = 'a25-a26'))
+    expect(errorsOf(files)).toContain('content/plazas/el-dorado/locales/a25-a26.yaml › plano_ref: debe ser "local-a25-a26" (contrato del plano, CLAUDE.md §7.1.2)')
   })
 
-  it('valida plano_ref contra los ids del SVG cuando existe', () => {
-    const ok = seedFiles().set(SVG, '<svg><rect id="local-a25-a26"/></svg>')
-    expect(() => buildContent(ok)).not.toThrow()
-
-    const missing = seedFiles().set(SVG, '<svg><rect id="local-a23"/></svg>')
-    expect(errorsOf(missing)).toContain(
+  it('exige que el local esté dibujado en el plano de su nivel', () => {
+    const files = seedFiles()
+    files.set(SVG, files.get(SVG)!.replace(/<polygon id="local-a25-a26"[^>]*\/>/, '').replace(/<path id="ruta-[^>]*\/>/, ''))
+    editYaml(files, SEED.local, (d) => delete d['ruta'])
+    expect(errorsOf(files)).toContain(
       'content/plazas/el-dorado/locales/a25-a26.yaml › plano_ref: no existe un elemento con id "local-a25-a26" en content/plazas/el-dorado/planos/pb.svg',
     )
   })
 
-  it('extrae los ids del SVG', () => {
-    expect(svgIds(`<svg id="pb"><g id='a1'><path id="a2" /></g></svg>`)).toEqual(new Set(['pb', 'a1', 'a2']))
+  it('acepta un plano en TODO mientras no exista', () => {
+    const files = editYaml(seedFiles(), SEED.plaza, (d) => (d['niveles'][0].plano = 'TODO: plano'))
+    editYaml(files, SEED.local, (d) => delete d['ruta'])
+    files.delete(SVG)
+    expect(() => buildContent(files)).not.toThrow()
   })
+
+  it('valida la ruta del local contra los orígenes y rutas del plano', () => {
+    const files = editYaml(seedFiles(), SEED.local, (d) => (d['ruta'].desde = 'estacionamiento-sur'))
+    expect(errorsOf(files)[0]).toMatch(/a25-a26\.yaml › ruta\.desde: "estacionamiento-sur" no es un estacionamiento, ancla ni acceso del plano/)
+    const sinRuta = seedFiles()
+    sinRuta.set(SVG, sinRuta.get(SVG)!.replace(/<path id="ruta-[^>]*\/>/, ''))
+    expect(errorsOf(sinRuta)).toContain(
+      'content/plazas/el-dorado/locales/a25-a26.yaml › ruta.desde: content/plazas/el-dorado/planos/pb.svg no tiene una ruta (<path> en "rutas") de "estacionamiento-norte" a "A25+A26"',
+    )
+  })
+
+  it('exige datos de ocupante para cada local dibujado', () => {
+    const files = editYaml(seedFiles(), SEED.plaza, (d) => d['niveles'][0].ocupantes.splice(0, 1))
+    expect(errorsOf(files)).toContain('content/plazas/el-dorado/plaza.yaml › niveles.0.ocupantes: faltan en ocupantes los locales del plano: A24')
+  })
+
 })
 
 describe('referencias de la presentación', () => {
@@ -274,5 +292,50 @@ describe('imágenes de la plaza', () => {
   it('acepta TODO en lugar de una imagen', () => {
     const files = editYaml(seedFiles(), SEED.plaza, (d) => (d['hero'].imagen = 'TODO: foto'))
     expect(() => buildContent(files)).not.toThrow()
+  })
+})
+
+describe('contrato del plano', () => {
+  const SVG = 'plazas/el-dorado/planos/pb.svg'
+  const conPlano = (mutate: (svg: string) => string) => {
+    const files = seedFiles()
+    files.set(SVG, mutate(files.get(SVG)!))
+    return files
+  }
+  const prefix = 'content/plazas/el-dorado/plaza.yaml › niveles.0.plano: content/plazas/el-dorado/planos/pb.svg:'
+
+  it('el plano de la semilla cumple el contrato', () => {
+    expect(buildContent(seedFiles()).plazas.get('el-dorado')!.planos.get('PB')!.info.locales.size).toBe(42)
+  })
+
+  it('exige los grupos de capa de nombre fijo', () => {
+    expect(errorsOf(conPlano((s) => s.replace('<g id="accesos">', '<g id="entradas">')))).toContain(`${prefix} faltan grupos de capa: <g id="accesos">`)
+  })
+
+  it('exige id local-<clave> y data-clave en cada local', () => {
+    const errors = errorsOf(conPlano((s) => s.replace('id="local-a24"', 'id="a24"')))
+    expect(errors).toContain(`${prefix} el local "A24" debe tener id="local-a24"`)
+  })
+
+  it('rechaza contenido inseguro', () => {
+    expect(errorsOf(conPlano((s) => s.replace('</svg>', '<script>alert(1)</script></svg>')))).toContain(`${prefix} no puede contener <script>`)
+  })
+
+  it('exige la leyenda de plano esquemático', () => {
+    expect(errorsOf(conPlano((s) => s.replace(' data-leyenda=""', '')))).toContain(
+      `${prefix} "etiquetas" debe incluir la leyenda (elemento con data-leyenda), p. ej. "Plano esquemático, no a escala"`,
+    )
+  })
+
+  it('las anclas del plano deben existir en la plaza', () => {
+    expect(errorsOf(conPlano((s) => s.replace('data-marca="Liverpool"', 'data-marca="Sears"')))).toContain(`${prefix} el ancla "Sears" no está en anclas de la plaza`)
+  })
+
+  it('valida el mapa de la región', () => {
+    const files = seedFiles()
+    files.set('plazas/el-dorado/planos/region.svg', files.get('plazas/el-dorado/planos/region.svg')!.replace('id="plaza"', 'id="punto"'))
+    expect(errorsOf(files)).toContain(
+      'content/plazas/el-dorado/plaza.yaml › region.mapa: content/plazas/el-dorado/planos/region.svg: falta el punto de la plaza (<circle id="plaza">)',
+    )
   })
 })

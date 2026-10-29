@@ -3,6 +3,7 @@ import path from 'node:path'
 import { parse } from 'yaml'
 import { resolvePresentation } from './resolve'
 import { checkContrast } from './theme/contrast'
+import { localId, readFloorPlan, readRegionMap, type FloorPlanInfo, type RegionMapInfo } from './plano/svg'
 import { fontNames, isFont } from './theme/font-roles'
 import type * as z from 'zod'
 import {
@@ -31,6 +32,9 @@ export interface PlazaEntry {
   plaza: Plaza
   /** Locales de la plaza, indexados por `clave`. */
   locales: Map<string, LocalEntry>
+  /** Planos que cumplen el contrato (CLAUDE.md §7.1.2), por id de nivel. */
+  planos: Map<string, { file: string; svg: string; info: FloorPlanInfo }>
+  region?: { file: string; svg: string; info: RegionMapInfo }
 }
 
 export interface Todo {
@@ -142,7 +146,12 @@ export function buildContent(files: Map<string, string>, label = 'content'): Con
         errors.push(...themeErrors)
         continue
       }
-      plazas.set(plaza.slug, { file: where(rel), plaza, locales: new Map() })
+      const planos = readPlans(where(rel), plaza, folder, files, where)
+      if (planos.errors.length > 0) {
+        errors.push(...planos.errors)
+        continue
+      }
+      plazas.set(plaza.slug, { file: where(rel), plaza, locales: new Map(), planos: planos.planos, ...(planos.region && { region: planos.region }) })
     } else if (localMatch) {
       localFiles.push({ rel, plazaSlug: localMatch[1]! })
     } else if (flatMatch) {
@@ -195,13 +204,43 @@ export function buildContent(files: Map<string, string>, label = 'content'): Con
       errors.push(formatIssue(where(rel), ['nivel'], `el nivel "${local.nivel}" no existe en la plaza (niveles: ${ids})`))
       continue
     }
-    const svgPath = path.posix.normalize(`plazas/${plazaSlug}/${nivel.plano}`)
-    const svg = files.get(svgPath)
-    if (svg !== undefined && !svgIds(svg).has(local.plano_ref)) {
-      errors.push(formatIssue(where(rel), ['plano_ref'], `no existe un elemento con id "${local.plano_ref}" en ${where(svgPath)}`))
+    const plan = entry.planos.get(nivel.id)
+    const planErrors: string[] = []
+    if (plan) {
+      if (local.plano_ref !== localId(local.clave)) {
+        planErrors.push(formatIssue(where(rel), ['plano_ref'], `debe ser "${localId(local.clave)}" (contrato del plano, CLAUDE.md §7.1.2)`))
+      } else if (!plan.info.locales.has(local.clave)) {
+        planErrors.push(formatIssue(where(rel), ['plano_ref'], `no existe un elemento con id "${local.plano_ref}" en ${plan.file}`))
+      }
+    }
+    if (local.ruta) {
+      if (!plan) {
+        planErrors.push(formatIssue(where(rel), ['ruta'], `el nivel "${nivel.id}" no tiene plano todavía`))
+      } else if (!plan.info.origenes.has(local.ruta.desde)) {
+        const ids = [...plan.info.origenes.keys()].map((id) => `"${id}"`).join(', ')
+        planErrors.push(formatIssue(where(rel), ['ruta', 'desde'], `"${local.ruta.desde}" no es un estacionamiento, ancla ni acceso del plano (disponibles: ${ids})`))
+      } else if (!plan.info.rutas.some((r) => r.desde === local.ruta!.desde && r.hasta === local.clave)) {
+        planErrors.push(formatIssue(where(rel), ['ruta', 'desde'], `${plan.file} no tiene una ruta (<path> en "rutas") de "${local.ruta.desde}" a "${local.clave}"`))
+      }
+    }
+    if (planErrors.length > 0) {
+      errors.push(...planErrors)
       continue
     }
     entry.locales.set(local.clave, { file: where(rel), local })
+  }
+
+  // Cada local dibujado en un plano necesita datos para su panel: un ocupante o un archivo de local.
+  for (const entry of plazas.values()) {
+    entry.plaza.niveles.forEach((nivel, i) => {
+      const plan = entry.planos.get(nivel.id)
+      if (!plan) return
+      const conocidos = new Set([...(nivel.ocupantes ?? []).map((o) => o.clave), ...entry.locales.keys()])
+      const sinDatos = [...plan.info.locales.keys()].filter((clave) => !conocidos.has(clave))
+      if (sinDatos.length > 0) {
+        errors.push(formatIssue(entry.file, ['niveles', i, 'ocupantes'], `faltan en ocupantes los locales del plano: ${sinDatos.join(', ')}`))
+      }
+    })
   }
 
   // Presentaciones: referencias a plaza, locales, giro y asesor, y tokens únicos.
@@ -298,6 +337,43 @@ export function validateImages(file: string, fields: ImageField[], plazaSlug: st
     const key = path.posix.normalize(`plazas/${plazaSlug}/${ruta}`)
     return files.has(key) ? [] : [formatIssue(file, field, `no existe la imagen "${ruta}" en la carpeta de la plaza`)]
   })
+}
+
+/** Lee y valida los planos de nivel y el mapa de región de una plaza. */
+function readPlans(file: string, plaza: Plaza, slug: string, files: Map<string, string>, where: (rel: string) => string) {
+  const errors: string[] = []
+  const planos: PlazaEntry['planos'] = new Map()
+  plaza.niveles.forEach((nivel, i) => {
+    if (isTodo(nivel.plano)) return
+    const rel = path.posix.normalize(`plazas/${slug}/${nivel.plano}`)
+    const svg = files.get(rel)
+    if (svg === undefined) {
+      errors.push(formatIssue(file, ['niveles', i, 'plano'], `no existe el plano "${nivel.plano}" en la carpeta de la plaza`))
+      return
+    }
+    const result = readFloorPlan(svg)
+    errors.push(...result.errors.map((e) => formatIssue(file, ['niveles', i, 'plano'], `${where(rel)}: ${e}`)))
+    if (result.info) {
+      const marcas = new Set(plaza.anclas.map((a) => a.marca))
+      for (const a of result.info.anclas) {
+        if (!marcas.has(a.marca)) errors.push(formatIssue(file, ['niveles', i, 'plano'], `${where(rel)}: el ancla "${a.marca}" no está en anclas de la plaza`))
+      }
+      planos.set(nivel.id, { file: where(rel), svg, info: result.info })
+    }
+  })
+  let region: PlazaEntry['region']
+  if (plaza.region && !isTodo(plaza.region.mapa)) {
+    const rel = path.posix.normalize(`plazas/${slug}/${plaza.region.mapa}`)
+    const svg = files.get(rel)
+    if (svg === undefined) {
+      errors.push(formatIssue(file, ['region', 'mapa'], `no existe el mapa "${plaza.region.mapa}" en la carpeta de la plaza`))
+    } else {
+      const result = readRegionMap(svg)
+      errors.push(...result.errors.map((e) => formatIssue(file, ['region', 'mapa'], `${where(rel)}: ${e}`)))
+      if (result.info) region = { file: where(rel), svg, info: result.info }
+    }
+  }
+  return { errors, planos, region }
 }
 
 /** Ids de los elementos de un SVG. */

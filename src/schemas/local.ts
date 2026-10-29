@@ -42,6 +42,9 @@ export const localSchema = z.strictObject({
     })
     .optional(),
   vecinos: z.array(text).optional(),
+  // Ruta del plano interactivo: desde un estacionamiento, ancla o acceso del SVG (su id) hasta
+  // el local. El texto de cercanía sale de aquí; TODO si no hay dato. Nunca inventar distancias.
+  ruta: z.strictObject({ desde: text, texto: text }).optional(),
   media: z
     .strictObject({
       fotos: z.array(text).optional(),

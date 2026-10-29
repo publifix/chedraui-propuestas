@@ -1,6 +1,5 @@
 ---
 // Monta las secciones en el orden de la presentación (o el de CLAUDE.md §9 por defecto).
-// PlanoInteractivo llega en el paso 6: por ahora solo deja un aviso en el link de revisión.
 import Anclas from './Anclas.astro'
 import BusinessCase from './BusinessCase.astro'
 import Cierre from './Cierre.astro'
@@ -11,6 +10,7 @@ import HeroPlaza from './HeroPlaza.astro'
 import Metricas from './Metricas.astro'
 import Modulos from './Modulos.astro'
 import Pivote from './Pivote.astro'
+import PlanoInteractivo from './PlanoInteractivo.astro'
 import Portada from './Portada.astro'
 import Directorio from './Directorio.astro'
 import Screen from '../Screen.astro'
@@ -27,6 +27,7 @@ const COMPONENTS: Partial<Record<Seccion, typeof Portada>> = {
   Metricas,
   Diferenciales,
   Anclas,
+  PlanoInteractivo,
   FichaLocal,
   Pivote,
   Condiciones,

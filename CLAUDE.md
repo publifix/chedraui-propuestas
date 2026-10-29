@@ -123,8 +123,9 @@ Leyenda: **O** = obligatorio, **Op** = opcional.
 | `diferenciales` | lista | O | Cada uno: `titulo`, `texto`, `imagen` (op) |
 | `anclas` | lista | O | Cada una: `marca`, `logo`, `giro`, `area_m2` (op), `local_ref` (op) |
 | `directorio` | lista | Op | Marcas con `logo` y `giro` |
-| `niveles` | lista | O | Cada uno: `id`, `nombre`, `plano` (ruta SVG) |
+| `niveles` | lista | O | Cada uno: `id`, `nombre`, `plano` (ruta SVG que cumple 7.1.2, o `TODO`), `ocupantes` (op): `clave`, `marca`, `giro`, `area_m2` (op), `categoria` (op: `tienda`, `restaurante`, `servicio`) |
 | `modulos` | lista | Op | Experiencias propias (p. ej. `marina`, `park`, `eventos`) con su contenido |
+| `region` | objeto | Op | `mapa`: SVG ilustrativo de la región para la secuencia de zoom (ver 7.1.2) |
 | `contacto_general` | objeto | O | `web`, `correo`, `telefono` |
 | `legales` | objeto | O | `aviso_privacidad_url`, `leyenda_imagenes` |
 
@@ -139,6 +140,20 @@ Leyenda: **O** = obligatorio, **Op** = opcional.
 - `src/lib/theme/tokens.ts` convierte el tema en variables CSS (`--color-*`, `--font-*`, `--step-*` fluidos con `clamp()` de 360 a 1280 px, `--space-*`, `--radius-*`, `--line-width`, `--duration*`) que el layout inyecta en `:root`. Ningún componente usa valores visuales propios.
 - El tema no cambia con el modo claro u oscuro del dispositivo: `color-scheme` queda fijo según el fondo de la plaza.
 
+#### 7.1.2 Contrato del plano
+
+Toda plaza entrega **un SVG por nivel** (`niveles[].plano`, relativo a la carpeta de la plaza) que cumple este contrato; el build lo valida (`src/lib/plano/svg.ts`, `readFloorPlan`) y falla con archivo, campo y motivo:
+
+- `<svg>` con `viewBox`. Sin `<script>`, manejadores `on…=`, `javascript:`, `<foreignObject>` ni `href` externos.
+- **Grupos de capa de nombre fijo**: `<g id="contorno">`, `pasillos`, `locales`, `anclas`, `accesos`, `estacionamiento`, `etiquetas` (obligatorios); `marina` y `rutas` (opcionales). El visor los estiliza con los tokens de la plaza: el SVG no necesita colores.
+- **Locales** (en `locales`): un `<rect>` o `<polygon>` por local, sin `transform`, con `id="local-<clave>"` (clave en minúsculas, separadores como guiones: `A25+A26` → `local-a25-a26`) y `data-clave="<clave>"`. El `plano_ref` del local debe ser ese id. Cada local dibujado necesita datos: un ocupante en `niveles[].ocupantes` o su propio archivo de local.
+- **Anclas**: `id="ancla-…"` y `data-marca` igual a una marca de `anclas` de la plaza. **Accesos**: `id="acceso-…"` y `data-nombre`. **Estacionamiento**: `id="estacionamiento-…"` y `data-nombre`.
+- **Rutas** (opcional): `<path id="ruta-…" data-desde="<id de estacionamiento, ancla o acceso>" data-hasta="<clave>">`. Un local con `ruta` en su archivo necesita su `<path>`.
+- **Etiquetas**: textos con `data-para` (clave o id al que rotulan) y una leyenda con `data-leyenda` ("Plano esquemático, no a escala").
+- Es un plano **esquemático, no arquitectónico**: la zona del local se dibuja con detalle y el resto como bloques simples.
+
+**Mapa de región** (`region.mapa`, opcional): SVG ilustrativo con `viewBox`, un `<circle id="plaza">` y una leyenda `data-leyenda` ("Mapa ilustrativo, no a escala"); sin mapas externos ni teselas.
+
 ### 7.2 Local (`locales/<clave>.yaml`) · uno por local disponible
 
 | Campo | Tipo | | Descripción |
@@ -151,6 +166,7 @@ Leyenda: **O** = obligatorio, **Op** = opcional.
 | `condiciones_base` | objeto | O | Ver 7.2.1 |
 | `ficha_tecnica` | objeto | Op | `frente_m`, `altura_m`, `agua`, `gas`, `carga_electrica`, `extraccion` |
 | `vecinos` | lista | Op | Si no se define, se deriva del plano |
+| `ruta` | objeto | Op | `desde` (id de un estacionamiento, ancla o acceso del plano) y `texto` de cercanía (`TODO` si no hay dato; nunca inventar distancias ni flujos) |
 | `media` | objeto | Op | `fotos`, `video`, `tour` |
 
 #### 7.2.1 Condiciones base
@@ -174,6 +190,7 @@ Leyenda: **O** = obligatorio, **Op** = opcional.
 | `nombre` | string | O | |
 | `costo_ocupacion_objetivo` | objeto | O | Rango sano de (renta + mantenimiento) / ventas, p. ej. `min`, `max`. **Valores a validar; no inventar cifras de mercado sin fuente** |
 | `angulos_narrativos` | lista | Op | Argumentos de la plaza relevantes para el giro |
+| `giros_afines` | lista | Op | Giros de la plaza que conviven con este (capa "giros afines" del plano); se comparan con el giro de cada ocupante sin mayúsculas ni acentos |
 
 ### 7.4 Asesor (`asesores/<slug>.yaml`)
 
@@ -270,6 +287,7 @@ Implementación (paso 5): cada sección es un componente de `src/components/sect
 - `Metricas`: contadores que suben al entrar en pantalla (valor final para lectores de pantalla y con movimiento reducido), con fuente y periodo siempre visibles.
 - `Condiciones`: tarjeta tipo estado de cuenta por local; en revisión explica el caso pendiente del depósito.
 - `BusinessCase`: barras de dos tonos (rango sano en `acento_suave`, escenario en `acento`), ventas de equilibrio y simulador con control deslizante. El script del navegador importa `src/lib/calc` (`costoOcupacionPct`, `evaluarRango`); `src/lib/todo.ts` y los cálculos no dependen de Zod para que el navegador no lo cargue.
+- `PlanoInteractivo` (paso 6, `src/components/plano/`): secuencia de zoom ligada al scroll en cuatro etapas (región → plaza → planta → local) con GSAP + ScrollTrigger (dependencia npm, chunk propio del sitio, solo se descarga si se permite movimiento; sin JS o con `prefers-reduced-motion` se ven cuatro cuadros estáticos). Después, el plano del nivel: local de la presentación resaltado con un pulso sutil; panel con clave, marca, giro y área al tocar o pulsar Enter sobre cualquier local; capas activables (anclas, restaurantes, accesos, estacionamiento y giros afines al prospecto, cada una con un tratamiento distinto para poder combinarlas); ruta animada desde `ruta.desde` con su texto de cercanía; recorte en la zona del local con opción de planta completa; y "Ver el plano en texto" con el local, vecinos, anclas, accesos y ocupantes para lector de pantalla.
 - `Cierre`: WhatsApp al asesor con mensaje prellenado (`src/lib/whatsapp.ts`), vigencia y estado de propuesta vencida comprobado en el navegador (`src/lib/vigencia.ts`).
 
 Layout base (`src/layouts/PresentationLayout.astro`): encabezado fijo con fondo, barra de progreso de lectura, `<main>` donde cada sección va dentro de `src/components/Screen.astro` (una idea por pantalla), footer con aviso de privacidad, leyenda de imágenes y crédito de Publifix, franja "Vista previa interna · sin registro" con la lista de pendientes solo en revisión, `noindex` y Open Graph desde `seo`, márgenes seguros (`env(safe-area-inset-*)`) y entrada sutil que respeta `prefers-reduced-motion`. Los valores en `TODO` se muestran con `src/components/Field.astro`. La muestra de tokens de cada plaza vive en `/revision/<token_revision>/tokens/`.
@@ -353,6 +371,8 @@ Datos tomados de la presentación PDF actual de Chedraui (junio 2026).
 - Contacto general: centrocomercialeldorado.mx · administracion@centrocomercialeldorado.mx · (229) 986 11 96 / 41 23.
 - Imágenes (`content/plazas/el-dorado/media/`, paso 5): `logo-el-dorado.png` (logo vertical), `icono-velero.png` (velero recortado del logo, favicon), `fachada-marina.jpg` (hero), `acceso-nocturno.jpg` (diferencial Legorreta; 662×302 px, **reemplazar por una de mayor resolución**), `marina-panoramica.png` (diferencial marina), `terraza-marina.jpg` (diferencial terrazas). `compras-stock.png` es una foto de stock que no muestra la plaza: no se usa. Pendientes: imágenes de los diferenciales "160 mil m²" y "El Dorado Park", de los módulos, fotos del local y logos de anclas y directorio. Confirmar derechos de uso de las fotos antes de publicar (el repo es público).
 - Identidad: morado con velero blanco; hashtag #ExperienciaElDorado. Morado de marca `#660066` (tomado del PDF de disponibilidad, junio 2026). El logo es una sans en mayúsculas con espaciado amplio y toda su comunicación es sans: la dirección tipográfica es sans, no serif. Aprobado en el paso 4: paleta de `plaza.yaml`, Archivo como única familia (expandido en mayúsculas para etiquetas, nombre de plaza y titulares cortos; condensado para titulares largos) y Newsreader itálica solo en la cita pivote. `acento_suave` `#9a579a` = `#660066` al 66 % sobre blanco, como en el PDF.
+
+- Plano (paso 6): `planos/pb.svg` es un plano esquemático dibujado a partir de la lámina 6 del PDF. La zona del A25+A26 (franja A25+A26, A24, A23, A22, A21; detrás A16+A17, A18, A19, A20) va con detalle; el resto, en bloques. Liverpool, Chedraui Selecto, accesos, estacionamiento y marina están ubicados de forma aproximada. Ocupantes en `plaza.yaml` según logos y rótulos del PDF; `TODO` donde no se leen con certeza. La ruta del A25+A26 sale del estacionamiento norte; su texto de cercanía queda en `TODO` porque el PDF no da distancias. `planos/region.svg` es un mapa ilustrativo (costa, Río Jamapa, Veracruz, Boca del Río, Antón Lizardo y el punto de la plaza), sin escala.
 
 **Local A25+A26**
 - Nivel: PB. Área: 77.76 m².
