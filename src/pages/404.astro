@@ -1,0 +1,10 @@
+---
+// 404 de todo el sitio: GitHub Pages lo sirve para cualquier ruta inexistente, incluidos los
+// tokens que no corresponden a una presentación. No revela qué presentaciones existen.
+import Headline from '../components/Headline.astro'
+import PublifixLayout from '../layouts/PublifixLayout.astro'
+---
+<PublifixLayout title="Página no disponible">
+  <Headline as="h1" size="display" text="Esta liga no está disponible" />
+  <p class="t-lead">Puede que haya cambiado o que ya no esté activa. Si recibiste una propuesta comercial, pide la liga vigente a la persona que te la envió.</p>
+</PublifixLayout>

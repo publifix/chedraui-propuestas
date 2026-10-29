@@ -7,47 +7,68 @@ import type { ResolvedPresentation } from '../lib/resolve'
 import { plazaImage } from '../lib/media'
 import { withBase } from '../lib/paths'
 import { fontFaceCss, preloadUrls, themeCss, themeFonts } from '../lib/theme'
-import { isTodo } from '../schemas'
+import { Image } from 'astro:assets'
+import { presentationMeta } from '../lib/meta'
+import type { PresentationRoute } from '../lib/routes'
 import { isShortText } from '../lib/typography'
+import { expiryScript, formatVigencia } from '../lib/vigencia'
+import { mensajeVencida, whatsappUrl } from '../lib/whatsapp'
 
 interface Props {
   model: ResolvedPresentation
   kind: 'revision' | 'envio'
+  /** Ruta de la página (relativa al base), para og:url. */
+  route: Pick<PresentationRoute, 'path'>
   /** Familias extra que necesita la página (p. ej. la muestra de tokens). */
   extraFonts?: string[]
   title?: string
 }
 
-const { model, kind, extraFonts = [], title } = Astro.props
-const { plaza, seo, prospecto } = model
+const { model, kind, route, extraFonts = [], title } = Astro.props
+const { plaza, prospecto, asesor } = model
 const { tema } = plaza
 const isRevision = kind === 'revision'
 
 const fonts = [...themeFonts(tema.tipografias), ...extraFonts]
-const pageTitle = title ?? seo.titulo
-const ogImage = isTodo(seo.imagen_og) ? undefined : new URL(withBase(seo.imagen_og), Astro.site).href
+const meta = presentationMeta(model, route, Astro.site!, import.meta.env.BASE_URL)
+const pageTitle = title ?? meta.title
+const logo = await plazaImage(plaza.slug, tema.logo)
+const vigencia = formatVigencia(model.vigencia)
+const claves = model.locales.map((l) => l.clave)
+const whatsappVencida = whatsappUrl(
+  asesor.whatsapp,
+  mensajeVencida({ asesor: asesor.nombre, marca: prospecto.marca, locales: claves, plaza: plaza.nombre }),
+)
 const icono = await plazaImage(plaza.slug, tema.icono)
 const favicon = icono ? (await getImage({ src: icono, width: 64, height: 64, format: 'png' })).src : withBase('favicon.svg')
 const appleIcon = icono ? (await getImage({ src: icono, width: 180, height: 180, format: 'png' })).src : undefined
 const pendientes = model.pendientes
 ---
 <!doctype html>
-<html lang="es" class:list={[isRevision && 'is-revision']}>
+<html lang="es" class:list={[isRevision ? 'is-revision' : 'is-envio']}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="robots" content="noindex, nofollow" />
+    <meta name="robots" content={meta.robots} />
+    <script is:inline set:html={expiryScript(model.vigencia)} />
     <title>{pageTitle}</title>
-    <meta name="description" content={seo.descripcion} />
+    <meta name="description" content={meta.description} />
     <meta name="theme-color" content={tema.colores.fondo} />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="es_MX" />
-    <meta property="og:title" content={seo.titulo} />
-    <meta property="og:description" content={seo.descripcion} />
-    {ogImage && <meta property="og:image" content={ogImage} />}
-    {ogImage && <meta property="og:image:width" content="1200" />}
-    {ogImage && <meta property="og:image:height" content="630" />}
-    <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+    <meta property="og:site_name" content={plaza.nombre_completo ?? plaza.nombre} />
+    <meta property="og:title" content={meta.title} />
+    <meta property="og:description" content={meta.description} />
+    <meta property="og:url" content={meta.url} />
+    <meta property="og:image" content={meta.image.url} />
+    {meta.image.type && <meta property="og:image:type" content={meta.image.type} />}
+    <meta property="og:image:width" content={String(meta.image.width)} />
+    <meta property="og:image:height" content={String(meta.image.height)} />
+    <meta property="og:image:alt" content={meta.image.alt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={meta.title} />
+    <meta name="twitter:description" content={meta.description} />
+    <meta name="twitter:image" content={meta.image.url} />
     <link rel="icon" href={favicon} />
     {appleIcon && <link rel="apple-touch-icon" href={appleIcon} />}
     {preloadUrls([tema.tipografias.display, tema.tipografias.cuerpo]).map((href) => <link rel="preload" href={href} as="font" type="font/woff2" crossorigin />)}
@@ -96,7 +117,21 @@ const pendientes = model.pendientes
     </div>
 
     <main id="contenido" tabindex="-1">
-      <slot />
+      {!isRevision && (
+        <section class="vencida" aria-labelledby="vencida-titulo">
+          {logo && <Image src={logo} alt={plaza.nombre} width={200} densities={[1, 2]} class="vencida__logo" />}
+          <h1 id="vencida-titulo" class="vencida__titulo">Esta propuesta venció el <time datetime={model.vigencia}>{vigencia}</time>.</h1>
+          <Label text={`Propuesta para ${prospecto.marca}`} />
+          <p class="t-lead">Para revisar las condiciones vigentes, pide una propuesta actualizada a {asesor.nombre}.</p>
+          <a class="vencida__boton" href={whatsappVencida} target="_blank" rel="noopener" data-cta="whatsapp-vencida">Solicitar propuesta actualizada por WhatsApp</a>
+        </section>
+      )}
+      {isRevision && (
+        <p class="aviso-vencida todo" role="note">Esta propuesta venció el {vigencia}: en el link de envío el prospecto solo ve el aviso de propuesta vencida.</p>
+      )}
+      <div class="contenido">
+        <slot />
+      </div>
     </main>
 
     <Footer model={model} kind={kind} />
@@ -135,6 +170,24 @@ const pendientes = model.pendientes
 </html>
 
 <style is:global>
+  /* Vigencia (CLAUDE.md §10): el script del <head> agrega .is-vencida si la fecha ya pasó. */
+  .vencida,
+  .aviso-vencida {
+    display: none;
+  }
+
+  .is-vencida.is-envio main > .contenido {
+    display: none;
+  }
+
+  .is-vencida.is-envio .vencida {
+    display: grid;
+  }
+
+  .is-vencida .aviso-vencida {
+    display: block;
+  }
+
   :root {
     --header-h: calc(var(--space-s) * 2 + 2.75rem);
     --banner-h: 0px;
@@ -153,6 +206,48 @@ const pendientes = model.pendientes
 </style>
 
 <style>
+  .vencida {
+    align-content: center;
+    justify-items: start;
+    gap: var(--space-m);
+    min-block-size: calc(100svh - var(--chrome-h));
+    max-inline-size: 40rem;
+    margin-inline: auto;
+    padding: var(--space-2xl) max(var(--space-m), env(safe-area-inset-right)) var(--space-2xl) max(var(--space-m), env(safe-area-inset-left));
+  }
+
+  .vencida__logo {
+    inline-size: 8rem;
+    block-size: auto;
+    margin-block-end: var(--space-m);
+  }
+
+  .vencida__titulo {
+    font-size: var(--step-4);
+  }
+
+  .vencida__boton {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 48px;
+    padding: var(--space-xs) var(--space-l);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    border-radius: var(--radius-m);
+    font-weight: var(--strong-weight);
+    text-decoration: none;
+  }
+
+  .vencida__boton:hover {
+    color: var(--color-on-accent);
+    background: color-mix(in srgb, var(--color-accent) 88%, var(--color-text));
+  }
+
+  .aviso-vencida {
+    margin: var(--space-s) max(var(--space-m), env(safe-area-inset-left));
+    padding: var(--space-xs) var(--space-s);
+  }
+
   .skip-link {
     position: absolute;
     inset-inline-start: var(--space-s);

@@ -7,7 +7,7 @@ import Label from '../Label.astro'
 import Screen from '../Screen.astro'
 import { SECTION_IDS } from '../../lib/sections'
 import { formatVigencia } from '../../lib/vigencia'
-import { mensajeCierre, whatsappUrl } from '../../lib/whatsapp'
+import { mensajeCierre, mensajeVencida, whatsappUrl } from '../../lib/whatsapp'
 import type { SectionProps } from './types'
 
 type Props = SectionProps
@@ -22,6 +22,7 @@ const mensaje = mensajeCierre({
   plaza: plaza.nombre,
 })
 const whatsapp = whatsappUrl(asesor.whatsapp, mensaje)
+const whatsappVencida = whatsappUrl(asesor.whatsapp, mensajeVencida({ asesor: asesor.nombre, marca: prospecto.marca, locales: model.locales.map((l) => l.clave), plaza: plaza.nombre }))
 ---
 <Screen section={SECTION_IDS.Cierre} tone="brand" labelledby="cierre-titulo">
   <div class="cierre" data-vigencia={model.vigencia}>
@@ -38,7 +39,7 @@ const whatsapp = whatsappUrl(asesor.whatsapp, mensaje)
     <div class="cierre__vencida" hidden>
       <p class="cierre__aviso">Esta propuesta venció el <time datetime={model.vigencia}>{vigencia}</time>.</p>
       <p>Para actualizar las condiciones, contacta a {asesor.nombre}.</p>
-      <a class="boton" href={whatsapp} target="_blank" rel="noopener" data-cta="whatsapp-vencida">
+      <a class="boton" href={whatsappVencida} target="_blank" rel="noopener" data-cta="whatsapp-vencida">
         <span>Pedir una propuesta actualizada</span>
       </a>
     </div>

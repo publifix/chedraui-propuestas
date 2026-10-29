@@ -1,0 +1,38 @@
+# Presentación de prueba en estado "lista": SOLO para las pruebas automáticas.
+# Vive fuera de CONTENT_DIR, así que nunca se publica ni genera páginas en el sitio.
+id: 2026-12-prueba-lista
+estado: lista
+
+tokens:
+  envio: pruebaEnvioToken01
+  revision: pruebaRevisionTk01
+
+plaza: el-dorado
+locales:
+  - A25+A26
+
+prospecto:
+  marca: Marca de Prueba
+  destinatario: Equipo de Prueba
+  giro: perfumeria
+
+vigencia: 2026-12-31
+
+escenarios_venta:
+  - nombre: Conservador
+    ventas_mensuales: 180000
+  - nombre: Base
+    ventas_mensuales: 240000
+  - nombre: Optimista
+    ventas_mensuales: 320000
+
+narrativa:
+  apertura: Texto de apertura de prueba.
+  pivote: Cita pivote de prueba para verificar el estado lista.
+  cierre: Cierre de prueba.
+
+asesor: demo
+
+seo:
+  titulo: Propuesta de prueba · El Dorado
+  descripcion: Presentación de prueba en estado lista.

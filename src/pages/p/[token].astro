@@ -8,8 +8,8 @@ export function getStaticPaths() {
   return staticPaths('envio')
 }
 
-const { model } = Astro.props as RouteEntry['props']
+const { model, route } = Astro.props as RouteEntry['props']
 ---
-<PresentationLayout model={model} kind="envio">
+<PresentationLayout model={model} kind="envio" route={route}>
   <Sections model={model} kind="envio" />
 </PresentationLayout>

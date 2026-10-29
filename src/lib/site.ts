@@ -12,14 +12,17 @@ export function getContent(): Content {
 
 export interface RouteEntry {
   params: { token: string }
-  props: { model: ResolvedPresentation }
+  props: { model: ResolvedPresentation; route: PresentationRoute }
 }
 
-/** Entradas de getStaticPaths para un tipo de link. */
-export function staticPaths(kind: PresentationRoute['kind']): RouteEntry[] {
-  return resolveAll(getContent()).flatMap((model) =>
+/**
+ * Entradas de getStaticPaths para un tipo de link: revisión para toda presentación, envío solo
+ * para las que están en "lista". Un token que no está aquí no tiene página: GitHub Pages sirve 404.
+ */
+export function staticPaths(kind: PresentationRoute['kind'], content: Content = getContent()): RouteEntry[] {
+  return resolveAll(content).flatMap((model) =>
     presentationRoutes(model)
       .filter((route) => route.kind === kind)
-      .map((route) => ({ params: { token: route.token }, props: { model } })),
+      .map((route) => ({ params: { token: route.token }, props: { model, route } })),
   )
 }

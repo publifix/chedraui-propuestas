@@ -1,22 +1,12 @@
 ---
-// Página temporal del paso 1: confirma que el build y el deploy funcionan.
-import { withBase } from '../lib/paths'
+// Portada neutra del sitio: confirma el deploy y no lista ni enlaza presentaciones.
+import Headline from '../components/Headline.astro'
+import PublifixLayout from '../layouts/PublifixLayout.astro'
 
 const builtAt = new Date().toISOString()
 ---
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="noindex, nofollow" />
-    <link rel="icon" type="image/svg+xml" href={withBase('favicon.svg')} />
-    <title>Deploy activo</title>
-  </head>
-  <body>
-    <main>
-      <h1>Deploy activo</h1>
-      <p>Motor de presentaciones comerciales · Publifix × Inmobiliaria Chedraui</p>
-      <p>Build: <time datetime={builtAt}>{builtAt}</time></p>
-    </main>
-  </body>
-</html>
+<PublifixLayout title="Publifix">
+  <Headline as="h1" size="display" text="Presentaciones comerciales" />
+  <p class="t-lead">Las propuestas se comparten solo mediante su liga directa.</p>
+  <p class="t-meta">Build: <time datetime={builtAt}>{builtAt}</time></p>
+</PublifixLayout>

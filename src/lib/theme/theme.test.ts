@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { Plaza } from '../../schemas'
 import { readYaml, SEED, seedFiles } from '../test-utils'
 import { checkContrast, contrastRatio, luminance } from './contrast'
+import { PUBLIFIX_TEMA } from './publifix'
 import { fontNames, isFont } from './font-roles'
 import { family, fontFaceCss, fontStack, preloadUrls } from './fonts'
 import { colorScheme, DEFAULT_MEDIDAS, fluid, resolveMedidas, SPACE_STEPS, themeCss, themeFonts, themeVariables, typeStep, TYPE_STEPS, typographyVariables } from './tokens'
@@ -178,5 +179,11 @@ describe('tokens', () => {
     expect(css).toMatch(/^:root\{--color-bg:#f9f5f8;/)
     expect(css).toContain('color-scheme:only light')
     expect(css).not.toContain('prefers-color-scheme')
+  })
+})
+
+describe('tema de Publifix (404 e índice)', () => {
+  it('cumple WCAG AA en todos los pares', () => {
+    expect(checkContrast(PUBLIFIX_TEMA.colores).filter((r) => !r.pasa)).toEqual([])
   })
 })

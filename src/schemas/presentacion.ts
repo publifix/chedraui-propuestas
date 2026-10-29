@@ -56,7 +56,9 @@ const presentacionBase = z.strictObject({
   narrativa: z.strictObject({ apertura: text, pivote: text, cierre: text }),
   asesor: slug,
   secciones: z.array(z.enum(SECCIONES)).min(1).optional(),
-  seo: z.strictObject({ titulo: text, descripcion: text, imagen_og: text }),
+  // imagen_og (opcional): URL absoluta o imagen de la carpeta de la plaza. Sin ella, el build
+  // genera una de 1200×630 con la identidad de la plaza (src/lib/og.ts).
+  seo: z.strictObject({ titulo: text, descripcion: text, imagen_og: text.optional() }),
 })
 
 /** Condiciones negociadas: planas con un local; por clave de local con dos. */

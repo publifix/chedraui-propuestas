@@ -257,6 +257,10 @@ export function buildContent(files: Map<string, string>, label = 'content'): Con
     if (!giros.has(p.prospecto.giro)) {
       errors.push(formatIssue(file, ['prospecto', 'giro'], `el giro "${p.prospecto.giro}" no existe en giros/`))
     }
+    const og = p.seo.imagen_og
+    if (og && !isTodo(og) && !/^https:\/\//.test(og)) {
+      errors.push(...validateImages(file, [{ path: ['seo', 'imagen_og'], ruta: og }], p.plaza, files))
+    }
     if (!asesores.has(p.asesor)) {
       errors.push(formatIssue(file, ['asesor'], `el asesor "${p.asesor}" no existe en asesores/`))
     }
