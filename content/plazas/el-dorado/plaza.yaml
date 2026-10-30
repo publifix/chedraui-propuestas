@@ -77,6 +77,28 @@ diferenciales:
   - titulo: El Dorado Park
     texto: Más de 50 atracciones, arcade, realidad virtual y trampolines.
 
+# Galería en carrusel antes del cierre. Fotos del sitio de Inmobiliaria Chedraui (confirmar
+# derechos de uso antes de operar).
+galeria:
+  - imagen: media/acceso-chedraui-selecto.jpg
+    alt: Fachada de piedra y acceso a Chedraui Selecto al atardecer
+    pie: Acceso a Chedraui Selecto
+  - imagen: media/pasillo-hacia-marina.jpg
+    alt: Pasillo abierto con columnas que da a la marina
+    pie: Pasillo abierto hacia la marina
+  - imagen: media/corredor-liverpool.jpg
+    alt: Corredor interior con Sonora Grill y la entrada de Liverpool
+    pie: Corredor de Liverpool
+  - imagen: media/mesas-restaurantes.jpg
+    alt: Mesas de restaurantes en el pasillo interior, junto a plantas
+    pie: Restaurantes con mesas al pasillo
+  - imagen: media/elevador-panoramico.jpg
+    alt: Elevador panorámico de cristal en el pasillo central
+    pie: Elevador panorámico
+  - imagen: media/planta-alta.jpg
+    alt: Planta alta con barandal de cristal y vista a la planta baja
+    pie: Planta alta en doble altura
+
 # Sin logo, cada marca se muestra como marca tipográfica (logo opcional, imagen de media/).
 anclas:
   - marca: Liverpool

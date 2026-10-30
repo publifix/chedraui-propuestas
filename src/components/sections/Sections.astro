@@ -13,6 +13,7 @@ import Pivote from './Pivote.astro'
 import PlanoInteractivo from './PlanoInteractivo.astro'
 import Portada from './Portada.astro'
 import Directorio from './Directorio.astro'
+import Galeria from './Galeria.astro'
 import Screen from '../Screen.astro'
 import { SECTION_IDS } from '../../lib/sections'
 import type { Seccion } from '../../schemas'
@@ -34,6 +35,7 @@ const COMPONENTS: Partial<Record<Seccion, typeof Portada>> = {
   BusinessCase,
   Modulos,
   Directorio,
+  Galeria,
   Cierre,
 }
 ---
