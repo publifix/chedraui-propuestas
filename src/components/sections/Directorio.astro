@@ -16,9 +16,9 @@ const marcas = plaza.directorio ?? []
 const logos = await Promise.all(marcas.map((m) => plazaImage(plaza.slug, m.logo)))
 ---
 {marcas.length > 0 && (
-  <Screen section={SECTION_IDS.Directorio} labelledby="directorio-titulo" align="start">
+  <Screen section={SECTION_IDS.Directorio} labelledby="directorio-titulo" align="start" compact>
     <Headline id="directorio-titulo" text="Directorio" />
-    <ul class="marcas">
+    <ul class="marcas" id="directorio-marcas" data-marcas>
       {marcas.map((m, i) => {
         const logo = logos[i]
         return (
@@ -29,9 +29,39 @@ const logos = await Promise.all(marcas.map((m) => plazaImage(plaza.slug, m.logo)
         )
       })}
     </ul>
+    <button type="button" class="directorio__mas" aria-controls="directorio-marcas" aria-expanded="false" data-mas hidden>
+      <span data-mas-texto>Ver las {marcas.length} marcas</span>
+    </button>
     <p class="t-meta nota">Entre otras marcas.</p>
   </Screen>
 )}
+
+<script>
+  // Muestra las tres primeras filas del directorio y el resto al pedirlo. Sin JS se ve completo.
+  for (const lista of document.querySelectorAll<HTMLElement>('[data-marcas]')) {
+    const boton = lista.parentElement!.querySelector<HTMLButtonElement>('[data-mas]')!
+    const texto = boton.querySelector<HTMLElement>('[data-mas-texto]')!
+    const items = [...lista.children] as HTMLElement[]
+    const total = texto.textContent
+    let abierto = false
+    const aplicar = () => {
+      const columnas = getComputedStyle(lista).gridTemplateColumns.split(' ').length
+      const visibles = columnas * 3
+      boton.hidden = items.length <= visibles
+      items.forEach((item, i) => (item.hidden = !abierto && i >= visibles))
+      lista.toggleAttribute('data-recortado', !abierto && items.length > visibles)
+      boton.setAttribute('aria-expanded', String(abierto))
+      texto.textContent = abierto ? 'Ver menos marcas' : total
+    }
+    boton.addEventListener('click', () => {
+      abierto = !abierto
+      aplicar()
+      if (!abierto) lista.scrollIntoView({ block: 'nearest' })
+    })
+    addEventListener('resize', aplicar)
+    aplicar()
+  }
+</script>
 
 <style>
   .marcas {
@@ -75,6 +105,49 @@ const logos = await Promise.all(marcas.map((m) => plazaImage(plaza.slug, m.logo)
     font-size: var(--step--2, 0.75rem);
     line-height: 1.2;
     overflow-wrap: break-word;
+  }
+
+  .marca[hidden] {
+    display: none;
+  }
+
+  .directorio__mas {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    min-block-size: 44px;
+    margin-block-start: var(--space-m);
+    padding: var(--space-3xs) var(--space-m);
+    border: var(--line-width) solid var(--color-accent);
+    border-radius: 999px;
+    background: var(--color-surface);
+    color: var(--color-accent);
+    font: inherit;
+    font-size: var(--step--1);
+    font-weight: var(--strong-weight);
+    cursor: pointer;
+  }
+
+  .directorio__mas[hidden] {
+    display: none;
+  }
+
+  /* Flecha que gira al abrir, como en los desplegables. */
+  .directorio__mas::after {
+    content: '';
+    inline-size: 0.5em;
+    block-size: 0.5em;
+    border-inline-end: calc(var(--line-width) * 2) solid currentColor;
+    border-block-end: calc(var(--line-width) * 2) solid currentColor;
+    transform: translateY(-25%) rotate(45deg);
+  }
+
+  .directorio__mas[aria-expanded='true']::after {
+    transform: translateY(25%) rotate(-135deg);
+  }
+
+  .directorio__mas:hover {
+    background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
   }
 
   .nota {

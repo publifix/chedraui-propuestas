@@ -9,6 +9,11 @@ describe('WhatsApp del cierre', () => {
     )
   })
 
+  it('se presenta con el nombre de la persona cuando lo hay', () => {
+    const mensaje = mensajeCierre({ asesor: 'Mariana Ortega', marca: 'Rubí Perfumería', remitente: 'Gabriela Álvarez, de Rubí Perfumería', locales: ['A25+A26'], plaza: 'El Dorado' })
+    expect(mensaje).toMatch(/^Hola, Mariana\. Soy Gabriela Álvarez, de Rubí Perfumería\. /)
+  })
+
   it('nombra los dos locales en una comparativa', () => {
     expect(mensajeCierre({ asesor: 'Ana', marca: 'X', locales: ['A1', 'A2'], plaza: 'P' })).toContain('los locales A1 y A2')
   })

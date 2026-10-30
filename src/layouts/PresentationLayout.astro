@@ -14,6 +14,7 @@ import type { PresentationRoute } from '../lib/routes'
 import { isShortText } from '../lib/typography'
 import { expiryScript, formatVigencia } from '../lib/vigencia'
 import { mensajeVencida, whatsappUrl } from '../lib/whatsapp'
+import { remitente } from '../lib/prospecto'
 
 interface Props {
   model: ResolvedPresentation
@@ -38,7 +39,7 @@ const vigencia = formatVigencia(model.vigencia)
 const claves = model.locales.map((l) => l.clave)
 const whatsappVencida = whatsappUrl(
   asesor.whatsapp,
-  mensajeVencida({ asesor: asesor.nombre, marca: prospecto.marca, locales: claves, plaza: plaza.nombre }),
+  mensajeVencida({ asesor: asesor.nombre, marca: prospecto.marca, remitente: remitente(prospecto), locales: claves, plaza: plaza.nombre }),
 )
 const icono = await plazaImage(plaza.slug, tema.icono)
 const favicon = icono ? (await getImage({ src: icono, width: 64, height: 64, format: 'png' })).src : withBase('favicon.svg')
@@ -157,11 +158,12 @@ const listas = [
       const root = document.documentElement
       const bar = document.querySelector<HTMLElement>('.progress__bar')
 
-      // Barra de progreso de lectura.
+      // Barra de progreso de lectura y encabezado compacto en cuanto empieza el scroll.
       let ticking = false
       const update = () => {
         const max = root.scrollHeight - root.clientHeight
         bar?.style.setProperty('--progress', String(max > 0 ? root.scrollTop / max : 0))
+        root.classList.toggle('is-compacto', root.scrollTop > 24)
         ticking = false
       }
       addEventListener('scroll', () => {
@@ -193,10 +195,22 @@ const listas = [
     display: none;
   }
 
+  /* --chrome-h es el alto completo de la franja y el encabezado: el espacio que se reserva arriba
+     y el que descuentan las pantallas. No cambia al compactar el encabezado (sin saltos). */
   :root {
-    --header-h: calc(var(--space-s) * 2 + 2.75rem);
+    --header-alto: calc(var(--space-s) * 2 + 2.75rem);
+    --header-h: var(--header-alto);
     --banner-h: 0px;
-    --chrome-h: calc(var(--header-h) + var(--banner-h) + env(safe-area-inset-top));
+    --chrome-h: calc(var(--header-alto) + var(--banner-h) + env(safe-area-inset-top));
+  }
+
+  /* Al hacer scroll el encabezado se reduce a la mitad; arriba recupera su tamaño. */
+  .is-compacto {
+    --header-h: calc(var(--header-alto) / 2);
+  }
+
+  body {
+    padding-block-start: var(--chrome-h);
   }
 
   .is-revision {
@@ -272,8 +286,9 @@ const listas = [
 
   /* El encabezado queda fijo arriba con fondo propio: los titulares pasan por debajo, nunca encima del logo. */
   .chrome {
-    position: sticky;
+    position: fixed;
     inset-block-start: 0;
+    inset-inline: 0;
     z-index: 10;
     padding-block-start: env(safe-area-inset-top);
     background: var(--color-bg);
@@ -371,6 +386,7 @@ const listas = [
 
   .site-header {
     position: relative;
+    transition: block-size var(--duration) var(--ease-out);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -383,6 +399,7 @@ const listas = [
   .site-header__brand {
     font-family: var(--font-display);
     font-size: var(--step-1);
+    transition: font-size var(--duration) var(--ease-out);
     line-height: 1;
     white-space: nowrap;
   }
@@ -419,6 +436,21 @@ const listas = [
     background: var(--color-accent);
     transform: scaleX(var(--progress, 0));
     transform-origin: left center;
+  }
+
+  :global(.is-compacto) .site-header__brand {
+    font-size: var(--step-0);
+  }
+
+  :global(.is-compacto) .site-header :global(.site-header__recipient) {
+    font-size: var(--step--2, 0.7rem);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .site-header,
+    .site-header__brand {
+      transition: none;
+    }
   }
 
   main:focus {

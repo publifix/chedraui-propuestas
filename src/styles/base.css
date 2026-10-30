@@ -265,3 +265,38 @@ time {
     filter: blur(6px);
   }
 }
+
+/* Secciones desplegables (<details class="desplegable">): una flecha indica que se abren y gira
+   al abrir. */
+.desplegable > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  list-style: none;
+  cursor: pointer;
+}
+
+.desplegable > summary::-webkit-details-marker {
+  display: none;
+}
+
+.desplegable > summary::after {
+  content: '';
+  flex: none;
+  inline-size: 0.55em;
+  block-size: 0.55em;
+  margin-inline-start: auto;
+  border-inline-end: calc(var(--line-width) * 2) solid currentColor;
+  border-block-end: calc(var(--line-width) * 2) solid currentColor;
+  transform: translateY(-25%) rotate(45deg);
+}
+
+.desplegable[open] > summary::after {
+  transform: translateY(25%) rotate(-135deg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .desplegable > summary::after {
+    transition: transform var(--duration-fast) var(--ease-out);
+  }
+}
