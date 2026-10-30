@@ -1,98 +1,88 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-170 60 1780 1030">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="39 124 1851 776">
   <title>El Dorado · Planta baja (plano esquemático, no a escala)</title>
-  <desc>Plano esquemático dibujado a partir del plano de planta baja de la presentación de disponibilidad de Inmobiliaria Chedraui (junio 2026). La zona del local A25+A26 se dibuja con detalle; el resto de la planta, simplificado.</desc>
+  <desc>Normalizado del plano oficial de planta baja del sitio de Inmobiliaria Chedraui: geometría de locales, anclas y terrazas del original; estacionamientos, marina y accesos como formas simples aproximadas. Sin textos: el visor rotula desde la configuración.</desc>
   <g id="marina">
-    <polygon data-nombre="Marina" points="-170,1005 1610,1005 1610,1090 -170,1090"/>
+    <polygon data-nombre="Marina" points="1520.0,748.0 1520.0,880.0 270.0,880.0 270.0,748.0"/>
   </g>
   <g id="estacionamiento">
-    <polygon id="estacionamiento-norte" data-nombre="Estacionamiento norte" points="40,75 1380,75 1185,405 1244.6,529.3 939.6,384.3 900,345 805,288 40,288"/>
-    <polygon id="estacionamiento-oriente" data-nombre="Estacionamiento oriente" points="1470,245 1605,170 1605,690 1345,690 1405,555"/>
+    <polygon id="estacionamiento-norte" data-nombre="Estacionamiento norte" points="64.0,144.0 1230.0,144.0 1230.0,292.0 1040.0,292.0 1000.0,360.0 980.0,292.0 64.0,292.0"/>
+    <polygon id="estacionamiento-oriente" data-nombre="Estacionamiento oriente" points="1480.0,144.0 1870.0,144.0 1870.0,430.0 1780.0,408.0 1466.0,222.0"/>
   </g>
   <g id="contorno">
-    <polygon points="55,293 805,288 900,345 927.0,413.0 1230.0,560.0 1190,412 1395,85 1595,190 1320,488 1250,700 1605,700 1605,1000 1320,1000 1240,975 1060,965 55,965"/>
+    <polygon points="51.2,613.1 58.3,614.0 58.3,719.3 209.4,719.3 211.1,726.3 371.1,726.3 371.1,720.1 523.1,719.2 523.1,714.1 1148.3,714.1 1148.3,742.6 1184.5,742.6 1313.2,742.2 1313.2,741.9 1601.5,740.8 1782.7,440.0 1778.3,415.2 1468.6,229.6 1468.8,229.1 1349.0,155.5 1315.9,210.0 1318.7,211.6 1258.1,314.6 1249.5,309.3 1209.1,378.7 1319.5,446.6 1244.7,571.4 1147.3,571.4 1147.3,557.1 1146.0,557.1 1146.3,523.8 1200.5,486.5 1225.4,502.1 1252.5,457.3 1190.9,420.5 1182.5,435.2 1137.1,408.0 1137.4,407.4 1123.7,399.8 1123.5,400.1 1066.8,366.1 1058.0,380.2 1050.0,373.8 1049.5,400.1 1049.1,400.0 1049.1,417.6 1049.2,417.7 1049.4,467.2 988.5,467.2 986.9,294.8 949.3,294.0 949.3,294.7 808.2,295.1 808.2,295.5 767.0,295.0 767.0,295.5 687.5,295.1 687.9,366.9 611.4,366.9 611.4,303.3 539.2,303.3 369.6,302.1 368.7,291.4 297.7,292.6 206.9,292.4 207.8,302.9 56.5,302.1 57.4,453.4 51.3,454.3 51.3,522.2 52.7,522.2"/>
   </g>
   <g id="pasillos">
-    <polygon data-nombre="Pasillo principal" points="55,637 1105,637 1180,600 1250,600 1250,705 55,705"/>
-    <polygon data-nombre="Pasillo oriente" points="1250,600 1300,520 1395,410 1560,225 1605,255 1430,450 1330,600 1250,705"/>
-    <polygon data-nombre="Atrio" points="485,490 655,490 655,637 485,637"/>
-    <polygon data-nombre="Pórtico a la marina" points="548,705 630,705 630,960 548,960"/>
-    <polygon data-nombre="Andador comercial" points="55,890 1110,890 1110,960 55,960"/>
-    <polygon data-nombre="Acceso oriente" points="1105.6,500.9 1138.1,516.3 1111.5,572.3 1079.0,556.9"/>
+    <polygon points="58.3,614.0 58.3,719.3 209.4,719.3 211.1,726.3 371.1,726.3 371.1,720.1 523.1,719.2 523.1,714.1 1148.3,714.1 1148.3,742.6 1184.5,742.6 1313.2,742.2 1313.2,741.9 1601.5,740.8 1782.7,440.0 1778.3,415.2 1468.6,229.6 1468.8,229.1 1349.0,155.5 1315.9,210.0 1318.7,211.6 1258.1,314.6 1249.5,309.3 1209.1,378.7 1319.5,446.6 1244.7,571.4 1147.3,571.4 1147.3,557.1 1146.0,557.1 1146.3,523.8 1200.5,486.5 1225.4,502.1 1252.5,457.3 1190.9,420.5 1182.5,435.2 1137.1,408.0 1137.4,407.4 1123.7,399.8 1123.5,400.1 1066.8,366.1 1058.0,380.2 1050.0,373.8 1049.5,400.1 1049.1,400.0 1049.1,417.6 1049.2,417.7 1049.4,467.2 988.5,467.2 986.9,294.8 949.3,294.0 949.3,294.7 808.2,295.1 808.2,295.5 767.0,295.0 767.0,295.5 687.5,295.1 687.9,366.9 611.4,366.9 611.4,303.3 539.2,303.3 369.6,302.1 368.7,291.4 297.7,292.6 206.9,292.4 207.8,302.9 56.5,302.1 57.4,453.4 51.3,454.3 51.3,522.2 52.7,522.2 51.2,613.1"/>
+    <polygon data-nombre="Terraza" points="735.6,679.7 818.9,679.7 818.9,706.1 735.6,706.1"/>
+    <polygon data-nombre="Terraza" points="695.8,679.7 735.6,679.7 735.6,706.1 695.8,706.1"/>
+    <polygon data-nombre="Terraza" points="635.3,679.7 696.2,679.7 696.2,706.1 635.3,706.1"/>
+    <polygon data-nombre="Terraza" points="575.3,679.0 635.3,679.0 635.3,706.1 575.3,706.1"/>
+    <polygon data-nombre="Terraza" points="1156.3,678.0 1176.5,678.0 1176.5,734.6 1156.3,734.6"/>
+    <polygon data-nombre="Terraza" points="874.1,678.0 937.0,678.0 937.0,706.1 874.1,706.1"/>
+    <polygon data-nombre="Terraza" points="936.7,678.0 996.7,678.0 996.7,706.1 936.7,706.1"/>
+    <polygon data-nombre="Terraza" points="997.2,678.0 1037.3,678.0 1037.3,706.1 997.2,706.1"/>
+    <polygon data-nombre="Terraza" points="1037.0,678.0 1076.9,678.0 1076.9,706.1 1037.0,706.1"/>
+    <polygon data-nombre="Terraza" points="1076.9,678.0 1139.8,678.0 1139.8,706.1 1076.9,706.1"/>
+    <polygon data-nombre="Terraza" points="514.8,679.0 574.8,679.0 574.8,706.1 514.8,706.1"/>
   </g>
   <g id="anclas">
-    <polygon id="ancla-liverpool" data-marca="Liverpool" points="-160,300 55,300 55,965 -160,965"/>
-    <polygon id="ancla-chedraui-selecto" data-marca="Chedraui Selecto" points="1255,705 1605,705 1605,995 1330,995"/>
+    <polygon id="ancla-liverpool" data-marca="Liverpool" points="64.6,310.1 216.5,311.0 215.6,300.4 269.5,300.4 269.5,310.1 309.2,310.1 309.2,300.4 361.4,299.5 362.2,310.1 511.5,311.0 515.0,711.3 363.1,712.1 363.1,718.3 309.2,718.3 309.2,710.4 269.5,709.5 268.6,718.3 217.4,718.3 215.6,711.3 66.3,711.3 66.3,607.0 59.3,606.1 60.2,554.9 68.1,554.9 69.9,514.2 59.3,514.2 59.3,461.2 65.4,460.3"/>
+    <polygon id="ancla-chedraui-selecto" data-marca="Chedraui Selecto" points="1248.7,580.3 1249.8,672.7 1304.6,704.9 1304.6,733.9 1597.0,732.8 1774.3,438.4 1771.1,420.1 1457.2,232.1"/>
   </g>
   <g id="locales">
-    <polygon id="local-a25-a26" data-clave="A25+A26" points="925.0,415.0 997.3,449.3 970.6,505.3 898.4,471.0"/>
-    <polygon id="local-a24" data-clave="A24" points="997.3,449.3 1031.6,465.7 1004.9,521.7 970.6,505.3"/>
-    <polygon id="local-a23" data-clave="A23" points="1031.6,465.7 1067.7,482.8 1041.1,538.8 1004.9,521.7"/>
-    <polygon id="local-a22" data-clave="A22" points="1067.7,482.8 1105.6,500.9 1079.0,556.9 1041.1,538.8"/>
-    <polygon id="local-a21" data-clave="A21" points="1138.1,516.3 1230.0,560.0 1203.4,616.0 1111.5,572.3"/>
-    <polygon id="local-a16-a17" data-clave="A16+A17" points="833.0,545.0 930.0,545.0 930.0,637.0 833.0,637.0"/>
-    <polygon id="local-a18" data-clave="A18" points="930.0,486.0 995.0,516.9 995.0,637.0 930.0,637.0"/>
-    <polygon id="local-a19" data-clave="A19" points="995.0,516.9 1058.0,546.9 1058.0,637.0 995.0,637.0"/>
-    <polygon id="local-a20" data-clave="A20" points="1058.0,546.9 1108.0,570.6 1085.0,637.0 1058.0,637.0"/>
-    <polygon id="local-a14-a15" data-clave="A14+A15" points="737.0,545.0 805.0,545.0 805.0,637.0 737.0,637.0"/>
-    <polygon id="local-a1-a2" data-clave="A1+A2" points="68.0,305.0 205.0,305.0 205.0,545.0 68.0,545.0"/>
-    <polygon id="local-a3-a4" data-clave="A3+A4" points="288.0,405.0 418.0,405.0 418.0,545.0 288.0,545.0"/>
-    <polygon id="local-a5-a6" data-clave="A5+A6" points="288.0,545.0 350.0,545.0 350.0,637.0 288.0,637.0"/>
-    <polygon id="local-a7-a8" data-clave="A7+A8" points="350.0,545.0 418.0,545.0 418.0,637.0 350.0,637.0"/>
-    <polygon id="local-sa1a" data-clave="SA1A" points="355.0,293.0 485.0,293.0 485.0,637.0 418.0,637.0 418.0,405.0 355.0,405.0"/>
-    <polygon id="local-sa1b" data-clave="SA1B" points="485.0,293.0 545.0,293.0 545.0,490.0 485.0,490.0"/>
-    <polygon id="local-sa1c" data-clave="SA1C" points="545.0,293.0 805.0,293.0 805.0,475.0 545.0,475.0"/>
-    <polygon id="local-sa1d" data-clave="SA1D" points="655.0,475.0 737.0,475.0 737.0,637.0 655.0,637.0"/>
-    <polygon id="local-c1-c2-c3-d1" data-clave="C1+C2+C3+D1" points="65.0,710.0 162.0,710.0 162.0,890.0 65.0,890.0"/>
-    <polygon id="local-c4-c6-d2" data-clave="C4+C6+D2" points="162.0,710.0 258.0,710.0 258.0,890.0 162.0,890.0"/>
-    <polygon id="local-c7-d3" data-clave="C7+D3" points="258.0,710.0 290.0,710.0 290.0,790.0 355.0,790.0 355.0,890.0 258.0,890.0"/>
-    <polygon id="local-c8" data-clave="C8" points="290.0,710.0 322.0,710.0 322.0,790.0 290.0,790.0"/>
-    <polygon id="local-c9" data-clave="C9" points="322.0,710.0 355.0,710.0 355.0,790.0 322.0,790.0"/>
-    <polygon id="local-c10-d4" data-clave="C10+D4" points="355.0,710.0 382.0,710.0 382.0,790.0 418.0,790.0 418.0,890.0 355.0,890.0"/>
-    <polygon id="local-c11" data-clave="C11" points="382.0,710.0 418.0,710.0 418.0,790.0 382.0,790.0"/>
-    <polygon id="local-c12-c13-d5" data-clave="C12+C13+D5" points="418.0,710.0 548.0,710.0 548.0,890.0 418.0,890.0"/>
-    <polygon id="local-d6" data-clave="D6" points="630.0,710.0 705.0,710.0 705.0,790.0 737.0,790.0 737.0,890.0 630.0,890.0"/>
-    <polygon id="local-c14" data-clave="C14" points="705.0,710.0 737.0,710.0 737.0,790.0 705.0,790.0"/>
-    <polygon id="local-c15-c16-d7" data-clave="C15+C16+D7" points="737.0,710.0 800.0,710.0 800.0,790.0 835.0,790.0 835.0,890.0 737.0,890.0"/>
-    <polygon id="local-c17" data-clave="C17" points="800.0,710.0 835.0,710.0 835.0,790.0 800.0,790.0"/>
-    <polygon id="local-c18-d8" data-clave="C18+D8" points="835.0,710.0 898.0,710.0 898.0,890.0 835.0,890.0"/>
-    <polygon id="local-c19" data-clave="C19" points="898.0,710.0 925.0,710.0 925.0,790.0 898.0,790.0"/>
-    <polygon id="local-c20" data-clave="C20" points="925.0,710.0 950.0,710.0 950.0,790.0 925.0,790.0"/>
-    <polygon id="local-c21" data-clave="C21" points="950.0,710.0 975.0,710.0 975.0,790.0 950.0,790.0"/>
-    <polygon id="local-d9-d10-c22" data-clave="D9+D10+C22" points="975.0,710.0 1060.0,710.0 1060.0,890.0 898.0,890.0 898.0,790.0 975.0,790.0"/>
-    <polygon id="local-c24" data-clave="C24" points="1118.0,710.0 1175.0,710.0 1175.0,835.0 1118.0,835.0"/>
-    <polygon id="local-c23" data-clave="C23" points="1175.0,710.0 1240.0,710.0 1240.0,835.0 1175.0,835.0"/>
-    <polygon id="local-d11" data-clave="D11" points="1118.0,835.0 1240.0,835.0 1240.0,975.0 1118.0,975.0"/>
-    <polygon id="local-b1-b4-b17-b21" data-clave="(B1-B4)+(B17+B21)" points="1190.0,412.0 1257.7,304.1 1410.8,389.7 1320.0,488.0"/>
-    <polygon id="local-b16" data-clave="B16" points="1257.7,304.1 1272.0,281.2 1430.0,368.8 1410.8,389.7"/>
-    <polygon id="local-b5-b8-b14-b15" data-clave="(B5-B8)+(B14-B15)" points="1272.0,281.2 1333.5,183.1 1512.5,279.4 1430.0,368.8"/>
-    <polygon id="local-b9-b13" data-clave="B9-B13" points="1349.9,156.9 1395.0,85.0 1595.0,190.0 1534.5,255.6"/>
+    <polygon id="local-a1-a2" data-clave="A1+A2" points="511.9,311.3 603.4,311.3 603.4,460.6 514.0,461.3"/>
+    <polygon id="local-a5-a6" data-clave="A5+A6" points="654.2,461.0 695.8,461.0 695.8,502.1 654.2,502.1"/>
+    <polygon id="local-a3-a4" data-clave="A3+A4" points="654.2,374.9 735.6,374.9 735.6,461.0 654.2,461.0"/>
+    <polygon id="local-a7-a8" data-clave="A7+A8" points="735.7,461.0 696.1,461.0 696.5,502.4 692.9,502.4 692.9,519.6 736.1,519.6"/>
+    <polygon id="local-sa1a" data-clave="SA1A" points="695.5,303.1 696.0,374.8 735.5,374.8 735.9,519.1 783.8,519.6 777.7,467.1 774.9,427.3 774.9,303.6"/>
+    <polygon id="local-sa1b" data-clave="SA1B" points="775.0,303.1 775.0,427.7 816.7,423.5 815.8,303.6"/>
+    <polygon id="local-sa1c" data-clave="SA1C" points="816.2,303.1 816.7,423.6 884.7,416.1 885.6,419.8 897.4,419.8 896.4,394.5 957.8,394.5 957.4,302.6"/>
+    <polygon id="local-sa1d" data-clave="SA1D" points="957.4,302.2 958.3,395.0 896.4,395.0 896.9,419.0 885.6,419.4 895.5,518.9 936.8,519.4 936.8,459.8 980.4,459.8 979.0,302.6"/>
+    <polygon id="local-a14-a15" data-clave="A14+A15" points="936.7,458.9 980.4,458.9 980.4,519.4 936.7,519.4"/>
+    <polygon id="local-a16-a17" data-clave="A16+A17" points="995.8,475.2 1057.2,475.2 1057.2,519.4 995.8,519.4"/>
+    <polygon id="local-a18" data-clave="A18" points="1057.2,413.8 1057.7,519.1 1097.5,520.1 1097.5,436.7"/>
+    <polygon id="local-a25-a26" data-clave="A25+A26" points="1057.2,413.0 1057.7,390.1 1060.0,392.0 1069.4,377.0 1106.9,399.5 1088.1,430.8"/>
+    <polygon id="local-a24" data-clave="A24" points="1087.7,430.6 1107.0,399.6 1126.3,410.4 1107.5,441.8"/>
+    <polygon id="local-a19" data-clave="A19" points="1097.5,436.3 1098.0,520.1 1138.3,519.6 1138.8,461.1"/>
+    <polygon id="local-a23" data-clave="A23" points="1106.9,441.9 1126.2,410.9 1145.0,422.1 1127.1,454.1"/>
+    <polygon id="local-a22" data-clave="A22" points="1135.7,438.6 1145.1,422.2 1184.9,446.1 1175.5,462.0"/>
+    <polygon id="local-a20" data-clave="A20" points="1138.8,460.6 1138.3,519.6 1185.4,487.3"/>
+    <polygon id="local-a21" data-clave="A21" points="1176.5,462.0 1193.8,431.5 1241.5,460.1 1222.8,491.0"/>
+    <polygon id="local-b1-b4-b17-b21" data-clave="B1-B4+B17-B21" points="1219.9,376.0 1252.3,320.4 1296.2,347.2 1306.3,330.1 1342.6,352.0 1298.6,424.3"/>
+    <polygon id="local-b5-b8-b14-b15" data-clave="B5-B8+B14-B15" points="1310.8,240.7 1261.0,325.5 1295.9,346.6 1317.0,313.2 1353.0,333.7 1383.4,283.9"/>
+    <polygon id="local-b16" data-clave="B16" points="1306.3,330.1 1316.8,313.2 1353.6,334.3 1342.6,352.3"/>
+    <polygon id="local-b9-b13" data-clave="B9-B13" points="1351.6,166.6 1327.0,207.2 1435.4,271.0 1458.0,231.9"/>
+    <polygon id="local-c1-c2" data-clave="C1+C2" points="514.3,565.4 514.8,615.3 554.6,615.8 555.6,565.4"/>
+    <polygon id="local-c3-d1" data-clave="C3+D1" points="555.2,565.4 554.7,616.2 515.0,615.7 515.0,678.5 575.0,678.5 574.5,566.0"/>
+    <polygon id="local-c4-c6-d2" data-clave="C4-C6+D2" points="574.3,565.4 574.8,679.0 635.3,678.4 634.8,566.0"/>
+    <polygon id="local-c7-d3" data-clave="C7+D3" points="634.3,566.0 635.4,679.0 698.6,679.0 697.5,615.7 655.2,616.2 655.2,565.4"/>
+    <polygon id="local-c8" data-clave="C8" points="654.2,565.4 674.9,565.4 674.9,615.8 654.2,615.8"/>
+    <polygon id="local-c9" data-clave="C9" points="674.9,565.4 695.5,565.4 695.5,615.8 674.9,615.8"/>
+    <polygon id="local-c10-d4" data-clave="C10+D4" points="695.3,565.7 715.1,566.1 715.1,616.3 735.9,616.3 736.3,679.4 696.2,679.4"/>
+    <polygon id="local-c11" data-clave="C11" points="715.0,565.4 735.8,565.4 735.8,615.8 715.0,615.8"/>
+    <polygon id="local-c12-c13" data-clave="C12+C13" points="735.6,565.4 775.7,565.4 775.7,615.8 735.6,615.8"/>
+    <polygon id="local-d5" data-clave="D5" points="776.0,565.7 817.7,566.1 818.9,678.7 736.0,679.9 735.6,616.4 776.4,616.4"/>
+    <polygon id="local-d6" data-clave="D6" points="865.7,561.6 873.9,678.7 937.0,678.3 937.0,615.0 916.1,615.4 916.1,562.0"/>
+    <polygon id="local-c14-c15-c16-d7" data-clave="C14+C15+C16+D7" points="915.8,564.7 916.3,615.5 936.8,615.5 936.3,677.5 997.2,678.0 997.7,615.1 975.8,615.5 976.3,565.2"/>
+    <polygon id="local-c17" data-clave="C17" points="976.3,595.6 976.3,615.1 1017.6,615.1 1017.2,564.7 996.3,565.2 996.3,585.6 991.1,585.6 991.1,595.6"/>
+    <polygon id="local-c18-d8" data-clave="C18+D8" points="1017.1,564.7 1017.1,615.5 997.6,615.5 997.2,678.5 1037.0,678.5 1037.0,564.7"/>
+    <polygon id="local-d9-d10-c22" data-clave="D9+D10+C22" points="1037.0,614.6 1037.5,678.7 1139.8,678.7 1139.3,565.2 1098.2,565.6 1098.2,615.0"/>
+    <polygon id="local-c19" data-clave="C19" points="1037.0,564.7 1057.2,564.7 1057.2,614.9 1037.0,614.9"/>
+    <polygon id="local-c20" data-clave="C20" points="1057.2,565.2 1077.8,565.2 1077.8,614.9 1057.2,614.9"/>
+    <polygon id="local-c21" data-clave="C21" points="1077.4,564.7 1098.0,564.7 1098.0,615.1 1077.4,615.1"/>
+    <polygon id="local-d11" data-clave="D11" points="1176.7,662.8 1250.0,662.4 1249.6,672.3 1304.7,705.2 1305.1,734.2 1176.7,734.6"/>
+    <polygon id="local-c23" data-clave="C23" points="1176.7,579.4 1249.2,579.4 1249.2,662.4 1176.7,662.4"/>
   </g>
   <g id="accesos">
-    <circle id="acceso-poniente" data-nombre="Acceso Liverpool" cx="55" cy="671" r="9"/>
-    <circle id="acceso-norte" data-nombre="Acceso norte" cx="245" cy="291" r="9"/>
-    <circle id="acceso-oriente" data-nombre="Acceso oriente" cx="1124.5" cy="503.2" r="9"/>
-    <circle id="acceso-nororiente" data-nombre="Acceso nororiente" cx="1380" cy="150" r="9"/>
-    <circle id="acceso-marina" data-nombre="Acceso a la marina" cx="589" cy="960" r="9"/>
+    <circle id="acceso-poniente" data-nombre="Acceso poniente" cx="628" cy="300" r="6"/>
+    <circle id="acceso-norte" data-nombre="Acceso norte" cx="1018" cy="344" r="6"/>
+    <circle id="acceso-oriente" data-nombre="Acceso oriente" cx="1208" cy="524" r="6"/>
+    <circle id="acceso-marina" data-nombre="Acceso marina" cx="842" cy="714" r="6"/>
   </g>
   <g id="rutas">
-    <path id="ruta-estacionamiento-norte-a25-a26" data-desde="estacionamiento-norte" data-hasta="A25+A26" d="M 1060 250 L 1010 330 L 967.1 419.5"/>
+    <path id="ruta-estacionamiento-norte-a25-a26" data-desde="estacionamiento-norte" data-hasta="A25+A26" d="M1010,280 L1018,344 L1036,400 L1058,408"/>
   </g>
   <g id="etiquetas">
-    <text x="947.8" y="464.2" data-para="A25+A26">A25+A26</text>
-    <text x="1001.1" y="489.5" data-para="A24">A24</text>
-    <text x="1036.3" y="506.2" data-para="A23">A23</text>
-    <text x="1073.4" y="523.9" data-para="A22">A22</text>
-    <text x="1170.8" y="570.2" data-para="A21">A21</text>
-    <text x="881.5" y="595.0" data-para="A16+A17">A16+A17</text>
-    <text x="962.5" y="573.2" data-para="A18">A18</text>
-    <text x="1026.5" y="588.5" data-para="A19">A19</text>
-    <text x="1077.2" y="601.9" data-para="A20">A20</text>
-    <text x="771.0" y="595.0" data-para="A14+A15">A14+A15</text>
-    <text x="-52" y="640" data-para="ancla-liverpool">Liverpool</text>
-    <text x="1440" y="860" data-para="ancla-chedraui-selecto">Chedraui Selecto</text>
-    <text x="640" y="190" data-para="estacionamiento-norte">Estacionamiento</text>
-    <text x="1500" y="470" data-para="estacionamiento-oriente">Estacionamiento</text>
-    <text x="700" y="1055" data-para="marina">Marina</text>
-    <text x="-160" y="1080" data-leyenda="">Plano esquemático, no a escala</text>
+    <text x="55" y="886" data-leyenda="">Plano esquemático, no a escala</text>
   </g>
 </svg>

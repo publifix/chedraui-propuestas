@@ -163,7 +163,7 @@ describe('modelo resuelto', () => {
     const model = resolvePresentation(buildContent(seedFiles()), ID)
     expect(model.pendientes).toEqual([])
     expect(model.fotosPendientes.map((f) => f.path)).toEqual(
-      expect.arrayContaining(['plaza.diferenciales.1.imagen', 'plaza.diferenciales.4.imagen', 'locales.0.media.fotos']),
+      expect.arrayContaining(['plaza.diferenciales.4.imagen', 'plaza.modulos.1.imagen', 'locales.0.media.fotos']),
     )
   })
 

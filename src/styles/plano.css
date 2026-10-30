@@ -79,9 +79,6 @@
   stroke: var(--color-accent);
 }
 
-.plano-svg [data-capa='etiquetas'] text.is-target-label {
-  fill: var(--color-on-accent);
-}
 
 .plano-svg text {
   font-family: var(--font-body);

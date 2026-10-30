@@ -15,12 +15,13 @@ type Props = SectionProps
 
 const { model } = Astro.props
 
-/** "+600 mil" → { prefix: "+", value: 600, suffix: " mil", decimals: 0 }. */
+/** "+600 mil" → { prefix: "+", value: 600, suffix: " mil", decimals: 0 }. Sin comas en el valor
+ * ("2012", un año) la cuenta no agrupa miles. */
 function parseValor(valor: string) {
   const match = /^(\D*?)(\d[\d,]*(?:\.\d+)?)(.*)$/.exec(valor)
   if (!match) return undefined
   const [, prefix = '', digits = '', suffix = ''] = match
-  return { prefix, value: Number(digits.replace(/,/g, '')), suffix, decimals: digits.split('.')[1]?.length ?? 0 }
+  return { prefix, value: Number(digits.replace(/,/g, '')), suffix, decimals: digits.split('.')[1]?.length ?? 0, grouping: digits.includes(',') }
 }
 
 const metricas = model.plaza.metricas.map((m) => ({ ...m, parsed: parseValor(m.valor) }))
@@ -33,7 +34,7 @@ const metricas = model.plaza.metricas.map((m) => ({ ...m, parsed: parseValor(m.v
         <dt class="metrica__etiqueta"><Label as="span" text={m.etiqueta} /></dt>
         <dd class="metrica__valor t-figure">
           {m.parsed ? (
-            <span class="metrica__cifra" data-counter={m.parsed.value} data-decimals={m.parsed.decimals} data-prefix={m.parsed.prefix} data-suffix={m.parsed.suffix}>{m.valor}</span>
+            <span class="metrica__cifra" data-counter={m.parsed.value} data-decimals={m.parsed.decimals} data-prefix={m.parsed.prefix} data-suffix={m.parsed.suffix} data-grouping={String(m.parsed.grouping)}>{m.valor}</span>
           ) : m.valor}
         </dd>
         <dd class="metrica__fuente t-meta">
@@ -53,7 +54,8 @@ const metricas = model.plaza.metricas.map((m) => ({ ...m, parsed: parseValor(m.v
       const target = Number(el.dataset.counter)
       const decimals = Number(el.dataset.decimals ?? 0)
       const { prefix = '', suffix = '' } = el.dataset
-      const format = (n: number) => prefix + n.toLocaleString('es-MX', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + suffix
+      const useGrouping = el.dataset.grouping === 'true'
+      const format = (n: number) => prefix + n.toLocaleString('es-MX', { minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping }) + suffix
       const overlay = document.createElement('span')
       overlay.className = 'metrica__cuenta'
       overlay.setAttribute('aria-hidden', 'true')

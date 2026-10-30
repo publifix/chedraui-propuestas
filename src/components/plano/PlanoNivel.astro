@@ -2,13 +2,13 @@
 // Plano interactivo de un nivel. Abre con la planta completa y el local marcado ("Tu local"),
 // con acercamiento animado a su zona; panel al tocar un local; capas que se resaltan con
 // botones de activar y desactivar; ruta desde el estacionamiento o un ancla; versión en texto.
-// Los rótulos de anclas, estacionamientos y marina se pintan en HTML sobre el SVG para que se
-// lean a cualquier escala.
+// Los rótulos se pintan en HTML sobre el SVG, desde la configuración y la geometría del plano (el
+// SVG no trae textos): anclas, estacionamientos y marina siempre; claves de locales al acercar.
 import Field from '../Field.astro'
 import Label from '../Label.astro'
 import { ocupantesDe, vecinosDe, type ResolvedFloorPlan, type ResolvedPresentation } from '../../lib/resolve'
 import { esGiroAfin } from '../../lib/plano/afines'
-import { etiquetas, frameAround, prepareSvg } from '../../lib/plano/svg'
+import { frameAround, prepareSvg } from '../../lib/plano/svg'
 import { isTodo } from '../../lib/todo'
 
 interface Props {
@@ -59,23 +59,25 @@ const attrs = Object.fromEntries(
     return [c, a]
   }),
 )
-// Rótulos que no son de locales (anclas, estacionamientos, marina): van en HTML sobre el SVG.
-const rotulos = etiquetas(plan.svg).filter((e) => !plan.info.locales.has(e.para))
-const labels = Object.fromEntries([
-  ...rotulos.map((r) => [r.para, { class: 'is-rotulo' }]),
-  ...plan.claves.map((c) => [c, { class: 'is-target-label' }]),
-])
+// Rótulos: anclas (marca), estacionamientos y marina siempre; claves de los locales al acercar.
+type Rotulo = { texto: string; x: number; y: number; tipo: 'lugar' | 'local' | 'objetivo' }
+const rotulos: Rotulo[] = [
+  ...plan.info.anclas.flatMap((a) => (a.punto ? [{ texto: a.marca, ...a.punto, tipo: 'lugar' as const }] : [])),
+  ...plan.info.estacionamientos.flatMap((e) => (e.punto ? [{ texto: 'Estacionamiento', ...e.punto, tipo: 'lugar' as const }] : [])),
+  ...plan.info.marina.map((m) => ({ texto: m.nombre, ...m.punto, tipo: 'lugar' as const })),
+  ...[...plan.info.locales].map(([c, l]) => ({ texto: c, ...l.punto, tipo: plan.claves.includes(c) ? ('objetivo' as const) : ('local' as const) })),
+]
 // Acercamiento con la misma proporción que la planta: el mapa no cambia de alto al animarse.
 const bboxLocal = plan.info.locales.get(clave)!.bbox
 const detalle = frameAround(bboxLocal, vb, { width: 560, ratio: vb.width / vb.height })
-const svg = prepareSvg(plan.svg, { prefix: 'pi-', locales: attrs, labels })
+const svg = prepareSvg(plan.svg, { prefix: 'pi-', locales: attrs })
 const view = (v: typeof vb) => `${v.x} ${v.y} ${v.width} ${v.height}`
 /** Posición en % dentro de la vista inicial (planta completa); el script la recalcula al acercar. */
 const pct = (x: number, y: number) => ({ left: ((x - vb.x) / vb.width) * 100, top: ((y - vb.y) / vb.height) * 100 })
 const pos = (x: number, y: number) => `left:${pct(x, y).left.toFixed(2)}%;top:${pct(x, y).top.toFixed(2)}%`
 /** Cerca de un borde, el rótulo se alinea hacia dentro para no cortarse. */
 const borde = (left: number) => (left < 12 ? 'inicio' : left > 88 ? 'fin' : undefined)
-const centro = { x: bboxLocal.x + bboxLocal.width / 2, y: bboxLocal.y + bboxLocal.height / 2 }
+const centro = plan.info.locales.get(clave)!.punto
 
 const ruta = local.ruta && plan.info.rutas.find((r) => r.desde === local.ruta!.desde && r.hasta === clave)
 const origen = ruta && plan.info.origenes.get(ruta.desde)
@@ -94,8 +96,8 @@ const id = `plano-${plan.nivel.id.toLowerCase()}`
   <div class="plano__mapa">
     <div class="plano__svg" role="group" aria-label={`Plano esquemático de ${plan.nivel.nombre.toLowerCase()} con el local ${clave} marcado. Toca un local para ver quién lo ocupa.`} set:html={svg} />
     <div class="plano__rotulos" aria-hidden="true">
-      {rotulos.map((r) => <span class="rotulo" data-x={r.x} data-y={r.y} data-borde={borde(pct(r.x, r.y).left)} style={pos(r.x, r.y)}>{r.texto}</span>)}
-      <span class="marcador" data-x={centro.x} data-y={centro.y} style={pos(centro.x, centro.y)}>
+      {rotulos.map((r) => <span class:list={['rotulo', `rotulo--${r.tipo}`]} data-x={r.x} data-y={r.y} data-borde={r.tipo === 'lugar' ? borde(pct(r.x, r.y).left) : undefined} style={pos(r.x, r.y)}>{r.texto}</span>)}
+      <span class="marcador" data-x={centro.x} data-y={centro.y} data-abajo={pct(centro.x, centro.y).top < 40 ? '' : undefined} style={pos(centro.x, centro.y)}>
         <span class="marcador__anillo"></span>
         <span class="marcador__etiqueta">Tu local · {clave}</span>
       </span>
@@ -221,6 +223,8 @@ const id = `plano-${plan.nivel.id.toLowerCase()}`
         el.style.left = `${left}%`
         el.style.top = `${top}%`
         el.hidden = left < -2 || left > 102 || top < -2 || top > 102
+        if (el.classList.contains('marcador')) el.toggleAttribute('data-abajo', top < 40)
+        if (!el.classList.contains('rotulo--lugar')) continue
         if (left < 12) el.dataset.borde = 'inicio'
         else if (left > 88) el.dataset.borde = 'fin'
         else delete el.dataset.borde
@@ -502,6 +506,18 @@ const id = `plano-${plan.nivel.id.toLowerCase()}`
     text-shadow: 0 0 3px var(--color-surface), 0 0 3px var(--color-surface), 0 0 6px var(--color-surface);
   }
 
+  .rotulo--local,
+  .rotulo--objetivo {
+    font-size: 0.625rem;
+    color: var(--color-text);
+  }
+
+  /* La clave del local va en el texto sobre acento, sobre su propio relleno. */
+  .rotulo--objetivo {
+    color: var(--color-on-accent);
+    text-shadow: none;
+  }
+
   .rotulo[data-borde='inicio'] {
     transform: translate(0, -50%);
   }
@@ -547,6 +563,17 @@ const id = `plano-${plan.nivel.id.toLowerCase()}`
     letter-spacing: 0.02em;
     white-space: nowrap;
     box-shadow: 0 var(--space-3xs) var(--space-s) color-mix(in srgb, var(--color-text) 20%, transparent);
+  }
+
+  /* Cerca del borde superior la etiqueta va debajo del anillo para no cortarse. */
+  .marcador[data-abajo] .marcador__etiqueta {
+    inset-block-end: auto;
+    inset-block-start: calc(100% + var(--space-s));
+  }
+
+  .marcador[data-abajo] .marcador__etiqueta::after {
+    inset-block-start: auto;
+    inset-block-end: 100%;
   }
 
   .marcador__etiqueta::after {
@@ -688,10 +715,9 @@ const id = `plano-${plan.nivel.id.toLowerCase()}`
     r: 16px;
   }
 
-  /* Rótulos en HTML: el texto del SVG no se pinta. En la planta completa los rótulos de los
-     locales no caben: se ocultan y se ven al acercar. */
-  .plano :global(.is-rotulo),
-  .plano[data-vista='completo'] :global([data-capa='etiquetas'] text[data-para]) {
+  /* En la planta completa las claves de los locales no caben: aparecen al acercar. */
+  .plano[data-vista='completo'] .rotulo--local,
+  .plano[data-vista='completo'] .rotulo--objetivo {
     display: none;
   }
 </style>

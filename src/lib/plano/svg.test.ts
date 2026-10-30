@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { esGiroAfin } from './afines'
-import { bbox, elementsIn, etiquetas, findLayers, frameAround, localId, prepareSvg, readFloorPlan } from './svg'
+import { bbox, elementsIn, findLayers, frameAround, localId, prepareSvg, puntoRotulo, readFloorPlan } from './svg'
 
 const PLANOS = path.resolve(import.meta.dirname, '../../../content/plazas/el-dorado/planos')
 const pb = readFileSync(path.join(PLANOS, 'pb.svg'), 'utf8')
@@ -86,11 +86,16 @@ describe('contrato del plano de nivel', () => {
   })
 })
 
-describe('etiquetas', () => {
-  it('lee los rótulos con data-para y su posición', () => {
-    expect(etiquetas('<g id="etiquetas"><text x="10" y="20" data-para="ancla-x">Liverpool</text><text x="1" y="2" data-leyenda="">Leyenda</text></g>')).toEqual([
-      { para: 'ancla-x', x: 10, y: 20, texto: 'Liverpool' },
-    ])
+describe('puntoRotulo', () => {
+  it('usa el centro de un rectángulo', () => {
+    expect(puntoRotulo([{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 4 }, { x: 0, y: 4 }])).toEqual({ x: 5, y: 2 })
+  })
+
+  it('en una L busca un punto dentro de la forma', () => {
+    // L: brazo vertical a la izquierda y horizontal abajo; el centro de la caja queda fuera.
+    const l = [{ x: 0, y: 0 }, { x: 2, y: 0 }, { x: 2, y: 8 }, { x: 10, y: 8 }, { x: 10, y: 10 }, { x: 0, y: 10 }]
+    const p = puntoRotulo(l)
+    expect(p.x <= 2 || p.y >= 8).toBe(true)
   })
 })
 
