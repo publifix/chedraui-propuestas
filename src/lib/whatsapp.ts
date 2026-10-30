@@ -8,12 +8,15 @@ const nombreDePila = (nombre: string) => nombre.trim().split(/\s+/)[0] ?? nombre
 
 const textoLocales = (locales: string[]) => (locales.length > 1 ? `de los locales ${locales.join(' y ')}` : `del local ${locales[0]}`)
 
+/** "Gabriela Álvarez, de Rubí Perfumería" si escribe una persona; "de Rubí Perfumería" si no. */
+const quien = (o: { marca: string; remitente?: string | undefined }) => o.remitente ?? `de ${o.marca}`
+
 /** Mensaje inicial del prospecto al asesor: saluda por su nombre y menciona su marca y el local. */
-export function mensajeCierre(opts: { asesor: string; marca: string; locales: string[]; plaza: string }): string {
-  return `Hola, ${nombreDePila(opts.asesor)}. Soy de ${opts.marca}. Ya revisé la propuesta ${textoLocales(opts.locales)} en ${opts.plaza} y me interesa. ¿Podemos platicarla o agendar una visita al local?`
+export function mensajeCierre(opts: { asesor: string; marca: string; remitente?: string | undefined; locales: string[]; plaza: string }): string {
+  return `Hola, ${nombreDePila(opts.asesor)}. Soy ${quien(opts)}. Ya revisé la propuesta ${textoLocales(opts.locales)} en ${opts.plaza} y me interesa. ¿Podemos platicarla o agendar una visita al local?`
 }
 
 /** Mensaje para pedir una propuesta actualizada cuando la vigencia ya pasó. */
-export function mensajeVencida(opts: { asesor: string; marca: string; locales: string[]; plaza: string }): string {
-  return `Hola, ${nombreDePila(opts.asesor)}. Soy de ${opts.marca}. La propuesta ${textoLocales(opts.locales)} en ${opts.plaza} ya venció. ¿Me podrías enviar una actualizada?`
+export function mensajeVencida(opts: { asesor: string; marca: string; remitente?: string | undefined; locales: string[]; plaza: string }): string {
+  return `Hola, ${nombreDePila(opts.asesor)}. Soy ${quien(opts)}. La propuesta ${textoLocales(opts.locales)} en ${opts.plaza} ya venció. ¿Me podrías enviar una actualizada?`
 }

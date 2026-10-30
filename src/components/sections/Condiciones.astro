@@ -36,33 +36,53 @@ const { model, kind } = Astro.props
             <Label id={id} as="p" text={`Local ${local.clave}`} />
             <p class="t-meta">{local.area_m2.toLocaleString('es-MX')} m²</p>
           </header>
-          <dl class="estado__rows">
-            <div><dt>Renta mensual</dt><dd>{formatAmount(local.condiciones.renta_mensual)} {vatLabel('excluded')}</dd></div>
-            <div><dt>Mantenimiento mensual</dt><dd>{formatAmount(local.condiciones.mantenimiento_mensual)} {vatLabel('excluded')}</dd></div>
-            <div class="estado__subtotal"><dt>Subtotal</dt><dd>{formatMoney(c.subtotalMensual)}</dd></div>
-            <div><dt>IVA ({iva})</dt><dd>{formatAmount(c.ivaMensual.amount)}</dd></div>
-            <div class="estado__total">
-              <dt>Total mensual</dt>
-              <dd><span class="t-figure">{formatAmount(c.totalMensual.amount)}</span><span class="t-meta">{vatLabel('included')}</span></dd>
+          <div class="estado__cuerpo">
+            <div class="estado__principal">
+            <section class="estado__bloque" aria-labelledby={`${id}-mensual`}>
+              <h3 id={`${id}-mensual`} class="estado__titulo"><Label as="span" text="Pago mensual" /></h3>
+              <dl class="estado__rows">
+                <div><dt>Renta mensual</dt><dd>{formatAmount(local.condiciones.renta_mensual)} {vatLabel('excluded')}</dd></div>
+                <div><dt>Mantenimiento mensual</dt><dd>{formatAmount(local.condiciones.mantenimiento_mensual)} {vatLabel('excluded')}</dd></div>
+                <div class="estado__subtotal"><dt>Subtotal</dt><dd>{formatMoney(c.subtotalMensual)}</dd></div>
+                <div><dt>IVA ({iva})</dt><dd>{formatAmount(c.ivaMensual.amount)}</dd></div>
+                <div class="estado__total">
+                  <dt>Total mensual</dt>
+                  <dd><span class="t-figure">{formatAmount(c.totalMensual.amount)}</span><span class="t-meta">{vatLabel('included')}</span></dd>
+                </div>
+              </dl>
+            </section>
+            {terminos.length > 0 && (
+              <section class="estado__bloque" aria-labelledby={`${id}-terminos`}>
+                <h3 id={`${id}-terminos`} class="estado__titulo"><Label as="span" text="Términos del contrato" /></h3>
+                <dl class="estado__rows estado__rows--extra estado__terminos">
+                  {terminos.map(([k, v, detalle]) => <div><dt>{k}{detalle && <span class="estado__detalle t-meta">{detalle}</span>}</dt><dd>{v}</dd></div>)}
+                </dl>
+              </section>
+            )}
             </div>
-          </dl>
-          <dl class="estado__rows estado__rows--extra">
-            <div>
-              <dt>Depósito en garantía<span class="estado__detalle t-meta">{c.deposito.assumptions.join(', ')}</span></dt>
-              <dd class="estado__apilado">{formatAmount(c.deposito.amount)}<span class="t-meta">{vatLabel(c.deposito.vat)}</span></dd>
+            <div class="estado__lateral">
+              <section class="estado__bloque" aria-labelledby={`${id}-inicial`}>
+                <h3 id={`${id}-inicial`} class="estado__titulo"><Label as="span" text="Al firmar y primer año" /></h3>
+                <dl class="estado__rows estado__rows--extra">
+                  <div>
+                    <dt>Depósito en garantía<span class="estado__detalle t-meta">{c.deposito.assumptions.join(', ')}</span></dt>
+                    <dd class="estado__apilado">{formatAmount(c.deposito.amount)}<span class="t-meta">{vatLabel(c.deposito.vat)}</span></dd>
+                  </div>
+                  <div>
+                    <dt>Costo del primer año{c.costoAnual.assumptions.length > 0 && <span class="estado__detalle t-meta">{c.costoAnual.assumptions.join('; ')}</span>}</dt>
+                    <dd class="estado__apilado">{formatAmount(c.costoAnual.amount)}<span class="t-meta">{vatLabel(c.costoAnual.vat)}</span></dd>
+                  </div>
+                </dl>
+              </section>
+              <section class="estado__bloque" aria-labelledby={`${id}-m2`}>
+                <h3 id={`${id}-m2`} class="estado__titulo"><Label as="span" text="Por metro cuadrado" /></h3>
+                <dl class="estado__rows estado__rows--extra">
+                  <div><dt>Renta por m²</dt><dd>{formatMoney(c.rentaPorM2)}</dd></div>
+                  <div><dt>Mantenimiento por m²</dt><dd>{formatMoney(c.mantenimientoPorM2)}</dd></div>
+                </dl>
+              </section>
             </div>
-            <div><dt>Renta por m²</dt><dd>{formatMoney(c.rentaPorM2)}</dd></div>
-            <div><dt>Mantenimiento por m²</dt><dd>{formatMoney(c.mantenimientoPorM2)}</dd></div>
-            <div>
-              <dt>Costo del primer año{c.costoAnual.assumptions.length > 0 && <span class="estado__detalle t-meta">{c.costoAnual.assumptions.join('; ')}</span>}</dt>
-              <dd class="estado__apilado">{formatAmount(c.costoAnual.amount)}<span class="t-meta">{vatLabel(c.costoAnual.vat)}</span></dd>
-            </div>
-          </dl>
-          {terminos.length > 0 && (
-            <dl class="estado__rows estado__rows--extra estado__terminos">
-              {terminos.map(([k, v, detalle]) => <div><dt>{k}{detalle && <span class="estado__detalle t-meta">{detalle}</span>}</dt><dd>{v}</dd></div>)}
-            </dl>
-          )}
+          </div>
           <p class="estado__nota t-meta">
             Renta y mantenimiento se expresan antes de IVA. El total mensual y el depósito incluyen IVA del {iva}. Montos en pesos mexicanos.
           </p>
@@ -80,7 +100,6 @@ const { model, kind } = Astro.props
 <style>
   .cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 38rem));
     gap: var(--space-l);
     margin-block-start: var(--space-xl);
   }
@@ -94,6 +113,45 @@ const { model, kind } = Astro.props
     border-radius: var(--radius-m);
     box-shadow: 0 var(--space-3xs) var(--space-l) color-mix(in srgb, var(--color-text) 6%, transparent);
     font-variant-numeric: lining-nums tabular-nums;
+  }
+
+  /* Escritorio: pago mensual y términos a la izquierda; al firmar y por m² a la derecha. */
+  .estado__cuerpo {
+    display: grid;
+    gap: var(--space-l);
+  }
+
+  @media (min-width: 60rem) {
+    .estado {
+      padding: var(--space-xl);
+    }
+
+    .estado__cuerpo {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      gap: var(--space-2xl);
+    }
+
+    .estado__lateral {
+      padding-inline-start: var(--space-2xl);
+      border-inline-start: var(--line-width) solid var(--color-line);
+    }
+  }
+
+  .estado__principal,
+  .estado__lateral {
+    display: grid;
+    align-content: start;
+    gap: var(--space-l);
+  }
+
+  .estado__bloque {
+    display: grid;
+    align-content: start;
+    gap: var(--space-2xs);
+  }
+
+  .estado__titulo {
+    color: var(--color-text-muted);
   }
 
   .estado__header {

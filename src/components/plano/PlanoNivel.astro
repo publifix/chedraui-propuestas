@@ -169,7 +169,7 @@ const id = `plano-${plan.nivel.id.toLowerCase()}`
     </p>
   )}
 
-  <details class="plano__texto">
+  <details class="plano__texto desplegable">
     <summary>Ver el plano en texto</summary>
     <div class="texto__grid">
       <section>
@@ -192,7 +192,7 @@ const id = `plano-${plan.nivel.id.toLowerCase()}`
         <ul>{[...plan.info.accesos, ...plan.info.estacionamientos].map((a) => <li>{a.nombre}</li>)}</ul>
       </section>
     </div>
-    <details class="texto__ocupantes">
+    <details class="texto__ocupantes desplegable">
       <summary><span>Otros locales del nivel</span> <span class="t-meta tabular">{ocupantes.length}</span></summary>
       <ul class="ocupantes">
         {ocupantes.map((o) => (

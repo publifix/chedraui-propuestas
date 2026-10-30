@@ -21,7 +21,7 @@ function parseValor(valor: string) {
   const match = /^(\D*?)(\d[\d,]*(?:\.\d+)?)(.*)$/.exec(valor)
   if (!match) return undefined
   const [, prefix = '', digits = '', suffix = ''] = match
-  return { prefix, value: Number(digits.replace(/,/g, '')), suffix, decimals: digits.split('.')[1]?.length ?? 0, grouping: digits.includes(',') }
+  return { prefix, digits, value: Number(digits.replace(/,/g, '')), suffix, decimals: digits.split('.')[1]?.length ?? 0, grouping: digits.includes(',') }
 }
 
 const metricas = model.plaza.metricas.map((m) => ({ ...m, parsed: parseValor(m.valor) }))
@@ -34,7 +34,7 @@ const metricas = model.plaza.metricas.map((m) => ({ ...m, parsed: parseValor(m.v
         <dt class="metrica__etiqueta"><Label as="span" text={m.etiqueta} /></dt>
         <dd class="metrica__valor t-figure">
           {m.parsed ? (
-            <span class="metrica__cifra" data-counter={m.parsed.value} data-decimals={m.parsed.decimals} data-prefix={m.parsed.prefix} data-suffix={m.parsed.suffix} data-grouping={String(m.parsed.grouping)}>{m.valor}</span>
+            <span class="metrica__cifra">{m.parsed.prefix}<span class="metrica__num" data-counter={m.parsed.value} data-decimals={m.parsed.decimals} data-grouping={String(m.parsed.grouping)}>{m.parsed.digits}</span>{m.parsed.suffix.trim() && <>{' '}<span class="metrica__unidad">{m.parsed.suffix.trim()}</span></>}</span>
           ) : m.valor}
         </dd>
         <dd class="metrica__fuente t-meta">
@@ -53,9 +53,8 @@ const metricas = model.plaza.metricas.map((m) => ({ ...m, parsed: parseValor(m.v
     const run = (el: HTMLElement) => {
       const target = Number(el.dataset.counter)
       const decimals = Number(el.dataset.decimals ?? 0)
-      const { prefix = '', suffix = '' } = el.dataset
       const useGrouping = el.dataset.grouping === 'true'
-      const format = (n: number) => prefix + n.toLocaleString('es-MX', { minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping }) + suffix
+      const format = (n: number) => n.toLocaleString('es-MX', { minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping })
       const overlay = document.createElement('span')
       overlay.className = 'metrica__cuenta'
       overlay.setAttribute('aria-hidden', 'true')
@@ -87,15 +86,28 @@ const metricas = model.plaza.metricas.map((m) => ({ ...m, parsed: parseValor(m.v
 </script>
 
 <style>
+  /* Cuatro cifras: una fila en escritorio, dos por dos en celular. Cada métrica usa las filas
+     de la cuadrícula (subgrid) para que cifras, etiquetas y fuentes queden alineadas. */
   .metricas {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
-    gap: var(--space-xl) var(--space-l);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-xl) var(--space-m);
     margin-block-start: var(--space-xl);
+    /* El contenedor es la cuadrícula: una métrica con container-type dejaría de ser subgrid. */
+    container-type: inline-size;
+  }
+
+  @media (min-width: 56rem) {
+    .metricas {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-xl) var(--space-l);
+    }
   }
 
   .metrica {
     display: grid;
+    grid-row: span 3;
+    grid-template-rows: subgrid;
     align-content: start;
     gap: var(--space-2xs);
     padding-block-start: var(--space-s);
@@ -107,8 +119,24 @@ const metricas = model.plaza.metricas.map((m) => ({ ...m, parsed: parseValor(m.v
     color: var(--color-text-muted);
   }
 
+  /* Etiquetas en ancho normal: "ESTACIONAMIENTO" cabe en media pantalla de 360 px. */
+  .metrica__etiqueta :global(.t-label) {
+    font-stretch: 100%;
+    letter-spacing: 0.08em;
+  }
+
   .metrica__valor {
     order: 1;
+    align-self: end;
+    white-space: nowrap;
+    /* La cifra cabe siempre en su columna: se ajusta al ancho de la cuadrícula (2 o 4 columnas). */
+    font-size: min(calc(var(--step-5) * var(--figure-size)), 11.5cqi);
+  }
+
+  @media (min-width: 56rem) {
+    .metrica__valor {
+      font-size: min(calc(var(--step-5) * var(--figure-size)), 5.4cqi);
+    }
   }
 
   .metrica__fuente {
@@ -116,16 +144,26 @@ const metricas = model.plaza.metricas.map((m) => ({ ...m, parsed: parseValor(m.v
   }
 
   .metrica__cifra {
+    display: inline;
+  }
+
+  .metrica__num {
     position: relative;
     display: inline-block;
   }
 
-  .metrica__cifra.is-counting {
+  /* Unidad (m², mil) más pequeña, en la misma línea base que la cifra. */
+  .metrica__unidad {
+    font-size: 0.5em;
+    font-weight: var(--strong-weight);
+  }
+
+  .metrica__num.is-counting {
     color: transparent;
   }
 
-  /* Copia decorativa de la cuenta, alineada al inicio sobre el texto real. */
-  .metrica__cifra :global(.metrica__cuenta) {
+  /* Copia decorativa de la cuenta, alineada al inicio sobre el número real. */
+  .metrica__num :global(.metrica__cuenta) {
     position: absolute;
     inset-block-start: 0;
     inset-inline-start: 0;

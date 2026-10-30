@@ -14,7 +14,8 @@ locales:
 
 prospecto:
   marca: Rubí Perfumería
-  destinatario: Equipo Rubí Perfumería # DEMO
+  # Persona del equipo del cliente a quien se dirige la propuesta (nombre ficticio).
+  destinatario: Gabriela Álvarez # DEMO
   giro: perfumeria
 
 vigencia: 2026-11-30

@@ -358,6 +358,7 @@ export function plazaImageFields(plaza: Plaza): ImageField[] {
     ...(plaza.modulos ?? []).map((m, i) => ({ path: ['modulos', i, 'imagen'], ruta: m.imagen })),
     ...plaza.anclas.map((a, i) => ({ path: ['anclas', i, 'logo'], ruta: a.logo })),
     ...(plaza.directorio ?? []).map((d, i) => ({ path: ['directorio', i, 'logo'], ruta: d.logo })),
+    { path: ['administradora', 'logo'], ruta: plaza.administradora?.logo },
   ]
 }
 

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { dedicatoria } from './prospecto'
+import { dedicatoria, remitente } from './prospecto'
+
+describe('remitente', () => {
+  it('nombra a la persona y su marca, o solo la marca si es un equipo', () => {
+    expect(remitente({ destinatario: 'Gabriela Álvarez', marca: 'Rubí Perfumería' })).toBe('Gabriela Álvarez, de Rubí Perfumería')
+    expect(remitente({ destinatario: 'Equipo Rubí Perfumería', marca: 'Rubí Perfumería' })).toBe('de Rubí Perfumería')
+  })
+})
 
 describe('dedicatoria', () => {
   it('nombra a la persona y a la marca', () => {

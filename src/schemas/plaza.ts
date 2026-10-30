@@ -111,6 +111,8 @@ export const plazaSchema = z
     directorio: z.array(marcaDirectorio).optional(),
     niveles: z.array(nivel).min(1, 'debe tener al menos un nivel'),
     modulos: z.array(modulo).optional(),
+    // Empresa que comercializa los locales (p. ej. Inmobiliaria Chedraui); su logo va en el cierre.
+    administradora: z.strictObject({ nombre: text, logo: text.optional() }).optional(),
     contacto_general: z.strictObject({
       web: text,
       correo: z.email('debe ser un correo válido'),

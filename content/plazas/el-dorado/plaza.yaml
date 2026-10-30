@@ -57,17 +57,12 @@ metricas:
     etiqueta: cajones de estacionamiento
     fuente: Inmobiliaria Chedraui, sitio oficial
     periodo: Consulta, octubre 2026
-  - valor: "2012"
-    etiqueta: año de inauguración
-    fuente: Inmobiliaria Chedraui, sitio oficial
-    periodo: Consulta, octubre 2026
 
 diferenciales:
   - titulo: Diseño de Legorreta + Legorreta
     texto: Arquitectura firmada por uno de los despachos más reconocidos de México.
-    # Acceso principal al atardecer, del sitio de Inmobiliaria Chedraui (678×452 px; la anterior medía 662×302).
-    # Foto pendiente: conviene una de mayor resolución.
-    imagen: media/acceso-principal-atardecer.jpg
+    # Fachada exterior con el pórtico naranja, del sitio de Inmobiliaria Chedraui (1122×898 px).
+    imagen: media/fachada-exterior.jpg
   - titulo: 160 mil m² de construcción
     texto: Una de las plazas de mayor escala de la Riviera Veracruzana.
     # Atrio central, del sitio de Inmobiliaria Chedraui (1075×860 px).
@@ -76,7 +71,7 @@ diferenciales:
     texto: Acceso en yate y club náutico integrados al centro comercial.
     # Yates en la marina, del sitio de Inmobiliaria Chedraui (1242×699 px): más nítida que la panorámica.
     imagen: media/marina-yates.jpg
-  - titulo: Terrazas con vista a la marina
+  - titulo: Terrazas frente a la marina
     texto: Espacios abiertos para comer y convivir frente al agua.
     imagen: media/terraza-marina.jpg
   - titulo: El Dorado Park
@@ -386,11 +381,17 @@ modulos:
   - id: marina
     titulo: Marina
     texto: Club náutico y acceso en yate.
-    # Panorámica de la marina (3148×740 px, escalada).
-    imagen: media/marina-panoramica.png
+    # Terraza junto al canal de la marina, del sitio de Inmobiliaria Chedraui (1242×699 px).
+    imagen: media/terraza-canal-marina.jpg
   - id: park
     titulo: El Dorado Park
     texto: Más de 50 atracciones, arcade, realidad virtual y trampolines.
+
+# Empresa que comercializa los locales: su logo cierra la propuesta junto al asesor.
+administradora:
+  nombre: Inmobiliaria Chedraui
+  # Logo blanco sobre transparente (el del pie del sitio oficial): va sobre el color de marca.
+  logo: media/logo-inmobiliaria-chedraui.png
 
 contacto_general:
   web: centrocomercialeldorado.mx

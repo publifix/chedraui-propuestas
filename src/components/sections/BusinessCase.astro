@@ -56,9 +56,15 @@ const pct = (n: number) => `${Math.min(100, n * 100)}%`
       rangoPendiente: kind === 'revision' ? 'Rango sano del giro pendiente de validar' : 'Sin rango de referencia del giro',
     })
     const id = `sim-${local.clave.replace(/\W+/g, '-').toLowerCase()}`
+    // Atajos del simulador: los escenarios con ventas y las ventas de equilibrio.
+    const atajos = [
+      ...escenarios.flatMap((e) => (e.ventasMensuales.kind === 'money' ? [{ nombre: e.nombre, valor: Math.round(e.ventasMensuales.amount) }] : [])),
+      ...(c.ventasEquilibrio.kind === 'money' ? [{ nombre: 'Equilibrio', valor: Math.ceil(c.ventasEquilibrio.amount / 500) * 500 }] : []),
+    ].filter((a) => a.valor >= sliderMin && a.valor <= sliderMax)
     return (
       <div class="caso">
         {model.locales.length > 1 && <Label class="caso__local" text={`Local ${local.clave}`} />}
+        <div class="caso__analisis">
 
         <div class="barras" role="list" style={rango ? `--rango-desde:${pct(rango.min / escala)};--rango-hasta:${pct(rango.max / escala)}` : undefined}>
           {escenarios.map((e) => (
@@ -92,19 +98,39 @@ const pct = (n: number) => `${Math.min(100, n * 100)}%`
           <span class="t-figure">{c.ventasEquilibrio.kind === 'money' ? formatMoney(c.ventasEquilibrio, { withVat: false }) : <span class={kind === 'revision' ? 'todo' : undefined}>{PENDIENTE}</span>}</span>
           <span class="t-meta">Ventas mensuales mínimas para no rebasar el rango sano, con renta y mantenimiento de {formatMoney(c.subtotalMensual)}.</span>
         </p>
+        </div>
 
         <div class="simulador" data-simulator={config}>
           <label class="simulador__label" for={id}><Label as="span" text="Simula tus ventas mensuales" /></label>
-          <output class="simulador__ventas t-figure" for={id} data-ventas>{formatAmount(inicial)}</output>
+          <div class="simulador__monto">
+            <button type="button" class="simulador__paso" data-paso="-5000" aria-label="Restar $5,000 a las ventas">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+            </button>
+            <output class="simulador__ventas t-figure" for={id} data-ventas>{formatAmount(inicial)}</output>
+            <button type="button" class="simulador__paso" data-paso="5000" aria-label="Sumar $5,000 a las ventas">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 6v12M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+            </button>
+          </div>
           <input id={id} class="simulador__input" type="range" min={sliderMin} max={sliderMax} step="500" value={inicial} aria-describedby={`${id}-resultado`} />
           <div class="simulador__escala t-meta tabular" aria-hidden="true"><span>{formatAmount(sliderMin)}</span><span>{formatAmount(sliderMax)}</span></div>
-          <div class="barra__track simulador__track" aria-hidden="true" style={rango ? `--rango-desde:${pct(rango.min / escala)};--rango-hasta:${pct(rango.max / escala)}` : undefined}>
-            {rango && <span class="barra__rango"></span>}
-            <span class="barra__valor" data-bar></span>
+          {atajos.length > 0 && (
+            <div class="simulador__atajos" role="group" aria-label="Probar con un escenario">
+              {atajos.map((a) => (
+                <button type="button" class="atajo" data-valor={a.valor} aria-pressed="false">
+                  <span>{a.nombre}</span>
+                  <span class="atajo__monto t-meta tabular">{formatAmount(a.valor)}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          <div id={`${id}-resultado`} class="simulador__resultado" aria-live="polite">
+            <p class="resultado__cifra"><strong class="t-figure" data-pct>–</strong> <span class="t-meta">de tus ventas se van en renta y mantenimiento</span></p>
+            <div class="barra__track simulador__track" aria-hidden="true" style={rango ? `--rango-desde:${pct(rango.min / escala)};--rango-hasta:${pct(rango.max / escala)}` : undefined}>
+              {rango && <span class="barra__rango"></span>}
+              <span class="barra__valor" data-bar></span>
+            </div>
+            <p class="resultado__estado" data-estado></p>
           </div>
-          <p id={`${id}-resultado`} class="simulador__resultado" aria-live="polite">
-            Costo de ocupación <strong class="tabular" data-pct>–</strong><span class="t-meta" data-estado></span>
-          </p>
           <noscript><p class="t-meta">El simulador necesita JavaScript.</p></noscript>
         </div>
       </div>
@@ -136,8 +162,10 @@ const pct = (n: number) => `${Math.min(100, n * 100)}%`
     const bar = root.querySelector<HTMLElement>('[data-bar]')!
     const giro = { costo_ocupacion_objetivo: { min: config.min ?? 'TODO', max: config.max ?? 'TODO' } }
 
+    const atajos = [...root.querySelectorAll<HTMLButtonElement>('[data-valor]')]
     const update = () => {
       const monto = Number(input.value)
+      for (const a of atajos) a.setAttribute('aria-pressed', String(Number(a.dataset.valor) === monto))
       const costo = costoOcupacionPct(config, monto)
       const rango = evaluarRango(costo, giro)
       ventas.textContent = formatAmount(monto)
@@ -146,10 +174,18 @@ const pct = (n: number) => `${Math.min(100, n * 100)}%`
         pctEl.textContent = formatPercent(costo, 1)
         bar.style.inlineSize = `${Math.min(100, (costo.value / config.escala) * 100)}%`
       }
-      estadoEl.textContent = ` · ${rango.kind === 'range' ? config.estados[rango.estado] : config.rangoPendiente}`
+      estadoEl.textContent = rango.kind === 'range' ? config.estados[rango.estado] : config.rangoPendiente
       root.dataset.rango = rango.kind === 'range' ? rango.estado : 'pending'
     }
     input.addEventListener('input', update)
+    const fijar = (valor: number) => {
+      input.value = String(Math.min(Number(input.max), Math.max(Number(input.min), valor)))
+      update()
+    }
+    for (const b of root.querySelectorAll<HTMLButtonElement>('[data-paso]')) {
+      b.addEventListener('click', () => fijar(Number(input.value) + Number(b.dataset.paso)))
+    }
+    for (const a of atajos) a.addEventListener('click', () => fijar(Number(a.dataset.valor)))
     update()
   }
 </script>
@@ -159,10 +195,39 @@ const pct = (n: number) => `${Math.min(100, n * 100)}%`
     margin-block: var(--space-s) var(--space-xl);
   }
 
+  /* Escritorio: escenarios y equilibrio a la izquierda, simulador a la derecha. */
   .caso {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-xl);
-    max-inline-size: 52rem;
+    align-items: start;
+  }
+
+  .caso__analisis {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-xl);
+  }
+
+  /* Las ventas de equilibrio caben en una línea también a 360 px. */
+  .equilibrio :global(.t-figure) {
+    font-size: min(calc(var(--step-5) * var(--figure-size)), 12vw);
+  }
+
+  @media (min-width: 60rem) {
+    .caso {
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+      gap: var(--space-2xl);
+    }
+
+    .caso :global(.caso__local) {
+      grid-column: 1 / -1;
+    }
+
+    .simulador {
+      position: sticky;
+      inset-block-start: calc(var(--header-alto) + var(--banner-h) + var(--space-m));
+    }
   }
 
   .caso + .caso {
@@ -273,13 +338,89 @@ const pct = (n: number) => `${Math.min(100, n * 100)}%`
     background: var(--color-surface);
     border: var(--line-width) solid var(--color-line);
     border-radius: var(--radius-m);
+    box-shadow: 0 var(--space-3xs) var(--space-l) color-mix(in srgb, var(--color-text) 6%, transparent);
   }
 
+  /* Monto con botones de −/+ para ajustar con precisión en el celular. */
+  .simulador__monto {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .simulador__ventas {
+    text-align: center;
+    font-size: min(calc(var(--step-4) * var(--figure-size)), 11vw);
+  }
+
+  .simulador__paso {
+    display: grid;
+    place-items: center;
+    inline-size: 48px;
+    block-size: 48px;
+    border: var(--line-width) solid var(--color-accent);
+    border-radius: 50%;
+    background: var(--color-surface);
+    color: var(--color-accent);
+    cursor: pointer;
+  }
+
+  .simulador__paso:hover {
+    background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
+  }
+
+  .simulador__paso svg {
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+  }
+
+  /* Control deslizante con pista gruesa y perilla grande para el dedo. */
   .simulador__input {
     inline-size: 100%;
     min-block-size: 44px;
+    margin: 0;
+    background: transparent;
     accent-color: var(--color-accent);
     cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .simulador__input::-webkit-slider-runnable-track {
+    block-size: 0.5rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-accent) 18%, var(--color-surface));
+  }
+
+  .simulador__input::-moz-range-track {
+    block-size: 0.5rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-accent) 18%, var(--color-surface));
+  }
+
+  .simulador__input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    margin-block-start: -0.625rem;
+    border: calc(var(--line-width) * 3) solid var(--color-surface);
+    border-radius: 50%;
+    background: var(--color-accent);
+    box-shadow: 0 1px 4px color-mix(in srgb, var(--color-text) 30%, transparent);
+  }
+
+  .simulador__input::-moz-range-thumb {
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    border: calc(var(--line-width) * 3) solid var(--color-surface);
+    border-radius: 50%;
+    background: var(--color-accent);
+  }
+
+  .simulador__input:focus-visible {
+    outline: calc(var(--line-width) * 2) solid var(--color-accent);
+    outline-offset: 4px;
   }
 
   .simulador__escala {
@@ -288,11 +429,67 @@ const pct = (n: number) => `${Math.min(100, n * 100)}%`
     margin-block-start: calc(-1 * var(--space-xs));
   }
 
-  .simulador__resultado strong {
-    font-size: var(--step-2);
+  .simulador__atajos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
   }
 
-  .simulador[data-rango='above'] .simulador__resultado strong {
+  .atajo {
+    display: grid;
+    justify-items: start;
+    gap: 0;
+    min-block-size: 44px;
+    padding: var(--space-3xs) var(--space-s);
+    border: var(--line-width) solid var(--color-line);
+    border-radius: var(--radius-m);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font: inherit;
+    font-size: var(--step--1);
+    font-weight: var(--strong-weight);
+    line-height: 1.2;
+    cursor: pointer;
+  }
+
+  .atajo:hover {
+    border-color: var(--color-accent);
+  }
+
+  .atajo[aria-pressed='true'] {
+    border-color: var(--color-accent);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+
+  .atajo[aria-pressed='true'] .atajo__monto {
+    color: var(--color-on-accent);
+  }
+
+  .simulador__resultado {
+    display: grid;
+    gap: var(--space-xs);
+    padding-block-start: var(--space-s);
+    border-block-start: var(--line-width) solid var(--color-line);
+  }
+
+  .resultado__cifra {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-3xs) var(--space-xs);
+  }
+
+  .resultado__cifra .t-figure {
+    font-size: calc(var(--step-4) * var(--figure-size));
+  }
+
+  .resultado__estado {
+    font-weight: var(--strong-weight);
+  }
+
+  .simulador[data-rango='above'] .resultado__estado,
+  .simulador[data-rango='above'] .resultado__cifra .t-figure {
     text-decoration: underline;
     text-decoration-thickness: calc(var(--line-width) * 2);
     text-underline-offset: 0.2em;
