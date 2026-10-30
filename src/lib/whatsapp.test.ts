@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { mensajeCierre, mensajeVencida, whatsappUrl } from './whatsapp'
 
 describe('WhatsApp del cierre', () => {
-  it('menciona la marca del prospecto y el local', () => {
-    const mensaje = mensajeCierre({ asesor: 'Ana', marca: 'Rubí Perfumería', locales: ['A25+A26'], plaza: 'El Dorado' })
-    expect(mensaje).toBe('Hola Ana, le escribo de Rubí Perfumería. Revisé la propuesta para el local A25+A26 en El Dorado y me gustaría platicarla.')
+  it('saluda al asesor por su nombre de pila y menciona la marca y el local', () => {
+    const mensaje = mensajeCierre({ asesor: 'Mariana Ortega', marca: 'Rubí Perfumería', locales: ['A25+A26'], plaza: 'El Dorado' })
+    expect(mensaje).toBe(
+      'Hola, Mariana. Soy de Rubí Perfumería. Ya revisé la propuesta del local A25+A26 en El Dorado y me interesa. ¿Podemos platicarla o agendar una visita al local?',
+    )
   })
 
   it('nombra los dos locales en una comparativa', () => {
@@ -18,8 +20,8 @@ describe('WhatsApp del cierre', () => {
 
 describe('WhatsApp de propuesta vencida', () => {
   it('pide una propuesta actualizada mencionando marca y local', () => {
-    expect(mensajeVencida({ asesor: 'Ana', marca: 'Rubí Perfumería', locales: ['A25+A26'], plaza: 'El Dorado' })).toBe(
-      'Hola Ana, le escribo de Rubí Perfumería. La propuesta para el local A25+A26 en El Dorado ya venció. ¿Me pueden enviar una propuesta actualizada?',
+    expect(mensajeVencida({ asesor: 'Mariana Ortega', marca: 'Rubí Perfumería', locales: ['A25+A26'], plaza: 'El Dorado' })).toBe(
+      'Hola, Mariana. Soy de Rubí Perfumería. La propuesta del local A25+A26 en El Dorado ya venció. ¿Me podrías enviar una actualizada?',
     )
   })
 })

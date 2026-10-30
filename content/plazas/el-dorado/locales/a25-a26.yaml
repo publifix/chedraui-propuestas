@@ -1,4 +1,5 @@
-# Local A25+A26 · El Dorado, planta baja. Datos del PDF de Chedraui (junio 2026).
+# Local A25+A26 · El Dorado, planta baja. Datos del PDF de Chedraui (junio 2026); los valores
+# de demostración llevan la marca DEMO y se confirmarán con Chedraui.
 clave: A25+A26
 nivel: PB
 plano_ref: local-a25-a26
@@ -10,29 +11,39 @@ condiciones_base:
   mantenimiento_mensual: 2550
   iva: 0.16
   # El PDF dice "renta + mantenimiento + IVA = $19,720", pero 19,720 = 17,000 × 1.16
-  # (solo renta con IVA). TODO: confirmar la regla del depósito con Chedraui (CLAUDE.md §8).
+  # (solo renta con IVA). Regla pendiente de confirmar con Chedraui (CLAUDE.md §8).
   deposito:
     meses: 1
     incluye_mantenimiento: false
     incluye_iva: true
-  # TODO: incremento anual (incremento_anual).
-  # TODO: plazo mínimo (plazo_minimo_meses).
-  # TODO: meses de gracia (meses_gracia).
-  # TODO: giros permitidos (giros_permitidos).
+  # INPC: valor es la inflación supuesta para estimar el año 2 en adelante.
+  incremento_anual: # DEMO
+    tipo: inpc
+    valor: 0.04
+  plazo_minimo_meses: 36 # DEMO
+  # Un mes sin renta para acondicionar el local.
+  meses_gracia: 1 # DEMO
+  giros_permitidos: [Perfumería, Cosméticos, Accesorios, Moda] # DEMO
 
-# TODO: ficha técnica del local (frente, altura, agua, gas, carga eléctrica, extracción).
+ficha_tecnica:
+  frente_m: 8.5 # DEMO
+  altura_m: 4.5 # DEMO
+  agua: true # DEMO
+  gas: false # DEMO
+  carga_electrica: Trifásica, 15 kW # DEMO
+  extraccion: false # DEMO
 
 # Ruta del plano interactivo. El PDF no da distancias ni tiempos: no inventarlos.
 ruta:
   desde: estacionamiento-norte
-  texto: "TODO: cercanía desde el estacionamiento (sin dato en el PDF)"
+  texto: A unos pasos del acceso norte del estacionamiento. # DEMO
 
+# Claves de los vecinos en el plano; la marca y el giro salen de niveles[].ocupantes de la plaza.
 vecinos:
+  - A24
   - A23
   - A22
-  - Innvictus (A19)
-  - B3 Studio
+  - A16+A17
   - A18
+  - A19
   - A20
-
-# TODO: fotos de buena calidad del local (media.fotos).

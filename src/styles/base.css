@@ -79,8 +79,15 @@ h3 {
   text-wrap: balance;
 }
 
-p {
+p,
+dd,
+li {
   text-wrap: pretty;
+}
+
+/* Una fecha no se parte entre líneas. */
+time {
+  white-space: nowrap;
 }
 
 /* Roles tipográficos */

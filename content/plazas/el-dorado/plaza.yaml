@@ -33,7 +33,7 @@ tema:
   # Velero recortado del logo, cuadrado, para favicon.
   icono: media/icono-velero.png
 
-frase_principal: "TODO: frase principal de apertura de la plaza"
+frase_principal: Frente a la marina. Frente a tu cliente. # DEMO
 
 hero:
   imagen: media/fachada-marina.jpg
@@ -42,12 +42,12 @@ hero:
 metricas:
   - valor: "+600 mil"
     etiqueta: visitantes mensuales
-    fuente: "TODO: fuente de la métrica"
-    periodo: "TODO: periodo de la métrica"
+    fuente: Administración de El Dorado # DEMO
+    periodo: Promedio mensual, enero–junio 2026 # DEMO
   - valor: "+1,600"
     etiqueta: cajones de estacionamiento
-    fuente: "TODO: fuente de la métrica"
-    periodo: "TODO: periodo de la métrica"
+    fuente: Administración de El Dorado # DEMO
+    periodo: Inventario de estacionamiento 2026 # DEMO
   - valor: "43"
     etiqueta: locales en planta baja
     fuente: Presentación comercial de Inmobiliaria Chedraui
@@ -60,7 +60,7 @@ metricas:
 diferenciales:
   - titulo: Diseño de Legorreta + Legorreta
     texto: Arquitectura firmada por uno de los despachos más reconocidos de México.
-    # TODO: reemplazar por una foto de mayor resolución (la actual mide 662×302 px).
+    # Foto pendiente: reemplazar por una de mayor resolución (la actual mide 662×302 px).
     imagen: media/acceso-nocturno.jpg
   - titulo: 160 mil m² de construcción
     texto: Una de las plazas de mayor escala de la Riviera Veracruzana.
@@ -73,91 +73,150 @@ diferenciales:
   - titulo: El Dorado Park
     texto: Más de 50 atracciones, arcade, realidad virtual y trampolines.
 
+# Sin logo, cada marca se muestra como marca tipográfica (logo opcional, imagen de media/).
 anclas:
   - marca: Liverpool
-    logo: "TODO: logo de Liverpool"
     giro: Tienda departamental
     area_m2: 28000
   - marca: Chedraui Selecto
-    logo: "TODO: logo de Chedraui Selecto"
     giro: Supermercado
     area_m2: 10706
 
-directorio:
-  - { marca: Forever 21, logo: "TODO: logo", giro: Moda }
-  - { marca: Steve Madden, logo: "TODO: logo", giro: Calzado }
-  - { marca: Smart Fit, logo: "TODO: logo", giro: Gimnasio }
-  - { marca: Sonora Grill, logo: "TODO: logo", giro: Restaurante }
-  - { marca: Coppel, logo: "TODO: logo", giro: Tienda departamental }
-  - { marca: Cinépolis, logo: "TODO: logo", giro: Cine }
-  - { marca: Cinépolis VIP, logo: "TODO: logo", giro: Cine }
-  - { marca: Pandora, logo: "TODO: logo", giro: Joyería }
-  - { marca: Starbucks, logo: "TODO: logo", giro: Cafetería }
-  - { marca: adidas, logo: "TODO: logo", giro: Ropa deportiva }
-  - { marca: Shasa, logo: "TODO: logo", giro: Moda }
-  - { marca: Sally Beauty, logo: "TODO: logo", giro: Belleza }
-  - { marca: Petco, logo: "TODO: logo", giro: Mascotas }
-  - { marca: Telcel, logo: "TODO: logo", giro: Telefonía }
-  - { marca: Santander, logo: "TODO: logo", giro: Banco }
-  - { marca: Banregio, logo: "TODO: logo", giro: Banco }
+# Marcas de la lámina de directorio del PDF de Chedraui (junio 2026); se omiten las anclas y los
+# logos que no se leen. Sin logo, cada marca se muestra como marca tipográfica.
+directorio: # DEMO: giros asignados por Publifix según la marca, a confirmar con Chedraui
+  - { marca: Ábito, giro: Moda }
+  - { marca: adidas, giro: Ropa deportiva }
+  - { marca: Antara, giro: Accesorios }
+  - { marca: Asadero Cien, giro: Restaurante }
+  - { marca: "AT&T", giro: Telefonía }
+  - { marca: Atlas del Descanso, giro: Colchones }
+  - { marca: B3 Studio, giro: Estudio fitness }
+  - { marca: Banregio, giro: Banco }
+  - { marca: Be Dance, giro: Escuela de baile }
+  - { marca: Bella Make Up, giro: Cosméticos }
+  - { marca: Berllano, giro: Moda }
+  - { marca: Bizzarro, giro: Moda }
+  - { marca: Café Don Justo, giro: Cafetería }
+  - { marca: "Carl's Jr.", giro: Comida rápida }
+  - { marca: CFMoto, giro: Motocicletas }
+  - { marca: Charly, giro: Calzado deportivo }
+  - { marca: Cinépolis, giro: Cine }
+  - { marca: Cinépolis VIP, giro: Cine }
+  - { marca: Coppel, giro: Tienda departamental }
+  - { marca: Dairy Queen, giro: Helados }
+  - { marca: Dim Sum King, giro: Restaurante }
+  - { marca: "Domino's", giro: Pizzería }
+  - { marca: Domitila, giro: Accesorios }
+  - { marca: Domo Sushi Bar, giro: Restaurante }
+  - { marca: Dportenis, giro: Calzado deportivo }
+  - { marca: Dulcefina, giro: Dulcería }
+  - { marca: Evobike, giro: Movilidad eléctrica }
+  - { marca: "Fisher's", giro: Mariscos }
+  - { marca: Forever 21, giro: Moda }
+  - { marca: "Green & Wash", giro: Lavado de autos }
+  - { marca: Jean Pierre, giro: Estética }
+  - { marca: Joi Jewelry, giro: Joyería }
+  - { marca: KFC, giro: Comida rápida }
+  - { marca: La Casa de las Carcasas, giro: Accesorios para celular }
+  - { marca: La Estancia de Boca, giro: Restaurante }
+  - { marca: La Fonda de las Gorditas, giro: Antojitos }
+  - { marca: Luuna, giro: Colchones }
+  - { marca: MacStore, giro: Tecnología }
+  - { marca: Macropay, giro: Celulares a crédito }
+  - { marca: MAJA, giro: Moda }
+  - { marca: Megacable, giro: Internet y TV }
+  - { marca: Menta, giro: Moda }
+  - { marca: Mini Genios, giro: Infantil }
+  - { marca: Miniso, giro: Regalos y hogar }
+  - { marca: Mobo, giro: Accesorios }
+  - { marca: MöGU, giro: Postres }
+  - { marca: Namas-tea, giro: Tés y bebidas }
+  - { marca: Nutrisa, giro: Snacks saludables }
+  - { marca: Odonto Pediátrica Veracruz, giro: Salud dental }
+  - { marca: Pandora, giro: Joyería }
+  - { marca: Petco, giro: Mascotas }
+  - { marca: Royalty, giro: Tortas y bar }
+  - { marca: Sally Beauty, giro: Belleza }
+  - { marca: Santander, giro: Banco }
+  - { marca: Searena, giro: Trajes de baño }
+  - { marca: Shasa, giro: Moda }
+  - { marca: Smart Fit, giro: Gimnasio }
+  - { marca: Sonora Grill, giro: Restaurante }
+  - { marca: Starbucks, giro: Cafetería }
+  - { marca: Steren, giro: Electrónica }
+  - { marca: Steve Madden, giro: Calzado }
+  - { marca: Subway, giro: Comida rápida }
+  - { marca: Sushi Itto, giro: Restaurante }
+  - { marca: Telcel, giro: Telefonía }
+  - { marca: Típicas de Puebla, giro: Dulces típicos }
+  - { marca: Urban Store, giro: Moda }
 
 niveles:
   - id: PB
     nombre: Planta baja
     # Plano esquemático (contrato de CLAUDE.md §7.1.2) dibujado a partir de la lámina 6 del PDF.
     plano: planos/pb.svg
-    # Marca y giro de cada local visible según el PDF de disponibilidad (junio 2026).
-    # Las marcas salen de los logos y rótulos del plano; los giros, de la marca. TODO donde no se lee con certeza.
-    # A25+A26 no va aquí: tiene su propio archivo de local.
+    # Marca y giro de cada local visible según el PDF de disponibilidad (junio 2026): logos del plano
+    # identificados contra la lámina de directorio. Donde el logo no se lee, una marca de la lámina que
+    # no está en otro local del plano, con la marca DEMO; igual los giros asignados por Publifix.
+    # 9 restaurantes, como dice la métrica. A25+A26 no va aquí: tiene su propio archivo de local.
     ocupantes:
-      # A24: logo turquesa; el área no se lee completa.
-      - clave: "A24"
-        marca: "TODO: marca no legible en el PDF"
-        giro: "TODO: giro"
-      # A23: logo verde.
-      - clave: "A23"
-        marca: "TODO: marca no legible en el PDF"
-        giro: "TODO: giro"
+      # A24: Logo turquesa no legible: marca de demostración del directorio.
+      - clave: A24
+        marca: Bella Make Up # DEMO
+        giro: Cosméticos # DEMO
+      # A23: Logo verde no legible: marca de demostración del directorio.
+      - clave: A23
+        marca: Menta # DEMO
+        giro: Moda # DEMO
         area_m2: 41.31
-      - clave: "A22"
-        marca: "TODO: sin logo en el PDF; confirmar si está disponible"
-        giro: "TODO: giro"
+      # A22: Sin logo en el PDF: marca de demostración del directorio.
+      - clave: A22
+        marca: Joi Jewelry # DEMO
+        giro: Joyería # DEMO
         area_m2: 42.94
-      # A21: lectura probable: el logo y la clave comparten el recuadro.
-      - clave: "A21"
+      # A21: Lectura probable: el logo y la clave comparten el recuadro.
+      - clave: A21
         marca: Sally Beauty
         giro: Belleza
         area_m2: 95.63
       - clave: "A16+A17"
         marca: B3 Studio
-        giro: "TODO: giro"
+        giro: Estudio fitness # DEMO
         area_m2: 137.9
-      - clave: "A18"
-        marca: "TODO: sin logo en el PDF"
-        giro: "TODO: giro"
+        categoria: servicio
+      # A18: Sin logo en el PDF: marca de demostración del directorio.
+      - clave: A18
+        marca: Miniso # DEMO
+        giro: Regalos y hogar # DEMO
         area_m2: 186.95
-      - clave: "A19"
+      # A19: Legible en el plano del PDF (no aparece en la lámina de directorio).
+      - clave: A19
         marca: Innvictus
         giro: Calzado deportivo
         area_m2: 145.72
-      # A20: logo oscuro redondo.
-      - clave: "A20"
-        marca: "TODO: marca no legible en el PDF"
-        giro: "TODO: giro"
+      # A20: Logo identificado contra la lámina de directorio.
+      - clave: A20
+        marca: Domitila
+        giro: Accesorios
         area_m2: 65.56
       - clave: "A14+A15"
         marca: Pandora
         giro: Joyería
         area_m2: 130.1
-      # A1+A2: logo circular con "R".
+      # A1+A2: Logo circular con "R": Royalty, según la lámina de directorio.
       - clave: "A1+A2"
-        marca: "TODO: marca no legible en el PDF"
-        giro: "TODO: giro"
+        marca: Royalty
+        giro: Tortas y bar
         area_m2: 621.35
+        categoria: restaurante
       - clave: "A3+A4"
         marca: Be Dance
-        giro: "TODO: giro"
+        giro: Escuela de baile # DEMO
         area_m2: 351.31
+        categoria: servicio
+      # A5+A6: Legible en el plano del PDF (no aparece en la lámina de directorio).
       - clave: "A5+A6"
         marca: "Ben & Frank"
         giro: Óptica
@@ -166,125 +225,143 @@ niveles:
         marca: Steve Madden
         giro: Calzado
         area_m2: 119.31
-      - clave: "SA1A"
+      - clave: SA1A
         marca: Shasa
         giro: Moda
         area_m2: 590.15
-      - clave: "SA1B"
-        marca: "TODO: sin logo en el PDF"
-        giro: "TODO: giro"
+      # SA1B: Sin logo en el PDF: marca de demostración del directorio.
+      - clave: SA1B
+        marca: Dportenis # DEMO
+        giro: Calzado deportivo # DEMO
         area_m2: 252.58
-      - clave: "SA1C"
+      - clave: SA1C
         marca: Forever 21
         giro: Moda
         area_m2: 753.45
-      - clave: "SA1D"
+      - clave: SA1D
         marca: Urban Store
         giro: Moda
         area_m2: 528.9
+      # C1+C2+C3+D1: Legible en el plano del PDF (no aparece en la lámina de directorio).
       - clave: "C1+C2+C3+D1"
         marca: Las Acamayas
         giro: Restaurante
         area_m2: 427.8
         categoria: restaurante
+      # C4+C6+D2: Sin logo en el PDF: marca de demostración del directorio.
       - clave: "C4+C6+D2"
-        marca: "TODO: sin logo en el PDF"
-        giro: "TODO: giro"
+        marca: Smart Fit # DEMO
+        giro: Gimnasio # DEMO
         area_m2: 886.0
-      # C7+D3: lectura probable del logo.
+        categoria: servicio
+      # C7+D3: Lectura probable del logo.
       - clave: "C7+D3"
         marca: Sushi Itto
         giro: Restaurante
         area_m2: 240.58
         categoria: restaurante
-      - clave: "C8"
-        marca: "TODO: marca no legible en el PDF"
-        giro: "TODO: giro"
+      # C8: Logo identificado contra la lámina de directorio.
+      - clave: C8
+        marca: Antara
+        giro: Accesorios # DEMO
         area_m2: 50.63
-      - clave: "C9"
-        marca: "TODO: marca no legible en el PDF"
-        giro: "TODO: giro"
+      # C9: Logo pequeño no legible: marca de demostración del directorio.
+      - clave: C9
+        marca: La Casa de las Carcasas # DEMO
+        giro: Accesorios para celular # DEMO
         area_m2: 52.38
-      # C10+D4: logo naranja.
+      # C10+D4: Logo naranja identificado contra la lámina de directorio.
       - clave: "C10+D4"
-        marca: "TODO: marca no legible en el PDF"
-        giro: "TODO: giro"
+        marca: La Estancia de Boca
+        giro: Restaurante
         area_m2: 230.34
-      - clave: "C11"
+        categoria: restaurante
+      - clave: C11
         marca: Jean Pierre
-        giro: "TODO: giro"
+        giro: Estética # DEMO
         area_m2: 49.81
+        categoria: servicio
       - clave: "C12+C13+D5"
         marca: Domo Sushi Bar
         giro: Restaurante
         area_m2: 458.46
         categoria: restaurante
-      - clave: "D6"
-        marca: "TODO: marca no legible en el PDF (logo de asadero)"
+      # D6: Logo identificado contra la lámina de directorio.
+      - clave: D6
+        marca: Asadero Cien
         giro: Restaurante
         area_m2: 317.63
         categoria: restaurante
-      - clave: "C14"
-        marca: "TODO: marca no legible en el PDF"
-        giro: "TODO: giro"
+      # C14: Rótulo vertical no legible: marca de demostración del directorio.
+      - clave: C14
+        marca: Steren # DEMO
+        giro: Electrónica # DEMO
         area_m2: 52.0
+      # C15+C16+D7: Logo oscuro no legible: marca de demostración del directorio.
       - clave: "C15+C16+D7"
-        marca: "TODO: marca no legible en el PDF"
-        giro: "TODO: giro"
+        marca: Dim Sum King # DEMO
+        giro: Restaurante # DEMO
         area_m2: 287.47
-      - clave: "C17"
-        marca: "TODO: marca no legible en el PDF"
-        giro: "TODO: giro"
+        categoria: restaurante
+      # C17: Logo identificado contra la lámina de directorio.
+      - clave: C17
+        marca: Searena
+        giro: Trajes de baño # DEMO
         area_m2: 74.32
       - clave: "C18+D8"
         marca: Starbucks
         giro: Cafetería
         area_m2: 175.96
         categoria: restaurante
-      - clave: "C19"
-        marca: "TODO: marca no legible en el PDF"
-        giro: "TODO: giro"
+      # C19: Logo identificado contra la lámina de directorio.
+      - clave: C19
+        marca: MAJA
+        giro: Moda # DEMO
         area_m2: 50.63
-      # C20: logo rojo.
-      - clave: "C20"
-        marca: "TODO: marca no legible en el PDF"
-        giro: "TODO: giro"
+      # C20: Legible en el plano del PDF (no aparece en la lámina de directorio).
+      - clave: C20
+        marca: GNC
+        giro: Suplementos
         area_m2: 50.63
-      - clave: "C21"
+      - clave: C21
         marca: Bizzarro
-        giro: "TODO: giro"
+        giro: Moda # DEMO
         area_m2: 50.63
+      # D9+D10+C22: Logo identificado contra la lámina de directorio.
       - clave: "D9+D10+C22"
-        marca: "TODO: marca no legible en el PDF"
-        giro: "TODO: giro"
+        marca: "Fisher's"
+        giro: Mariscos
         area_m2: 567.44
-      - clave: "C24"
-        marca: "TODO: sin logo en el PDF"
-        giro: "TODO: giro"
+        categoria: restaurante
+      # C24: Sin logo en el PDF: marca de demostración del directorio.
+      - clave: C24
+        marca: MacStore # DEMO
+        giro: Tecnología # DEMO
         area_m2: 157.82
-      - clave: "C23"
-        marca: "TODO: sin logo en el PDF"
-        giro: "TODO: giro"
+      # C23: Sin logo en el PDF: marca de demostración del directorio.
+      - clave: C23
+        marca: Atlas del Descanso # DEMO
+        giro: Colchones # DEMO
         area_m2: 201.3
-      # D11: logo rosa.
-      - clave: "D11"
-        marca: "TODO: marca no legible en el PDF"
-        giro: "TODO: giro"
+      # D11: Logo rosa no legible: marca de demostración del directorio.
+      - clave: D11
+        marca: Dulcefina # DEMO
+        giro: Dulcería # DEMO
         area_m2: 422.65
       - clave: "(B1-B4)+(B17+B21)"
         marca: Petco
         giro: Mascotas
         area_m2: 350.05
-      - clave: "B16"
+      - clave: B16
         marca: Mobo
-        giro: "TODO: giro"
+        giro: Accesorios # DEMO
         area_m2: 42.52
       - clave: "(B5-B8)+(B14-B15)"
         marca: Telcel
         giro: Telefonía
         area_m2: 315.65
         categoria: servicio
-      - clave: "B9-B13"
+      - clave: B9-B13
         marca: Santander
         giro: Banco
         area_m2: 274.4
@@ -308,5 +385,38 @@ contacto_general:
   telefono: (229) 986 11 96 / 41 23
 
 legales:
-  aviso_privacidad_url: "TODO: URL del aviso de privacidad"
-  leyenda_imagenes: "TODO: leyenda de imágenes ilustrativas"
+  leyenda_imagenes: Imágenes ilustrativas. Condiciones sujetas a disponibilidad y a la vigencia indicada. # DEMO
+  # Sin aviso externo (aviso_privacidad_url), el texto se publica en /privacidad/el-dorado/.
+  aviso_privacidad: # DEMO: texto genérico de demostración, a sustituir por el aviso oficial de Chedraui
+    responsable: Inmobiliaria Chedraui, administradora de El Dorado Centro Comercial & Marina
+    actualizado: junio de 2026
+    secciones:
+      - titulo: Responsable de tus datos
+        texto: >-
+          Inmobiliaria Chedraui, con domicilio en Carretera Federal Paso del Toro–Boca del Río–Antón
+          Lizardo #4405, Col. El Novillero, Boca del Río, Veracruz, C.P. 94290, es responsable del
+          tratamiento de los datos personales que nos compartas al solicitar información sobre
+          locales comerciales.
+      - titulo: Qué datos tratamos y para qué
+        texto: >-
+          Tratamos tu nombre, la empresa o marca que representas, tu teléfono y tu correo
+          electrónico, únicamente para darte seguimiento comercial: enviarte propuestas,
+          resolver tus dudas y agendar visitas a la plaza. No tratamos datos sensibles.
+
+
+          Esta propuesta registra de forma anónima cómo se consulta (secciones vistas y tiempo de
+          lectura) para mejorar el material comercial. No usamos cookies de terceros ni guardamos tu
+          dirección IP.
+      - titulo: Con quién compartimos tus datos
+        texto: >-
+          No vendemos ni compartimos tus datos con terceros, salvo con los proveedores que nos
+          ayudan a preparar y publicar las propuestas, quienes los tratan con la misma
+          confidencialidad, y cuando una autoridad competente lo requiera.
+      - titulo: Tus derechos ARCO
+        texto: >-
+          Puedes acceder, rectificar o cancelar tus datos, u oponerte a su tratamiento, escribiendo a
+          administracion@centrocomercialeldorado.mx. Te responderemos en un plazo máximo de 20 días
+          hábiles.
+      - titulo: Cambios a este aviso
+        texto: >-
+          Cualquier cambio a este aviso de privacidad se publicará en esta misma página.

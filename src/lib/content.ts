@@ -43,6 +43,13 @@ export interface Todo {
   text: string
 }
 
+/** Valor de demostración: línea del YAML marcada con un comentario `# DEMO` (CLAUDE.md §7.6). */
+export interface DemoMark {
+  file: string
+  line: number
+  text: string
+}
+
 export interface Content {
   plazas: Map<string, PlazaEntry>
   giros: Map<string, Giro>
@@ -50,6 +57,10 @@ export interface Content {
   asesores: Map<string, Asesor>
   presentaciones: Map<string, Presentacion>
   todos: Todo[]
+  /** Marcas `# DEMO` de cada archivo YAML, por ruta (con el prefijo de la carpeta de contenido). */
+  demos: Map<string, DemoMark[]>
+  /** Archivo de cada giro, asesor y presentación ("giros/<slug>" → ruta), para ubicar sus marcas. */
+  archivos: Map<string, string>
 }
 
 export class ContentValidationError extends Error {
@@ -98,6 +109,8 @@ const FLAT_FILE = /^(giros|asesores|presentaciones)\/([^/]+)\.ya?ml$/
 export function buildContent(files: Map<string, string>, label = 'content'): Content {
   const errors: string[] = []
   const todos: Todo[] = []
+  const demos = new Map<string, DemoMark[]>()
+  const archivos = new Map<string, string>()
   const where = (rel: string) => `${label}/${rel}`
 
   const parseFile = <T>(rel: string, schema: z.ZodType<T>): T | undefined => {
@@ -125,6 +138,7 @@ export function buildContent(files: Map<string, string>, label = 'content'): Con
   for (const rel of [...files.keys()].sort()) {
     if (rel.endsWith('.svg') || IMAGE_FILE.test(rel)) continue
     todos.push(...findTodos(where(rel), files.get(rel) ?? ''))
+    demos.set(where(rel), findDemos(where(rel), files.get(rel) ?? ''))
 
     const plazaMatch = PLAZA_FILE.exec(rel)
     const localMatch = LOCAL_FILE.exec(rel)
@@ -156,6 +170,7 @@ export function buildContent(files: Map<string, string>, label = 'content'): Con
       localFiles.push({ rel, plazaSlug: localMatch[1]! })
     } else if (flatMatch) {
       const [, kind, name] = flatMatch as unknown as [string, string, string]
+      archivos.set(`${kind}/${name}`, where(rel))
       if (kind === 'giros') {
         const giro = parseFile(rel, giroSchema)
         if (giro && giro.slug !== name) {
@@ -243,6 +258,22 @@ export function buildContent(files: Map<string, string>, label = 'content'): Con
     })
   }
 
+  // Vecinos: claves de locales del mismo nivel (ocupantes u otros archivos de local).
+  for (const entry of plazas.values()) {
+    for (const { file, local } of entry.locales.values()) {
+      const nivel = entry.plaza.niveles.find((n) => n.id === local.nivel)!
+      const delNivel = new Set([
+        ...(nivel.ocupantes ?? []).map((o) => o.clave),
+        ...[...entry.locales.values()].filter((l) => l.local.nivel === nivel.id).map((l) => l.local.clave),
+      ])
+      local.vecinos?.forEach((clave, i) => {
+        if (clave === local.clave || !delNivel.has(clave)) {
+          errors.push(formatIssue(file, ['vecinos', i], `"${clave}" no es un local del nivel "${nivel.id}" (clave de niveles[].ocupantes o de otro local)`))
+        }
+      })
+    }
+  }
+
   // Presentaciones: referencias a plaza, locales, giro y asesor, y tokens únicos.
   const tokenOwners = new Map<string, string>()
   for (const p of presentaciones.values()) {
@@ -273,7 +304,7 @@ export function buildContent(files: Map<string, string>, label = 'content'): Con
   }
 
   if (errors.length > 0) throw new ContentValidationError(errors)
-  const content = { plazas, giros, asesores, presentaciones, todos }
+  const content = { plazas, giros, asesores, presentaciones, todos, demos, archivos }
 
   // Una presentación "lista" no puede mostrarle ningún TODO al prospecto.
   for (const p of presentaciones.values()) {
@@ -390,4 +421,21 @@ export function findTodos(file: string, source: string): Todo[] {
   return source.split('\n').flatMap((line, i) =>
     /\bTODO\b/.test(line) ? [{ file, line: i + 1, text: line.trim().replace(/^#\s*/, '') }] : [],
   )
+}
+
+/**
+ * Líneas cuyo comentario empieza con `DEMO` (`# DEMO`): valores de demostración (CLAUDE.md §7.6).
+ * Una marca en la línea de un bloque (lista u objeto) cuenta una vez y cubre todo el bloque. Un
+ * comentario que solo menciona "# DEMO" más adelante no cuenta.
+ */
+export function findDemos(file: string, source: string): DemoMark[] {
+  return source.split('\n').flatMap((line, i) =>
+    esMarcaDemo(line) ? [{ file, line: i + 1, text: line.trim() }] : [],
+  )
+}
+
+/** Línea de comentario: el comentario empieza con DEMO. Línea con valor: su último comentario. */
+function esMarcaDemo(line: string): boolean {
+  const comentario = line.trimStart().startsWith('#') ? line.trimStart().slice(1) : line.split(/\s#/).slice(1).at(-1)
+  return comentario !== undefined && /^\s*DEMO\b/.test(comentario)
 }

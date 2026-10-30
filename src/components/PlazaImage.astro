@@ -1,7 +1,9 @@
 ---
 // Imagen de la plaza optimizada por Astro (AVIF/WebP, varios anchos para celular).
-// Si falta o está en TODO, muestra un marcador con la misma proporción.
+// Si falta o está en TODO: una foto se sustituye por una composición en el color de marca
+// (Composicion) y cualquier otra imagen por un marcador con la misma proporción.
 import { Picture } from 'astro:assets'
+import Composicion from './Composicion.astro'
 import MediaPlaceholder from './MediaPlaceholder.astro'
 import { plazaImage } from '../lib/media'
 
@@ -19,9 +21,11 @@ interface Props {
   /** false para logos o gráficos con transparencia (respaldo PNG en lugar de JPG). */
   photo?: boolean
   class?: string | undefined
+  /** Si es una foto: título, texto o cifra de la composición que la sustituye mientras falta. */
+  composicion?: { titulo: string; texto?: string | undefined; cifra?: { cifra: string; etiqueta: string } | undefined }
 }
 
-const { plaza, ruta, alt, ratio, sizes, kind, falta, widths = [360, 540, 720, 1080, 1440], loading = 'lazy', photo = true, class: className } = Astro.props
+const { plaza, ruta, alt, ratio, sizes, kind, falta, widths = [360, 540, 720, 1080, 1440], loading = 'lazy', photo = true, class: className, composicion } = Astro.props
 const image = await plazaImage(plaza, ruta)
 const usable = image ? widths.filter((w) => w <= image.width) : []
 ---
@@ -39,6 +43,8 @@ const usable = image ? widths.filter((w) => w <= image.width) : []
     class:list={['plaza-image', className]}
     style={`aspect-ratio:${ratio}`}
   />
+) : composicion ? (
+  <Composicion ratio={ratio} kind={kind} titulo={composicion.titulo} texto={composicion.texto} cifra={composicion.cifra} class={className} />
 ) : (
   <MediaPlaceholder ratio={ratio} kind={kind} falta={falta} class={className} />
 )}

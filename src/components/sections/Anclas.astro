@@ -1,17 +1,17 @@
 ---
-// 5 · Anclas: marcas ancla de la plaza con su giro y superficie.
+// 5 · Anclas: marcas ancla de la plaza con su giro y superficie. Sin logo, la marca va como
+// marca tipográfica, con el mismo sistema de tarjetas que el directorio.
 import Headline from '../Headline.astro'
 import Label from '../Label.astro'
 import Screen from '../Screen.astro'
 import { Image } from 'astro:assets'
 import { plazaImage } from '../../lib/media'
 import { SECTION_IDS } from '../../lib/sections'
-import { isTodo } from '../../lib/todo'
 import type { SectionProps } from './types'
 
 type Props = SectionProps
 
-const { model, kind } = Astro.props
+const { model } = Astro.props
 const { plaza } = model
 const area = (m2: number) => `${m2.toLocaleString('es-MX')} m²`
 const logos = await Promise.all(plaza.anclas.map((a) => plazaImage(plaza.slug, a.logo)))
@@ -28,7 +28,6 @@ const logos = await Promise.all(plaza.anclas.map((a) => plazaImage(plaza.slug, a
           </div>
           <Label class="ancla__giro" text={a.giro} />
           {a.area_m2 && <p class="t-figure">{area(a.area_m2)}</p>}
-          {kind === 'revision' && isTodo(a.logo) && <span class="todo">{a.logo}</span>}
         </li>
       )
     })}
@@ -57,6 +56,7 @@ const logos = await Promise.all(plaza.anclas.map((a) => plazaImage(plaza.slug, a
     font-family: var(--font-display);
     font-weight: var(--title-long-weight);
     font-stretch: var(--title-long-stretch);
+    letter-spacing: var(--title-long-tracking);
     font-size: var(--step-3);
     line-height: 1;
   }

@@ -1,0 +1,8 @@
+---
+// Contenido que solo existe en la página si la propuesta ya venció (CLAUDE.md §10). Va dentro de
+// un <template>: mientras la propuesta está vigente no forma parte del documento (no lo leen
+// lectores de pantalla, buscadores ni extractores de texto). El script en línea lo inserta en su
+// lugar, durante el análisis del HTML, si el <head> marcó <html class="is-vencida">.
+---
+<template data-si-vencida><slot /></template>
+<script is:inline>(function(s){var t=s.previousElementSibling;if(document.documentElement.classList.contains('is-vencida'))t.replaceWith(t.content.cloneNode(true));s.remove()})(document.currentScript)</script>

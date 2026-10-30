@@ -2,10 +2,9 @@ slug: perfumeria
 nombre: Perfumería
 
 # Rango sano de (renta + mantenimiento) / ventas mensuales.
-# Pendiente de validar con una fuente: no se capturan cifras de mercado sin respaldo.
-costo_ocupacion_objetivo:
-  min: "TODO: validar con fuente"
-  max: "TODO: validar con fuente"
+costo_ocupacion_objetivo: # DEMO: rango de referencia de demostración, a validar con una fuente
+  min: 0.08
+  max: 0.12
 
 angulos_narrativos:
   - Convivencia con marcas de moda, joyería y belleza (Liverpool, Pandora, Sally Beauty, Forever 21).
@@ -16,3 +15,5 @@ giros_afines:
   - Belleza
   - Cosméticos
   - Moda
+  - Joyería # DEMO
+  - Accesorios # DEMO
