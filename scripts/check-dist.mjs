@@ -4,6 +4,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { parse } from 'yaml'
+import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
 
 const dist = path.resolve(process.argv[2] ?? 'dist')
 const contentDir = path.resolve(process.env.CONTENT_DIR || 'content')
@@ -120,6 +121,62 @@ for (const f of files.filter((f) => /^p\/[^/]+\/index\.html$/.test(f))) {
     check(!re.test(texto), `${f}: el link de envío no debe mostrar ${what}`)
   }
   check(!/class="[^"]*\b(todo|media-placeholder|review-banner)\b/.test(markup), `${f}: el link de envío no debe tener marcadores de revisión`)
+}
+
+// PDF de la propuesta (dos hojas carta): uno por link, junto a su página, nunca cruzado.
+const rutasImpresion = files.filter((f) => /\/imprimir\//.test(f))
+check(rutasImpresion.length === 0, `las rutas de impresión no deben publicarse: ${rutasImpresion.slice(0, 3).join(', ')}`)
+
+/** Texto y enlaces de un PDF, con pdfjs. */
+async function leerPdf(file) {
+  const doc = await getDocument({ data: new Uint8Array(readFileSync(file)), useSystemFonts: false, isEvalSupported: false }).promise
+  let texto = ''
+  const enlaces = []
+  for (let i = 1; i <= doc.numPages; i++) {
+    const page = await doc.getPage(i)
+    texto += (await page.getTextContent()).items.map((it) => it.str).join(' ') + '\n'
+    for (const a of await page.getAnnotations()) if (a.url) enlaces.push(a.url)
+  }
+  const { info } = await doc.getMetadata()
+  const marca = await doc.getMarkInfo()
+  const etiquetado = (marca instanceof Map ? marca.get('Marked') : marca?.Marked) === true && Boolean(await (await doc.getPage(1)).getStructTree())
+  return { paginas: doc.numPages, texto: texto.replace(/\s+/g, ' '), enlaces, info, etiquetado }
+}
+
+for (const p of presentaciones) {
+  for (const [kind, token, carpeta] of [['envio', p.tokens.envio, 'p'], ['revision', p.tokens.revision, 'revision']]) {
+    if (kind === 'envio' && p.estado !== 'lista') continue
+    const dir = `${carpeta}/${token}/`
+    const pdfs = files.filter((f) => f.startsWith(dir) && f.endsWith('.pdf'))
+    check(pdfs.length === 1, `${p.id}: el link de ${kind} debe tener exactamente un PDF (tiene ${pdfs.length})`)
+    if (pdfs.length !== 1) continue
+    const pdf = pdfs[0]
+    const nombre = pdf.slice(dir.length)
+    check(/^Propuesta-[A-Za-z0-9-]+\.pdf$/.test(nombre), `${pdf}: nombre de archivo poco legible`)
+    check(kind === 'revision' ? nombre.endsWith('-vista-previa.pdf') : !nombre.includes('vista-previa'), `${pdf}: el nombre no corresponde al link de ${kind}`)
+    check(statSync(path.join(dist, pdf)).size < 2 * 1024 * 1024, `${pdf}: debe pesar menos de 2 MB`)
+    const leido = await leerPdf(path.join(dist, pdf))
+    const urlLink = `${SITE}${BASE}${dir}`
+    check(leido.paginas === 2, `${pdf}: debe tener exactamente 2 páginas (tiene ${leido.paginas})`)
+    check(leido.texto.includes(p.prospecto.marca), `${pdf}: debe incluir el nombre del prospecto (${p.prospecto.marca})`)
+    // La URL puede partirse en dos líneas: se compara sin espacios.
+    check(leido.texto.replace(/\s/g, '').includes(urlLink.replace(/^https:\/\//, '').replace(/\/$/, '')), `${pdf}: debe mostrar la URL del link interactivo`)
+    check(leido.enlaces.includes(urlLink), `${pdf}: el QR debe enlazar a ${urlLink}`)
+    check(leido.etiquetado, `${pdf}: debe ser un PDF etiquetado (accesible)`)
+    check(Boolean(leido.info?.Title && leido.info?.Author && leido.info?.Subject), `${pdf}: faltan título, autor o asunto en los metadatos`)
+    const interna = /vista previa interna/i.test(leido.texto)
+    check(kind === 'revision' ? interna : !interna, `${pdf}: ${kind === 'revision' ? 'debe llevar' : 'no debe llevar'} la marca "Vista previa interna"`)
+    check(!/\bTODO\b|\bDEMO\b|demostraci[óo]n/i.test(leido.texto), `${pdf}: no debe indicar datos pendientes ni de demostración`)
+    // El total mensual debe ser el del módulo de cálculos (lo prueba también Vitest con la semilla).
+    const total = leido.texto.match(/Total mensual \$([\d,]+(?:\.\d{2})?)/)?.[1]
+    const html = read(`${dir}index.html`)
+    const totalWeb = html.match(/Total mensual<\/dt>\s*<dd[^>]*><span class="t-figure"[^>]*>\$([\d,.]+)/)?.[1]
+    check(total !== undefined && total === totalWeb, `${pdf}: el total mensual del PDF ($${total}) debe coincidir con el de la presentación ($${totalWeb})`)
+    // Cada página enlaza solo su propio PDF.
+    check(html.includes(`href="${BASE}${dir}${nombre}"`), `${dir}index.html: el botón de descarga debe enlazar ${nombre}`)
+    const ajeno = kind === 'envio' ? /href="[^"]*\/revision\/[^"]*\.pdf"/ : /href="[^"]*\/p\/[^"]*\.pdf"/
+    check(!ajeno.test(html), `${dir}index.html: no debe enlazar el PDF del otro link`)
+  }
 }
 
 if (errors.length > 0) {

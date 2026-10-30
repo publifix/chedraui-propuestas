@@ -1,0 +1,93 @@
+---
+// Mini plano estático para el PDF: el mismo SVG del nivel recortado alrededor del local, con el
+// local resaltado, las claves de sus vecinos y las anclas cercanas rotuladas con texto real.
+import type { ResolvedFloorPlan, ResolvedPresentation } from '../../lib/resolve'
+import { frameAround, prepareSvg } from '../../lib/plano/svg'
+
+interface Props {
+  model: ResolvedPresentation
+  plan: ResolvedFloorPlan
+  /** Ancho con que se imprime, en px CSS: fija el tamaño de los rótulos. */
+  ancho: number
+  /** Proporción ancho / alto del recorte. */
+  proporcion: number
+}
+
+const { model, plan, ancho, proporcion } = Astro.props
+const clave = plan.claves[0]!
+const local = model.locales.find((l) => l.clave === clave)!
+const objetivo = plan.info.locales.get(clave)!
+const vista = frameAround(objetivo.bbox, plan.info.viewBox, { width: 760, ratio: proporcion })
+const unidad = vista.width / ancho
+const tam = (px: number) => +(px * unidad).toFixed(1)
+
+const dentro = (x: number, y: number) => x >= vista.x && x <= vista.x + vista.width && y >= vista.y && y <= vista.y + vista.height
+const vecinos = new Set(local.vecinos ?? [])
+const rotulos = [
+  ...[...plan.info.locales]
+    .filter(([c, l]) => (c === clave || vecinos.has(c)) && dentro(l.punto.x, l.punto.y))
+    .map(([c, l]) => ({ texto: c, ...l.punto, clase: c === clave ? 'mini__objetivo' : 'mini__vecino' })),
+  // Anclas que entran en el recorte: rótulo al centro de la parte visible.
+  ...plan.info.anclas.flatMap((a) => {
+    if (!a.bbox) return []
+    const x0 = Math.max(a.bbox.x, vista.x)
+    const x1 = Math.min(a.bbox.x + a.bbox.width, vista.x + vista.width)
+    const y0 = Math.max(a.bbox.y, vista.y)
+    const y1 = Math.min(a.bbox.y + a.bbox.height, vista.y + vista.height)
+    return x1 - x0 > vista.width * 0.08 && y1 - y0 > vista.height * 0.08 ? [{ texto: a.marca, x: (x0 + x1) / 2, y: (y0 + y1) / 2, clase: 'mini__ancla' }] : []
+  }),
+]
+const textos = rotulos
+  .map((r) => `<text x="${r.x}" y="${r.y}" class="${r.clase}" font-size="${tam(r.clase === 'mini__ancla' ? 9 : 7)}" stroke-width="${tam(2.4)}">${r.texto.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</text>`)
+  .join('')
+const svg = prepareSvg(plan.svg, { prefix: 'mini-', locales: { [clave]: { class: 'is-target' } }, viewBox: vista }).replace('</svg>', `<g class="mini__rotulos">${textos}</g></svg>`)
+---
+<figure class="mini" style={`--mini-trazo:${tam(1)}`}>
+  <div class="mini__svg" role="img" aria-label={`Plano esquemático: local ${clave} y sus vecinos`} set:html={svg} />
+</figure>
+
+<style>
+  .mini {
+    margin: 0;
+    border: var(--line-width) solid var(--color-line);
+    border-radius: var(--radius-m);
+    overflow: hidden;
+    background: var(--color-bg);
+  }
+
+  .mini :global(.plano-svg) {
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+  }
+
+  /* Trazos finos y sin leyenda interna: el pie del PDF ya aclara que es esquemático. */
+  .mini :global([data-capa='locales'] > *) {
+    stroke-width: var(--mini-trazo);
+  }
+
+  .mini :global([data-capa='etiquetas']),
+  .mini :global([data-capa='rutas']) {
+    display: none;
+  }
+
+  .mini :global(.mini__rotulos text) {
+    font-family: var(--font-body);
+    font-weight: var(--strong-weight);
+    text-anchor: middle;
+    dominant-baseline: middle;
+    fill: var(--color-text);
+    stroke: var(--color-surface);
+    paint-order: stroke;
+  }
+
+  /* El rótulo del local va en el texto sobre acento con halo de acento: se lee aunque salga del local. */
+  .mini :global(.mini__rotulos .mini__objetivo) {
+    fill: var(--color-on-accent);
+    stroke: var(--color-accent);
+  }
+
+  .mini :global(.mini__rotulos .mini__ancla) {
+    fill: var(--color-accent);
+  }
+</style>

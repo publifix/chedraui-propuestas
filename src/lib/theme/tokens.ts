@@ -141,3 +141,15 @@ export function themeCss(tema: Tema): string {
   declarations.push(`color-scheme:${colorScheme(tema)}`)
   return `:root{${declarations.join(';')}}`
 }
+
+/**
+ * Escala para la hoja impresa (PDF carta): los mismos pasos de la plaza en su tamaño de celular,
+ * multiplicados por `factor` y en rem fijos (en papel no hay viewport). Se suma a themeCss.
+ */
+export function printThemeCss(tema: Tema, factor = 0.88): string {
+  const m = resolveMedidas(tema)
+  const declarations: string[] = []
+  for (const step of TYPE_STEPS) declarations.push(`--step-${step}:${rem(typeStep(step, m.escala).minPx * factor)}`)
+  for (const [name, f] of Object.entries(SPACE_STEPS)) declarations.push(`--space-${name}:${rem(m.espacio_base * f * factor)}`)
+  return `:root{${declarations.join(';')}}`
+}

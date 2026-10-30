@@ -6,6 +6,7 @@ import Label from '../Label.astro'
 import Screen from '../Screen.astro'
 import { deposito, formatAmount, formatMoney, formatPercent, vatLabel } from '../../lib/calc'
 import { SECTION_IDS } from '../../lib/sections'
+import { terminosContrato } from '../../lib/terminos'
 import type { SectionProps } from './types'
 
 type Props = SectionProps
@@ -20,15 +21,7 @@ const { model, kind } = Astro.props
       const iva = formatPercent(local.condiciones.iva)
       const pdfRule = deposito({ ...local.condiciones, deposito: { ...local.condiciones.deposito, incluye_mantenimiento: true, incluye_iva: true } })
       const cond = local.condiciones
-      const inc = cond.incremento_anual
-      const terminos = [
-        cond.plazo_minimo_meses && ['Plazo mínimo', `${cond.plazo_minimo_meses} meses`],
-        cond.meses_gracia && ['Meses de gracia', `${cond.meses_gracia} ${cond.meses_gracia === 1 ? 'mes' : 'meses'} sin renta`],
-        inc && (inc.tipo === 'inpc'
-          ? ['Incremento anual', 'Según INPC', `Estimado en ${formatPercent(inc.valor)} sobre la renta a partir del año 2`]
-          : ['Incremento anual', formatPercent(inc.valor), 'Sobre la renta a partir del año 2']),
-        cond.giros_permitidos?.length && ['Giros permitidos', cond.giros_permitidos.join(', ')],
-      ].filter((t): t is [string, string] | [string, string, string] => Boolean(t))
+      const terminos = terminosContrato(cond)
       const id = `estado-${local.clave.replace(/\W+/g, '-').toLowerCase()}`
       return (
         <article class="estado" aria-labelledby={id}>

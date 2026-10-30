@@ -1,0 +1,18 @@
+---
+// Ruta de impresión del link de envío: scripts/pdf.mjs la convierte en el PDF de la propuesta y la
+// retira del sitio. El QR apunta al link de envío.
+import ImpresionLayout from '../../../layouts/ImpresionLayout.astro'
+import Propuesta from '../../../components/impresion/Propuesta.astro'
+import { pdfMeta } from '../../../lib/pdf'
+import { staticPaths, type RouteEntry } from '../../../lib/site'
+
+export function getStaticPaths() {
+  return staticPaths('envio')
+}
+
+const { model, route } = Astro.props as RouteEntry['props']
+const meta = pdfMeta(model, route, Astro.site!, import.meta.env.BASE_URL)
+---
+<ImpresionLayout model={model} kind="envio" pdf={meta}>
+  <Propuesta model={model} kind="envio" urlInteractiva={meta.urlInteractiva} />
+</ImpresionLayout>

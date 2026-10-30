@@ -26,6 +26,17 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
+      # Chromium sin interfaz para convertir las rutas de impresión a PDF (scripts/pdf.mjs).
+      # Se cachea por versión de Playwright: solo se descarga cuando cambia la versión.
+      - id: playwright
+        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+      - id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium-headless-shell
+      - if: steps.cache-playwright.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --only-shell chromium
       - run: pnpm build
         env:
           ASTRO_TELEMETRY_DISABLED: 1
