@@ -2,11 +2,10 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { esGiroAfin } from './afines'
-import { bbox, elementsIn, findLayers, frameAround, localId, prepareSvg, readFloorPlan, readRegionMap } from './svg'
+import { bbox, elementsIn, etiquetas, findLayers, frameAround, localId, prepareSvg, readFloorPlan } from './svg'
 
 const PLANOS = path.resolve(import.meta.dirname, '../../../content/plazas/el-dorado/planos')
 const pb = readFileSync(path.join(PLANOS, 'pb.svg'), 'utf8')
-const region = readFileSync(path.join(PLANOS, 'region.svg'), 'utf8')
 
 const minimo = (extra = '', locales = '<rect id="local-a1" data-clave="A1" x="0" y="0" width="10" height="10"/>') => `<svg viewBox="0 0 100 100">
   <g id="contorno"></g><g id="pasillos"></g><g id="locales">${locales}</g><g id="anclas"></g>
@@ -87,15 +86,11 @@ describe('contrato del plano de nivel', () => {
   })
 })
 
-describe('mapa de región', () => {
-  it('el de El Dorado tiene punto de plaza y leyenda', () => {
-    const { errors, info } = readRegionMap(region)
-    expect(errors).toEqual([])
-    expect(info!.plaza).toEqual({ cx: 336, cy: 372 })
-  })
-
-  it('reporta el punto faltante', () => {
-    expect(readRegionMap('<svg viewBox="0 0 1 1"><text data-leyenda="">x</text></svg>').errors).toEqual(['falta el punto de la plaza (<circle id="plaza">)'])
+describe('etiquetas', () => {
+  it('lee los rótulos con data-para y su posición', () => {
+    expect(etiquetas('<g id="etiquetas"><text x="10" y="20" data-para="ancla-x">Liverpool</text><text x="1" y="2" data-leyenda="">Leyenda</text></g>')).toEqual([
+      { para: 'ancla-x', x: 10, y: 20, texto: 'Liverpool' },
+    ])
   })
 })
 

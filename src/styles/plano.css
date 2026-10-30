@@ -83,27 +83,6 @@
   fill: var(--color-on-accent);
 }
 
-/* Mapa de región. */
-.plano-svg [data-capa='tierra'] > * {
-  fill: var(--color-surface);
-  stroke: var(--color-line);
-  stroke-width: 2;
-}
-
-.plano-svg [data-capa='agua'] > * {
-  fill: color-mix(in srgb, var(--color-accent-soft) 22%, var(--color-surface));
-}
-
-.plano-svg [data-capa='rio'] > * {
-  stroke: color-mix(in srgb, var(--color-accent-soft) 45%, var(--color-surface));
-}
-
-.plano-svg [data-ref='plaza'] {
-  fill: var(--color-accent);
-  stroke: var(--color-surface);
-  stroke-width: 4;
-}
-
 .plano-svg text {
   font-family: var(--font-body);
 }

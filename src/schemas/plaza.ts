@@ -111,8 +111,6 @@ export const plazaSchema = z
     directorio: z.array(marcaDirectorio).optional(),
     niveles: z.array(nivel).min(1, 'debe tener al menos un nivel'),
     modulos: z.array(modulo).optional(),
-    // Mapa ilustrativo de la región para la secuencia de zoom (CLAUDE.md §7.1.2).
-    region: z.strictObject({ mapa: text }).optional(),
     contacto_general: z.strictObject({
       web: text,
       correo: z.email('debe ser un correo válido'),

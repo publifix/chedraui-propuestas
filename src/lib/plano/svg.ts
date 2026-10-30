@@ -172,23 +172,6 @@ export function readFloorPlan(svg: string): { errors: string[]; info?: FloorPlan
   return { errors, info: { viewBox, locales, origenes, anclas, accesos, estacionamientos, rutas } }
 }
 
-export interface RegionMapInfo {
-  viewBox: ViewBox
-  plaza: { cx: number; cy: number }
-}
-
-/** Mapa ilustrativo de la región: viewBox, leyenda y un <circle id="plaza">. */
-export function readRegionMap(svg: string): { errors: string[]; info?: RegionMapInfo } {
-  const errors = [...unsafeContent(svg)]
-  const viewBox = parseViewBox(svg)
-  if (!viewBox) errors.push('el <svg> necesita un viewBox válido')
-  const punto = elementsIn(svg).find((el) => el.tag === 'circle' && el.attrs['id'] === 'plaza')
-  if (!punto) errors.push('falta el punto de la plaza (<circle id="plaza">)')
-  if (!elementsIn(svg).some((el) => 'data-leyenda' in el.attrs)) errors.push('falta la leyenda (elemento con data-leyenda), p. ej. "Mapa ilustrativo, no a escala"')
-  if (errors.length > 0 || !viewBox || !punto) return { errors }
-  return { errors, info: { viewBox, plaza: { cx: Number(punto.attrs['cx']), cy: Number(punto.attrs['cy']) } } }
-}
-
 export interface PrepareOptions {
   /** Prefijo para los ids: el mismo plano puede aparecer varias veces en la página. */
   prefix: string
@@ -225,6 +208,22 @@ export function prepareSvg(svg: string, { prefix, locales = {}, labels = {}, vie
     return `<svg${a} class="plano-svg" focusable="false">`
   })
   return out.trim()
+}
+
+export interface Etiqueta {
+  /** data-para: clave del local o id del elemento que rotula. */
+  para: string
+  x: number
+  y: number
+  texto: string
+}
+
+/** Rótulos del plano (<text data-para>) con su posición, p. ej. para rotularlos fuera del SVG. */
+export function etiquetas(svg: string): Etiqueta[] {
+  return [...svg.matchAll(/<text\b([^>]*)>([^<]*)<\/text>/g)].flatMap(([, attrs, texto]) => {
+    const a = parseAttributes(attrs!)
+    return a['data-para'] ? [{ para: a['data-para'], x: Number(a['x']), y: Number(a['y']), texto: texto!.trim() }] : []
+  })
 }
 
 /** Caja ampliada alrededor de una caja, dentro del viewBox y con la proporción indicada. */

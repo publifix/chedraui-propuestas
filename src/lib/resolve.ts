@@ -1,7 +1,7 @@
 import type { Content, DemoMark } from './content'
 import { calcularLocal, type LocalCalculations } from './calc'
 import { findFotosPendientes, findVisibleTodos, type TodoValue } from './todos'
-import type { FloorPlanInfo, RegionMapInfo } from './plano/svg'
+import type { FloorPlanInfo } from './plano/svg'
 import {
   condicionesDeLocal,
   SECCIONES,
@@ -33,8 +33,6 @@ export interface ResolvedPresentation
   secciones: Seccion[]
   /** Plano de cada nivel donde están los locales de la presentación (si ya existe). */
   planos: ResolvedFloorPlan[]
-  /** Mapa ilustrativo de la región, para la secuencia de zoom. */
-  region?: { svg: string; info: RegionMapInfo }
   /** Valores TODO que vería el prospecto (sin fotos). Bloquean "lista"; solo se ven en revisión. */
   pendientes: TodoValue[]
   /** Fotos que faltan. No bloquean "lista": en revisión se listan y en envío hay composiciones. */
@@ -96,7 +94,6 @@ export function resolvePresentation(content: Content, id: string): ResolvedPrese
       // Los ocupantes se leen de plaza.niveles (ocupantesDe): una sola fuente de verdad.
       return [{ nivel: { id: nivel.id, nombre: nivel.nombre }, svg: plan.svg, info: plan.info, claves }]
     }),
-    ...(plazaEntry.region && { region: { svg: plazaEntry.region.svg, info: plazaEntry.region.info } }),
   }
   // Archivos de los que sale la presentación: plaza, sus locales, giro, asesor y la presentación.
   const archivos = [

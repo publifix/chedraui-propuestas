@@ -367,10 +367,6 @@ niveles:
         area_m2: 274.4
         categoria: servicio
 
-# Mapa ilustrativo de Boca del Río para la secuencia de zoom (no a escala).
-region:
-  mapa: planos/region.svg
-
 modulos:
   - id: marina
     titulo: Marina
