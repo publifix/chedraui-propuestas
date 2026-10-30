@@ -337,12 +337,4 @@ describe('contrato del plano', () => {
   it('las anclas del plano deben existir en la plaza', () => {
     expect(errorsOf(conPlano((s) => s.replace('data-marca="Liverpool"', 'data-marca="Sears"')))).toContain(`${prefix} el ancla "Sears" no está en anclas de la plaza`)
   })
-
-  it('valida el mapa de la región', () => {
-    const files = seedFiles()
-    files.set('plazas/el-dorado/planos/region.svg', files.get('plazas/el-dorado/planos/region.svg')!.replace('id="plaza"', 'id="punto"'))
-    expect(errorsOf(files)).toContain(
-      'content/plazas/el-dorado/plaza.yaml › region.mapa: content/plazas/el-dorado/planos/region.svg: falta el punto de la plaza (<circle id="plaza">)',
-    )
-  })
 })

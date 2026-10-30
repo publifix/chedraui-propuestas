@@ -5,3 +5,11 @@ dist/
 .env.*
 !.env.example
 .DS_Store
+
+# Material de referencia local (PDF de Chedraui, capturas): no se versiona, salvo la copia del
+# sitio público de Inmobiliaria Chedraui, que sí (información pública). Nada de _referencias/
+# se publica: el sitio solo toma public/ y CONTENT_DIR.
+_referencias/*
+!_referencias/sitio-chedraui/
+_referencias/sitio-chedraui/*
+!_referencias/sitio-chedraui/el-dorado/

@@ -3,7 +3,7 @@ import path from 'node:path'
 import { parse } from 'yaml'
 import { resolvePresentation } from './resolve'
 import { checkContrast } from './theme/contrast'
-import { localId, readFloorPlan, readRegionMap, type FloorPlanInfo, type RegionMapInfo } from './plano/svg'
+import { localId, readFloorPlan, type FloorPlanInfo } from './plano/svg'
 import { fontNames, isFont } from './theme/font-roles'
 import type * as z from 'zod'
 import {
@@ -34,7 +34,6 @@ export interface PlazaEntry {
   locales: Map<string, LocalEntry>
   /** Planos que cumplen el contrato (CLAUDE.md §7.1.2), por id de nivel. */
   planos: Map<string, { file: string; svg: string; info: FloorPlanInfo }>
-  region?: { file: string; svg: string; info: RegionMapInfo }
 }
 
 export interface Todo {
@@ -165,7 +164,7 @@ export function buildContent(files: Map<string, string>, label = 'content'): Con
         errors.push(...planos.errors)
         continue
       }
-      plazas.set(plaza.slug, { file: where(rel), plaza, locales: new Map(), planos: planos.planos, ...(planos.region && { region: planos.region }) })
+      plazas.set(plaza.slug, { file: where(rel), plaza, locales: new Map(), planos: planos.planos })
     } else if (localMatch) {
       localFiles.push({ rel, plazaSlug: localMatch[1]! })
     } else if (flatMatch) {
@@ -374,7 +373,7 @@ export function validateImages(file: string, fields: ImageField[], plazaSlug: st
   })
 }
 
-/** Lee y valida los planos de nivel y el mapa de región de una plaza. */
+/** Lee y valida los planos de nivel de una plaza. */
 function readPlans(file: string, plaza: Plaza, slug: string, files: Map<string, string>, where: (rel: string) => string) {
   const errors: string[] = []
   const planos: PlazaEntry['planos'] = new Map()
@@ -396,19 +395,7 @@ function readPlans(file: string, plaza: Plaza, slug: string, files: Map<string, 
       planos.set(nivel.id, { file: where(rel), svg, info: result.info })
     }
   })
-  let region: PlazaEntry['region']
-  if (plaza.region && !isTodo(plaza.region.mapa)) {
-    const rel = path.posix.normalize(`plazas/${slug}/${plaza.region.mapa}`)
-    const svg = files.get(rel)
-    if (svg === undefined) {
-      errors.push(formatIssue(file, ['region', 'mapa'], `no existe el mapa "${plaza.region.mapa}" en la carpeta de la plaza`))
-    } else {
-      const result = readRegionMap(svg)
-      errors.push(...result.errors.map((e) => formatIssue(file, ['region', 'mapa'], `${where(rel)}: ${e}`)))
-      if (result.info) region = { file: where(rel), svg, info: result.info }
-    }
-  }
-  return { errors, planos, region }
+  return { errors, planos }
 }
 
 /** Ids de los elementos de un SVG. */

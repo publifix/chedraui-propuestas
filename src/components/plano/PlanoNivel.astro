@@ -1,6 +1,9 @@
 ---
-// Plano interactivo de un nivel: local de la presentación resaltado, panel al tocar un local,
-// capas activables, ruta desde el estacionamiento o un ancla, y versión en texto.
+// Plano interactivo de un nivel. Abre con la planta completa y el local marcado ("Tu local"),
+// con acercamiento animado a su zona; panel al tocar un local; capas que se resaltan con
+// botones de activar y desactivar; ruta desde el estacionamiento o un ancla; versión en texto.
+// Los rótulos se pintan en HTML sobre el SVG, desde la configuración y la geometría del plano (el
+// SVG no trae textos): anclas, estacionamientos y marina siempre; claves de locales al acercar.
 import Field from '../Field.astro'
 import Label from '../Label.astro'
 import { ocupantesDe, vecinosDe, type ResolvedFloorPlan, type ResolvedPresentation } from '../../lib/resolve'
@@ -56,10 +59,25 @@ const attrs = Object.fromEntries(
     return [c, a]
   }),
 )
-const labels = Object.fromEntries(plan.claves.map((c) => [c, { class: 'is-target-label' }]))
-const detalle = frameAround(plan.info.locales.get(clave)!.bbox, vb, { width: 480, ratio: 1 })
-const svg = prepareSvg(plan.svg, { prefix: 'pi-', locales: attrs, labels, viewBox: detalle })
+// Rótulos: anclas (marca), estacionamientos y marina siempre; claves de los locales al acercar.
+type Rotulo = { texto: string; x: number; y: number; tipo: 'lugar' | 'local' | 'objetivo' }
+const rotulos: Rotulo[] = [
+  ...plan.info.anclas.flatMap((a) => (a.punto ? [{ texto: a.marca, ...a.punto, tipo: 'lugar' as const }] : [])),
+  ...plan.info.estacionamientos.flatMap((e) => (e.punto ? [{ texto: 'Estacionamiento', ...e.punto, tipo: 'lugar' as const }] : [])),
+  ...plan.info.marina.map((m) => ({ texto: m.nombre, ...m.punto, tipo: 'lugar' as const })),
+  ...[...plan.info.locales].map(([c, l]) => ({ texto: c, ...l.punto, tipo: plan.claves.includes(c) ? ('objetivo' as const) : ('local' as const) })),
+]
+// Acercamiento con la misma proporción que la planta: el mapa no cambia de alto al animarse.
+const bboxLocal = plan.info.locales.get(clave)!.bbox
+const detalle = frameAround(bboxLocal, vb, { width: 560, ratio: vb.width / vb.height })
+const svg = prepareSvg(plan.svg, { prefix: 'pi-', locales: attrs })
 const view = (v: typeof vb) => `${v.x} ${v.y} ${v.width} ${v.height}`
+/** Posición en % dentro de la vista inicial (planta completa); el script la recalcula al acercar. */
+const pct = (x: number, y: number) => ({ left: ((x - vb.x) / vb.width) * 100, top: ((y - vb.y) / vb.height) * 100 })
+const pos = (x: number, y: number) => `left:${pct(x, y).left.toFixed(2)}%;top:${pct(x, y).top.toFixed(2)}%`
+/** Cerca de un borde, el rótulo se alinea hacia dentro para no cortarse. */
+const borde = (left: number) => (left < 12 ? 'inicio' : left > 88 ? 'fin' : undefined)
+const centro = plan.info.locales.get(clave)!.punto
 
 const ruta = local.ruta && plan.info.rutas.find((r) => r.desde === local.ruta!.desde && r.hasta === clave)
 const origen = ruta && plan.info.origenes.get(ruta.desde)
@@ -74,32 +92,54 @@ const capas = [
 ].filter((c) => c.n > 0)
 const id = `plano-${plan.nivel.id.toLowerCase()}`
 ---
-<div class="plano" id={id} data-plano data-view-detalle={view(detalle)} data-view-completo={view(vb)}>
-  <div class="plano__toolbar" role="group" aria-label="Capas del plano">
-    {capas.map((c) => (
-      <button type="button" class:list={['capa', `capa--${c.id}`]} aria-pressed="false" data-capa-toggle={c.id}>
-        <span class="capa__muestra" aria-hidden="true"></span>{c.nombre}
-      </button>
-    ))}
-    {ruta && (
-      <button type="button" class="capa capa--ruta" aria-pressed="false" data-ruta-toggle={ruta.id}>
-        <span class="capa__muestra" aria-hidden="true"></span>Ruta desde {origen?.toLowerCase()}
-      </button>
-    )}
-  </div>
-
+<div class="plano" id={id} data-plano data-vista="completo" data-view-detalle={view(detalle)} data-view-completo={view(vb)}>
   <div class="plano__mapa">
-    <div class="plano__svg" role="group" aria-label={`Plano esquemático de ${plan.nivel.nombre.toLowerCase()}. Toca un local para ver quién lo ocupa.`} set:html={svg} />
+    <div class="plano__svg" role="group" aria-label={`Plano esquemático de ${plan.nivel.nombre.toLowerCase()} con el local ${clave} marcado. Toca un local para ver quién lo ocupa.`} set:html={svg} />
+    <div class="plano__rotulos" aria-hidden="true">
+      {rotulos.map((r) => <span class:list={['rotulo', `rotulo--${r.tipo}`]} data-x={r.x} data-y={r.y} data-borde={r.tipo === 'lugar' ? borde(pct(r.x, r.y).left) : undefined} style={pos(r.x, r.y)}>{r.texto}</span>)}
+      <span class="marcador" data-x={centro.x} data-y={centro.y} data-abajo={pct(centro.x, centro.y).top < 40 ? '' : undefined} style={pos(centro.x, centro.y)}>
+        <span class="marcador__anillo"></span>
+        <span class="marcador__etiqueta">Tu local · {clave}</span>
+      </span>
+    </div>
   </div>
-  <div class="plano__pie">
-    <p class="t-meta">Plano esquemático, no a escala.</p>
-    <button type="button" class="plano__vista" data-vista aria-pressed="false">Ver planta completa</button>
+  <div class="plano__barra">
+    <p class="plano__ayuda t-meta">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3.5" fill="currentColor" /><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.5" /></svg>
+      Toca cualquier local para ver quién lo ocupa.
+    </p>
+    <button type="button" class="plano__vista" data-vista-toggle aria-pressed="false">
+      <svg class="vista__icono" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2" /><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" /><path d="M7.5 10.5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" /><path data-mas d="M10.5 7.5v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+      <span data-vista-texto>Acercar al local</span>
+    </button>
   </div>
 
-  <div class="plano__panel" aria-live="polite" data-panel>
-    <Label as="p" class="panel__clave" text={`Local ${clave}`} />
-    <p class="panel__marca">{info[clave]?.marca}</p>
-    <p class="panel__giro t-meta">{info[clave]?.giro} · {info[clave]?.area}</p>
+  <div class="plano__detalle">
+    <div class="plano__panel" aria-live="polite" data-panel>
+      <Label as="p" class="panel__clave" text={`Local ${clave}`} />
+      <p class="panel__marca">{info[clave]?.marca}</p>
+      <p class="panel__giro t-meta">{[info[clave]?.giro, info[clave]?.area].filter(Boolean).join(' · ')}</p>
+    </div>
+
+    <fieldset class="plano__capas">
+      <legend><Label as="span" text="Resalta en el plano" /></legend>
+      <p class="capas__ayuda t-meta">Toca un botón para activarlo; vuelve a tocarlo para quitarlo. Puedes combinarlos.</p>
+      <div class="capas__lista">
+        {capas.map((c) => (
+          <button type="button" class:list={['capa', `capa--${c.id}`]} aria-pressed="false" data-capa-toggle={c.id}>
+            <span class="capa__muestra" aria-hidden="true"></span>
+            <span class="capa__nombre">{c.nombre}</span>
+            <span class="capa__n tabular" aria-label={`${c.n} en el plano`}>{c.n}</span>
+          </button>
+        ))}
+        {ruta && (
+          <button type="button" class="capa capa--ruta" aria-pressed="false" data-ruta-toggle={ruta.id}>
+            <span class="capa__muestra" aria-hidden="true"></span>
+            <span class="capa__nombre">Ruta desde {origen?.toLowerCase()}</span>
+          </button>
+        )}
+      </div>
+    </fieldset>
   </div>
 
   {ruta && (
@@ -174,13 +214,57 @@ const id = `plano-${plan.nivel.id.toLowerCase()}`
       })
     }
 
-    const vista = root.querySelector<HTMLButtonElement>('[data-vista]')!
+    // Rótulos y marcador en HTML: se reubican con cada viewBox (y se ocultan si quedan fuera).
+    const rotulos = [...root.querySelectorAll<HTMLElement>('.plano__rotulos [data-x]')]
+    const colocar = ([x, y, w, h]: number[]) => {
+      for (const el of rotulos) {
+        const left = ((Number(el.dataset.x) - x!) / w!) * 100
+        const top = ((Number(el.dataset.y) - y!) / h!) * 100
+        el.style.left = `${left}%`
+        el.style.top = `${top}%`
+        el.hidden = left < -2 || left > 102 || top < -2 || top > 102
+        if (el.classList.contains('marcador')) el.toggleAttribute('data-abajo', top < 40)
+        if (!el.classList.contains('rotulo--lugar')) continue
+        if (left < 12) el.dataset.borde = 'inicio'
+        else if (left > 88) el.dataset.borde = 'fin'
+        else delete el.dataset.borde
+      }
+    }
+    const parse = (v: string) => v.split(' ').map(Number)
+    const completo = parse(root.dataset.viewCompleto!)
+    const detalle = parse(root.dataset.viewDetalle!)
+    let actual = completo
+    let frame = 0
+
+    // Acercar y alejar: interpola el viewBox (ease-in-out, 0.7 s); sin animación si se pidió
+    // reducir movimiento.
+    const ir = (destino: number[]) => {
+      cancelAnimationFrame(frame)
+      const desde = actual
+      const aplicar = (v: number[]) => {
+        actual = v
+        svg.setAttribute('viewBox', v.join(' '))
+        colocar(v)
+      }
+      if (reduce) return aplicar(destino)
+      const inicio = performance.now()
+      const paso = (now: number) => {
+        const t = Math.min(1, (now - inicio) / 700)
+        const e = t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2
+        aplicar(desde.map((d, i) => d + (destino[i]! - d) * e))
+        if (t < 1) frame = requestAnimationFrame(paso)
+      }
+      frame = requestAnimationFrame(paso)
+    }
+
+    const vista = root.querySelector<HTMLButtonElement>('[data-vista-toggle]')!
+    const vistaTexto = vista.querySelector<HTMLElement>('[data-vista-texto]')!
     vista.addEventListener('click', () => {
-      const completo = vista.getAttribute('aria-pressed') !== 'true'
-      vista.setAttribute('aria-pressed', String(completo))
-      vista.textContent = completo ? 'Acercar al local' : 'Ver planta completa'
-      svg.setAttribute('viewBox', completo ? root.dataset.viewCompleto! : root.dataset.viewDetalle!)
-      root.toggleAttribute('data-completo', completo)
+      const cerca = vista.getAttribute('aria-pressed') !== 'true'
+      vista.setAttribute('aria-pressed', String(cerca))
+      vistaTexto.textContent = cerca ? 'Ver la plaza completa' : 'Acercar al local'
+      root.dataset.vista = cerca ? 'detalle' : 'completo'
+      ir(cerca ? detalle : completo)
     })
 
     const rutaBtn = root.querySelector<HTMLButtonElement>('[data-ruta-toggle]')
@@ -212,10 +296,50 @@ const id = `plano-${plan.nivel.id.toLowerCase()}`
     gap: var(--space-s);
   }
 
-  .plano__toolbar {
+  .plano__detalle {
+    display: grid;
+    gap: var(--space-m);
+    align-items: start;
+  }
+
+  @media (min-width: 48rem) {
+    .plano__detalle {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+    }
+  }
+
+  .plano__ayuda {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs);
+  }
+
+  .plano__ayuda svg {
+    flex: none;
+    inline-size: 1.1rem;
+    block-size: 1.1rem;
+    color: var(--color-accent);
+  }
+
+  .plano__capas {
+    display: grid;
+    gap: var(--space-2xs);
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .plano__capas legend {
+    padding: 0;
+    color: var(--color-text-muted);
+  }
+
+  .capas__lista {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2xs);
+    margin-block-start: var(--space-2xs);
   }
 
   .capa {
@@ -223,9 +347,9 @@ const id = `plano-${plan.nivel.id.toLowerCase()}`
     align-items: center;
     gap: var(--space-2xs);
     min-block-size: 44px;
-    padding: var(--space-3xs) var(--space-s);
-    border: var(--line-width) solid var(--color-line);
-    border-radius: var(--radius-m);
+    padding: var(--space-3xs) var(--space-xs) var(--space-3xs) var(--space-s);
+    border: var(--line-width) solid var(--color-text-muted);
+    border-radius: 999px;
     background: var(--color-surface);
     color: var(--color-text);
     font: inherit;
@@ -233,10 +357,41 @@ const id = `plano-${plan.nivel.id.toLowerCase()}`
     cursor: pointer;
   }
 
+  .capa:hover {
+    border-color: var(--color-accent);
+  }
+
+  /* Activo: relleno en el acento, como un interruptor encendido. */
   .capa[aria-pressed='true'] {
     border-color: var(--color-accent);
-    box-shadow: inset 0 0 0 var(--line-width) var(--color-accent);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
     font-weight: var(--strong-weight);
+  }
+
+  .capa[aria-pressed='true'] .capa__muestra {
+    box-shadow: 0 0 0 calc(var(--line-width) * 1.5) var(--color-on-accent);
+  }
+
+  .capa__n {
+    display: inline-grid;
+    place-items: center;
+    min-inline-size: 1.5rem;
+    block-size: 1.5rem;
+    padding-inline: var(--space-3xs);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-text) 8%, transparent);
+    font-size: var(--step--1);
+  }
+
+  .capa[aria-pressed='true'] .capa__n {
+    background: color-mix(in srgb, var(--color-on-accent) 22%, transparent);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .capa {
+      transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+    }
   }
 
   .capa__muestra {
@@ -272,6 +427,15 @@ const id = `plano-${plan.nivel.id.toLowerCase()}`
     background: var(--color-accent);
   }
 
+  /* En celular el mapa ocupa todo el ancho de la pantalla: cada píxel cuenta en la planta completa. */
+  @media (max-width: 40rem) {
+    .plano__mapa {
+      margin-inline: calc(-1 * max(var(--space-m), env(safe-area-inset-left))) calc(-1 * max(var(--space-m), env(safe-area-inset-right)));
+      border-inline: 0;
+      border-radius: 0 !important;
+    }
+  }
+
   .plano__mapa {
     position: relative;
     overflow: hidden;
@@ -281,24 +445,161 @@ const id = `plano-${plan.nivel.id.toLowerCase()}`
     touch-action: pan-y;
   }
 
-  .plano__pie {
+  .plano__barra {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-2xs) var(--space-s);
+    gap: var(--space-xs) var(--space-s);
   }
 
   .plano__vista {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
     min-block-size: 44px;
     padding: var(--space-3xs) var(--space-s);
-    border: var(--line-width) solid var(--color-line);
-    border-radius: var(--radius-m);
+    border: var(--line-width) solid var(--color-accent);
+    border-radius: 999px;
     background: var(--color-surface);
-    color: var(--color-text);
+    color: var(--color-accent);
     font: inherit;
     font-size: var(--step--1);
+    font-weight: var(--strong-weight);
     cursor: pointer;
+  }
+
+  .plano__vista:hover {
+    background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
+  }
+
+  .vista__icono {
+    inline-size: 1.15rem;
+    block-size: 1.15rem;
+  }
+
+  .plano__vista[aria-pressed='true'] [data-mas] {
+    display: none;
+  }
+
+  /* Rótulos y marcador en HTML, alineados con el SVG; no capturan toques. */
+  .plano__rotulos {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .rotulo,
+  .marcador {
+    position: absolute;
+    transform: translate(-50%, -50%);
+  }
+
+  .rotulo {
+    padding-inline: var(--space-3xs);
+    color: var(--color-text-muted);
+    font-size: var(--step--2, 0.7rem);
+    font-weight: var(--strong-weight);
+    line-height: 1.1;
+    text-align: center;
+    white-space: nowrap;
+    text-shadow: 0 0 3px var(--color-surface), 0 0 3px var(--color-surface), 0 0 6px var(--color-surface);
+  }
+
+  .rotulo--local,
+  .rotulo--objetivo {
+    font-size: 0.625rem;
+    color: var(--color-text);
+  }
+
+  /* La clave del local va en el texto sobre acento, sobre su propio relleno. */
+  .rotulo--objetivo {
+    color: var(--color-on-accent);
+    text-shadow: none;
+  }
+
+  .rotulo[data-borde='inicio'] {
+    transform: translate(0, -50%);
+  }
+
+  .rotulo[data-borde='fin'] {
+    transform: translate(-100%, -50%);
+  }
+
+  .rotulo[hidden],
+  .marcador[hidden] {
+    display: none;
+  }
+
+  .marcador {
+    display: grid;
+    justify-items: center;
+  }
+
+  /* Anillo claro con contorno en el acento: se distingue sobre el local relleno de acento. */
+  .marcador__anillo {
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    border: calc(var(--line-width) * 2) solid var(--color-surface);
+    border-radius: 50%;
+    outline: calc(var(--line-width) * 2) solid var(--color-accent);
+  }
+
+  /* Al acercar, el rótulo del local ya se lee en el SVG: el anillo se retira. */
+  .plano[data-vista='detalle'] .marcador__anillo {
+    visibility: hidden;
+  }
+
+  /* La etiqueta flota sobre el anillo, unida por una línea fina. */
+  .marcador__etiqueta {
+    position: absolute;
+    inset-block-end: calc(100% + var(--space-s));
+    padding: var(--space-3xs) var(--space-xs);
+    border-radius: var(--radius-s);
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+    font-size: var(--step--1);
+    font-weight: var(--strong-weight);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    box-shadow: 0 var(--space-3xs) var(--space-s) color-mix(in srgb, var(--color-text) 20%, transparent);
+  }
+
+  /* Cerca del borde superior la etiqueta va debajo del anillo para no cortarse. */
+  .marcador[data-abajo] .marcador__etiqueta {
+    inset-block-end: auto;
+    inset-block-start: calc(100% + var(--space-s));
+  }
+
+  .marcador[data-abajo] .marcador__etiqueta::after {
+    inset-block-start: auto;
+    inset-block-end: 100%;
+  }
+
+  .marcador__etiqueta::after {
+    content: '';
+    position: absolute;
+    inset-block-start: 100%;
+    inset-inline-start: 50%;
+    inline-size: var(--line-width);
+    block-size: var(--space-s);
+    background: var(--color-accent);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .marcador__anillo {
+      animation: latido 2.4s var(--ease-out) infinite;
+    }
+  }
+
+  @keyframes latido {
+    0% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 45%, transparent);
+    }
+    70%,
+    100% {
+      box-shadow: 0 0 0 1rem color-mix(in srgb, var(--color-accent) 0%, transparent);
+    }
   }
 
   .plano__panel {
@@ -414,8 +715,9 @@ const id = `plano-${plan.nivel.id.toLowerCase()}`
     r: 16px;
   }
 
-  /* En la planta completa los rótulos de los locales no caben: se ocultan. */
-  .plano[data-completo] :global([data-capa='etiquetas'] text[data-para]:not([data-para^='ancla']):not([data-para^='estacionamiento']):not([data-para='marina'])) {
+  /* En la planta completa las claves de los locales no caben: aparecen al acercar. */
+  .plano[data-vista='completo'] .rotulo--local,
+  .plano[data-vista='completo'] .rotulo--objetivo {
     display: none;
   }
 </style>

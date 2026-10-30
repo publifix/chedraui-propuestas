@@ -19,15 +19,22 @@ export interface Element {
   attrs: Record<string, string>
 }
 
+export interface Punto {
+  x: number
+  y: number
+}
+
 export interface FloorPlanInfo {
   viewBox: ViewBox
-  /** Locales por clave, con su caja para el zoom. */
-  locales: Map<string, { id: string; bbox: BBox }>
+  /** Locales por clave, con su caja para el zoom y el punto donde se rotula. */
+  locales: Map<string, { id: string; bbox: BBox; punto: Punto }>
   /** Ids de los posibles orígenes de una ruta: estacionamientos, anclas y accesos. */
   origenes: Map<string, string>
-  anclas: Array<{ id: string; marca: string }>
+  anclas: Array<{ id: string; marca: string; punto?: Punto }>
   accesos: Array<{ id: string; nombre: string }>
-  estacionamientos: Array<{ id: string; nombre: string }>
+  estacionamientos: Array<{ id: string; nombre: string; punto?: Punto }>
+  /** Áreas con nombre de la capa "marina" (opcional), para rotularlas. */
+  marina: Array<{ nombre: string; punto: Punto }>
   rutas: Array<{ id: string; desde: string; hasta: string }>
 }
 
@@ -81,6 +88,70 @@ export function parseViewBox(svg: string): ViewBox | undefined {
   return { x, y, width, height }
 }
 
+/** Vértices de un rect o polygon. */
+export function vertices(el: Element): Punto[] | undefined {
+  if (el.tag === 'rect') {
+    const [x, y, w, h] = ['x', 'y', 'width', 'height'].map((k) => Number(el.attrs[k] ?? 0)) as [number, number, number, number]
+    return w > 0 && h > 0 ? [{ x, y }, { x: x + w, y }, { x: x + w, y: y + h }, { x, y: y + h }] : undefined
+  }
+  if (el.tag === 'polygon') {
+    const nums = (el.attrs['points'] ?? '').trim().split(/[\s,]+/).map(Number)
+    if (nums.length < 6 || nums.length % 2 || nums.some((n) => !Number.isFinite(n))) return undefined
+    return nums.flatMap((n, i) => (i % 2 === 0 ? [{ x: n, y: nums[i + 1]! }] : []))
+  }
+  return undefined
+}
+
+function dentro(p: Punto, pts: Punto[]): boolean {
+  let inside = false
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const a = pts[i]!
+    const b = pts[j]!
+    if (a.y > p.y !== b.y > p.y && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) inside = !inside
+  }
+  return inside
+}
+
+function distanciaAlBorde(p: Punto, pts: Punto[]): number {
+  let min = Infinity
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const a = pts[j]!
+    const b = pts[i]!
+    const dx = b.x - a.x
+    const dy = b.y - a.y
+    const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy || 1)))
+    min = Math.min(min, Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy)))
+  }
+  return min
+}
+
+/**
+ * Punto para rotular un polígono: el centro de su caja si cae dentro y holgado; si no (formas en
+ * L, triángulos), el punto interior más alejado de los bordes en una rejilla de 24 × 24.
+ */
+export function puntoRotulo(pts: Punto[]): Punto {
+  const xs = pts.map((p) => p.x)
+  const ys = pts.map((p) => p.y)
+  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]
+  let mejor = { x: (x0 + x1) / 2, y: (y0 + y1) / 2 }
+  let holgura = dentro(mejor, pts) ? distanciaAlBorde(mejor, pts) : -1
+  const minimo = Math.min(x1 - x0, y1 - y0) * 0.3
+  if (holgura >= minimo) return mejor
+  const n = 24
+  for (let i = 1; i < n; i++) {
+    for (let j = 1; j < n; j++) {
+      const p = { x: x0 + ((x1 - x0) * i) / n, y: y0 + ((y1 - y0) * j) / n }
+      if (!dentro(p, pts)) continue
+      const d = distanciaAlBorde(p, pts)
+      if (d > holgura) {
+        holgura = d
+        mejor = p
+      }
+    }
+  }
+  return { x: Math.round(mejor.x * 10) / 10, y: Math.round(mejor.y * 10) / 10 }
+}
+
 /** Caja de un rect o polygon (los locales del contrato solo usan esas dos formas, sin transform). */
 export function bbox(el: Element): BBox | undefined {
   if (el.tag === 'rect') {
@@ -121,7 +192,7 @@ export function readFloorPlan(svg: string): { errors: string[]; info?: FloorPlan
   const faltan = CAPAS_OBLIGATORIAS.filter((c) => !layers.has(c))
   if (faltan.length > 0) errors.push(`faltan grupos de capa: ${faltan.map((c) => `<g id="${c}">`).join(', ')}`)
 
-  const locales = new Map<string, { id: string; bbox: BBox }>()
+  const locales = new Map<string, { id: string; bbox: BBox; punto: Punto }>()
   for (const el of elementsIn(layers.get('locales') ?? '')) {
     const { id, 'data-clave': clave } = el.attrs
     if (!clave) {
@@ -132,7 +203,7 @@ export function readFloorPlan(svg: string): { errors: string[]; info?: FloorPlan
     const box = bbox(el)
     if (!box) errors.push(`el local "${clave}" debe ser un <rect> o <polygon> válido`)
     if (locales.has(clave)) errors.push(`el local "${clave}" está repetido`)
-    if (box) locales.set(clave, { id: localId(clave), bbox: box })
+    if (box) locales.set(clave, { id: localId(clave), bbox: box, punto: puntoRotulo(vertices(el)!) })
   }
 
   const conPrefijo = (capa: Capa, prefijo: string, atributo: string) =>
@@ -145,11 +216,16 @@ export function readFloorPlan(svg: string): { errors: string[]; info?: FloorPlan
           errors.push(`en "${capa}" cada elemento necesita id="${prefijo}…" y ${atributo}`)
           return []
         }
-        return [{ id, valor }]
+        const pts = vertices(el)
+        return [{ id, valor, ...(pts && { punto: puntoRotulo(pts) }) }]
       })
-  const anclas = conPrefijo('anclas', 'ancla-', 'data-marca').map(({ id, valor }) => ({ id, marca: valor }))
+  const anclas = conPrefijo('anclas', 'ancla-', 'data-marca').map(({ id, valor, punto }) => ({ id, marca: valor, ...(punto && { punto }) }))
   const accesos = conPrefijo('accesos', 'acceso-', 'data-nombre').map(({ id, valor }) => ({ id, nombre: valor }))
-  const estacionamientos = conPrefijo('estacionamiento', 'estacionamiento-', 'data-nombre').map(({ id, valor }) => ({ id, nombre: valor }))
+  const estacionamientos = conPrefijo('estacionamiento', 'estacionamiento-', 'data-nombre').map(({ id, valor, punto }) => ({ id, nombre: valor, ...(punto && { punto }) }))
+  const marina = elementsIn(layers.get('marina') ?? '').flatMap((el) => {
+    const pts = vertices(el)
+    return el.attrs['data-nombre'] && pts ? [{ nombre: el.attrs['data-nombre'], punto: puntoRotulo(pts) }] : []
+  })
   const origenes = new Map([...estacionamientos, ...accesos].map((e) => [e.id, e.nombre]))
   for (const a of anclas) origenes.set(a.id, a.marca)
 
@@ -169,24 +245,7 @@ export function readFloorPlan(svg: string): { errors: string[]; info?: FloorPlan
   }
 
   if (errors.length > 0 || !viewBox) return { errors }
-  return { errors, info: { viewBox, locales, origenes, anclas, accesos, estacionamientos, rutas } }
-}
-
-export interface RegionMapInfo {
-  viewBox: ViewBox
-  plaza: { cx: number; cy: number }
-}
-
-/** Mapa ilustrativo de la región: viewBox, leyenda y un <circle id="plaza">. */
-export function readRegionMap(svg: string): { errors: string[]; info?: RegionMapInfo } {
-  const errors = [...unsafeContent(svg)]
-  const viewBox = parseViewBox(svg)
-  if (!viewBox) errors.push('el <svg> necesita un viewBox válido')
-  const punto = elementsIn(svg).find((el) => el.tag === 'circle' && el.attrs['id'] === 'plaza')
-  if (!punto) errors.push('falta el punto de la plaza (<circle id="plaza">)')
-  if (!elementsIn(svg).some((el) => 'data-leyenda' in el.attrs)) errors.push('falta la leyenda (elemento con data-leyenda), p. ej. "Mapa ilustrativo, no a escala"')
-  if (errors.length > 0 || !viewBox || !punto) return { errors }
-  return { errors, info: { viewBox, plaza: { cx: Number(punto.attrs['cx']), cy: Number(punto.attrs['cy']) } } }
+  return { errors, info: { viewBox, locales, origenes, anclas, accesos, estacionamientos, marina, rutas } }
 }
 
 export interface PrepareOptions {

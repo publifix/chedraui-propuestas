@@ -18,7 +18,7 @@ const CAMPOS_POR_SECCION: Partial<Record<Seccion, string[]>> = {
   BusinessCase: ['escenarios_venta', 'giro.costo_ocupacion_objetivo'],
   Modulos: ['plaza.modulos'],
   Directorio: ['plaza.directorio'],
-  PlanoInteractivo: ['plaza.niveles', 'plaza.region', 'locales.*.ruta'],
+  PlanoInteractivo: ['plaza.niveles', 'locales.*.ruta'],
 }
 
 /**

@@ -54,6 +54,14 @@ if (existsSync(path.join(dist, 'robots.txt'))) {
 }
 check(!files.some((f) => /sitemap/i.test(f)), 'no debe generarse sitemap')
 
+// Material de referencia (_referencias/, p. ej. la copia del sitio de Chedraui) nunca se publica.
+for (const f of files) {
+  check(!/_referencias|ChedrauiInmobiliaria|_4omz\./i.test(f), `${f}: el material de referencia no debe publicarse`)
+}
+for (const f of files.filter((f) => /\.(html|css|js)$/.test(f))) {
+  check(!/_referencias\/|ChedrauiInmobiliaria/.test(read(f)), `${f}: no debe enlazar material de referencia`)
+}
+
 // Ninguna página lista presentaciones: solo las páginas de una presentación enlazan a /p/ o /revision/.
 for (const f of files.filter((f) => f.endsWith('.html') && !/^(p|revision)\//.test(f))) {
   check(!/href="[^"]*\/(p|revision)\//.test(read(f)), `${f} no debe enlazar presentaciones`)

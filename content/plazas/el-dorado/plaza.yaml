@@ -44,29 +44,38 @@ metricas:
     etiqueta: visitantes mensuales
     fuente: Administración de El Dorado # DEMO
     periodo: Promedio mensual, enero–junio 2026 # DEMO
-  - valor: "+1,600"
+  # Datos oficiales de la ficha de El Dorado en el sitio de Inmobiliaria Chedraui (consulta: octubre 2026).
+  - valor: "32,882 m²"
+    etiqueta: superficie rentable
+    fuente: Inmobiliaria Chedraui, sitio oficial
+    periodo: Consulta, octubre 2026
+  - valor: "96"
+    etiqueta: locales en total
+    fuente: Inmobiliaria Chedraui, sitio oficial
+    periodo: Consulta, octubre 2026
+  - valor: "1,600"
     etiqueta: cajones de estacionamiento
-    fuente: Administración de El Dorado # DEMO
-    periodo: Inventario de estacionamiento 2026 # DEMO
-  - valor: "43"
-    etiqueta: locales en planta baja
-    fuente: Presentación comercial de Inmobiliaria Chedraui
-    periodo: junio 2026
-  - valor: "9"
-    etiqueta: restaurantes en planta baja
-    fuente: Presentación comercial de Inmobiliaria Chedraui
-    periodo: junio 2026
+    fuente: Inmobiliaria Chedraui, sitio oficial
+    periodo: Consulta, octubre 2026
+  - valor: "2012"
+    etiqueta: año de inauguración
+    fuente: Inmobiliaria Chedraui, sitio oficial
+    periodo: Consulta, octubre 2026
 
 diferenciales:
   - titulo: Diseño de Legorreta + Legorreta
     texto: Arquitectura firmada por uno de los despachos más reconocidos de México.
-    # Foto pendiente: reemplazar por una de mayor resolución (la actual mide 662×302 px).
-    imagen: media/acceso-nocturno.jpg
+    # Acceso principal al atardecer, del sitio de Inmobiliaria Chedraui (678×452 px; la anterior medía 662×302).
+    # Foto pendiente: conviene una de mayor resolución.
+    imagen: media/acceso-principal-atardecer.jpg
   - titulo: 160 mil m² de construcción
     texto: Una de las plazas de mayor escala de la Riviera Veracruzana.
+    # Atrio central, del sitio de Inmobiliaria Chedraui (1075×860 px).
+    imagen: media/atrio-central.jpg
   - titulo: Marina con club náutico
     texto: Acceso en yate y club náutico integrados al centro comercial.
-    imagen: media/marina-panoramica.png
+    # Yates en la marina, del sitio de Inmobiliaria Chedraui (1242×699 px): más nítida que la panorámica.
+    imagen: media/marina-yates.jpg
   - titulo: Terrazas con vista a la marina
     texto: Espacios abiertos para comer y convivir frente al agua.
     imagen: media/terraza-marina.jpg
@@ -155,17 +164,21 @@ directorio: # DEMO: giros asignados por Publifix según la marca, a confirmar co
 niveles:
   - id: PB
     nombre: Planta baja
-    # Plano esquemático (contrato de CLAUDE.md §7.1.2) dibujado a partir de la lámina 6 del PDF.
+    # Plano normalizado del plano oficial del sitio de Inmobiliaria Chedraui (contrato de CLAUDE.md §7.1.2;
+    # original y script en _referencias/sitio-chedraui/el-dorado/).
     plano: planos/pb.svg
-    # Marca y giro de cada local visible según el PDF de disponibilidad (junio 2026): logos del plano
-    # identificados contra la lámina de directorio. Donde el logo no se lee, una marca de la lámina que
-    # no está en otro local del plano, con la marca DEMO; igual los giros asignados por Publifix.
-    # 9 restaurantes, como dice la métrica. A25+A26 no va aquí: tiene su propio archivo de local.
+    # Claves y geometría del plano oficial de planta baja (sitio de Inmobiliaria Chedraui, octubre 2026).
+    # Áreas: si el área redondeada del plano oficial coincide con la del PDF (junio 2026), se conserva el
+    # decimal del PDF; si difiere, manda el plano oficial (es más reciente).
+    # Marcas: logos del PDF identificados contra la lámina de directorio; donde no se leen, una marca de la
+    # lámina que no está en otro local, con la marca DEMO; igual los giros asignados por Publifix.
+    # A25+A26 no va aquí: tiene su propio archivo de local.
     ocupantes:
-      # A24: Logo turquesa no legible: marca de demostración del directorio.
+      # A24: Logo turquesa no legible: marca de demostración del directorio. Área del plano oficial.
       - clave: A24
         marca: Bella Make Up # DEMO
         giro: Cosméticos # DEMO
+        area_m2: 40
       # A23: Logo verde no legible: marca de demostración del directorio.
       - clave: A23
         marca: Menta # DEMO
@@ -205,7 +218,7 @@ niveles:
         marca: Pandora
         giro: Joyería
         area_m2: 130.1
-      # A1+A2: Logo circular con "R": Royalty, según la lámina de directorio.
+      # A1+A2: Logo circular con "R": Royalty, según la lámina de directorio. El plano oficial trae dos rótulos de área: 622 y 1,949 m².
       - clave: "A1+A2"
         marca: Royalty
         giro: Tortas y bar
@@ -242,17 +255,22 @@ niveles:
         marca: Urban Store
         giro: Moda
         area_m2: 528.9
-      # C1+C2+C3+D1: Legible en el plano del PDF (no aparece en la lámina de directorio).
-      - clave: "C1+C2+C3+D1"
+      # C1+C2: Local separado en el plano oficial (antes C1+C2+C3+D1): marca de demostración del directorio.
+      - clave: "C1+C2"
+        marca: Ábito # DEMO
+        giro: Moda # DEMO
+        area_m2: 101
+      # C3+D1: Legible en el plano del PDF (no aparece en la lámina de directorio). Área del plano oficial.
+      - clave: "C3+D1"
         marca: Las Acamayas
         giro: Restaurante
-        area_m2: 427.8
+        area_m2: 325
         categoria: restaurante
-      # C4+C6+D2: Sin logo en el PDF: marca de demostración del directorio.
-      - clave: "C4+C6+D2"
+      # C4-C6+D2: Sin logo en el PDF: marca de demostración del directorio. Área del plano oficial (antes C4+C6+D2, 886 m²).
+      - clave: "C4-C6+D2"
         marca: Smart Fit # DEMO
         giro: Gimnasio # DEMO
-        area_m2: 886.0
+        area_m2: 425
         categoria: servicio
       # C7+D3: Lectura probable del logo.
       - clave: "C7+D3"
@@ -281,10 +299,16 @@ niveles:
         giro: Estética # DEMO
         area_m2: 49.81
         categoria: servicio
-      - clave: "C12+C13+D5"
+      # C12+C13: Local separado en el plano oficial (antes C12+C13+D5): marca de demostración del directorio.
+      - clave: "C12+C13"
+        marca: Nutrisa # DEMO
+        giro: Snacks saludables # DEMO
+        area_m2: 103
+      # D5: Área del plano oficial (antes con C12+C13).
+      - clave: D5
         marca: Domo Sushi Bar
         giro: Restaurante
-        area_m2: 458.46
+        area_m2: 354
         categoria: restaurante
       # D6: Logo identificado contra la lámina de directorio.
       - clave: D6
@@ -292,16 +316,11 @@ niveles:
         giro: Restaurante
         area_m2: 317.63
         categoria: restaurante
-      # C14: Rótulo vertical no legible: marca de demostración del directorio.
-      - clave: C14
-        marca: Steren # DEMO
-        giro: Electrónica # DEMO
-        area_m2: 52.0
-      # C15+C16+D7: Logo oscuro no legible: marca de demostración del directorio.
-      - clave: "C15+C16+D7"
+      # C14+C15+C16+D7: Un solo local en el plano oficial (antes C14 y C15+C16+D7): marca de demostración del directorio.
+      - clave: "C14+C15+C16+D7"
         marca: Dim Sum King # DEMO
         giro: Restaurante # DEMO
-        area_m2: 287.47
+        area_m2: 339
         categoria: restaurante
       # C17: Logo identificado contra la lámina de directorio.
       - clave: C17
@@ -327,54 +346,48 @@ niveles:
         marca: Bizzarro
         giro: Moda # DEMO
         area_m2: 50.63
-      # D9+D10+C22: Logo identificado contra la lámina de directorio.
+      # D9+D10+C22: Logo identificado contra la lámina de directorio. Área del plano oficial (el PDF decía 567.44 m²).
       - clave: "D9+D10+C22"
         marca: "Fisher's"
         giro: Mariscos
-        area_m2: 567.44
+        area_m2: 421
         categoria: restaurante
-      # C24: Sin logo en el PDF: marca de demostración del directorio.
-      - clave: C24
-        marca: MacStore # DEMO
-        giro: Tecnología # DEMO
-        area_m2: 157.82
-      # C23: Sin logo en el PDF: marca de demostración del directorio.
+      # C23: Sin logo en el PDF: marca de demostración del directorio. Área del plano oficial.
       - clave: C23
         marca: Atlas del Descanso # DEMO
         giro: Colchones # DEMO
-        area_m2: 201.3
-      # D11: Logo rosa no legible: marca de demostración del directorio.
+        area_m2: 298
+      # D11: Logo rosa no legible: marca de demostración del directorio. Área del plano oficial (incluye el antiguo C24).
       - clave: D11
         marca: Dulcefina # DEMO
         giro: Dulcería # DEMO
-        area_m2: 422.65
-      - clave: "(B1-B4)+(B17+B21)"
+        area_m2: 581
+      # B1-B4+B17-B21: Área del plano oficial (el PDF decía 350.05 m²).
+      - clave: "B1-B4+B17-B21"
         marca: Petco
         giro: Mascotas
-        area_m2: 350.05
+        area_m2: 345
       - clave: B16
         marca: Mobo
         giro: Accesorios # DEMO
         area_m2: 42.52
-      - clave: "(B5-B8)+(B14-B15)"
+      - clave: "B5-B8+B14-B15"
         marca: Telcel
         giro: Telefonía
         area_m2: 315.65
         categoria: servicio
-      - clave: B9-B13
+      - clave: "B9-B13"
         marca: Santander
         giro: Banco
         area_m2: 274.4
         categoria: servicio
 
-# Mapa ilustrativo de Boca del Río para la secuencia de zoom (no a escala).
-region:
-  mapa: planos/region.svg
-
 modulos:
   - id: marina
     titulo: Marina
     texto: Club náutico y acceso en yate.
+    # Panorámica de la marina (3148×740 px, escalada).
+    imagen: media/marina-panoramica.png
   - id: park
     titulo: El Dorado Park
     texto: Más de 50 atracciones, arcade, realidad virtual y trampolines.
