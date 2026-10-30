@@ -1,0 +1,545 @@
+---
+// PDF de la propuesta, dos hojas carta. Hoja 1: portada personalizada. Hoja 2: el local, su mini
+// plano, condiciones, términos, costo de ocupación por escenario, asesor, vigencia y QR al link
+// interactivo. Todo sale del modelo resuelto y de src/lib/calc; los valores visuales, de los tokens.
+import { getImage } from 'astro:assets'
+import QRCode from 'qrcode'
+import Label from '../Label.astro'
+import MiniPlano from './MiniPlano.astro'
+import { evaluarRango, formatAmount, formatMoney, formatPercent, vatLabel, type RangoResult } from '../../lib/calc'
+import { plazaImage } from '../../lib/media'
+import { fechaEmision, folio } from '../../lib/pdf'
+import { esPersona } from '../../lib/prospecto'
+import type { ResolvedPresentation } from '../../lib/resolve'
+import { terminosContrato } from '../../lib/terminos'
+import { isTodo } from '../../lib/todo'
+import { formatVigencia } from '../../lib/vigencia'
+import { withBase } from '../../lib/paths'
+
+interface Props {
+  model: ResolvedPresentation
+  kind: 'revision' | 'envio'
+  /** URL absoluta del link interactivo al que apunta el QR. */
+  urlInteractiva: string
+}
+
+const { model, kind, urlInteractiva } = Astro.props
+const { plaza, prospecto, asesor, giro } = model
+const local = model.locales[0]!
+const c = local.calculos
+const cond = local.condiciones
+const nivel = plaza.niveles.find((n) => n.id === local.nivel)?.nombre ?? local.nivel
+const plan = model.planos.find((p) => p.claves.includes(local.clave))
+const area = `${local.area_m2.toLocaleString('es-MX')} m²`
+const nombrePlaza = plaza.nombre_completo ?? plaza.nombre
+const emision = formatVigencia(fechaEmision())
+const vigencia = formatVigencia(model.vigencia)
+const folioPdf = folio(model)
+const terminos = terminosContrato(cond)
+const iva = formatPercent(cond.iva)
+
+// Portada: foto hero optimizada para el PDF (JPEG, ancho de la hoja a ~200 ppp).
+const hero = await plazaImage(plaza.slug, plaza.hero.imagen)
+const heroPdf = hero && (await getImage({ src: hero, width: Math.min(1700, hero.width), format: 'jpg', quality: 68 }))
+const logo = await plazaImage(plaza.slug, plaza.tema.logo)
+const logoPdf = logo && (await getImage({ src: logo, width: Math.min(480, logo.width), format: 'png' }))
+const logoAdmin = await plazaImage(plaza.slug, plaza.administradora?.logo)
+const logoAdminPdf = logoAdmin && (await getImage({ src: logoAdmin, width: Math.min(360, logoAdmin.width), format: 'png' }))
+
+const ft = local.ficha_tecnica
+const si = (v: boolean | undefined) => (v === undefined ? undefined : v ? 'Sí' : 'No')
+const datosLocal = [
+  ['Clave', local.clave],
+  ['Nivel', nivel],
+  ['Área', area],
+  ['Frente', ft?.frente_m && `${ft.frente_m} m`],
+  ['Altura', ft?.altura_m && `${ft.altura_m} m`],
+  ['Agua', si(ft?.agua)],
+  ['Gas', si(ft?.gas)],
+  ['Carga eléctrica', ft?.carga_electrica],
+  ['Extracción', si(ft?.extraccion)],
+].filter((d): d is [string, string] => Boolean(d[1]))
+
+const ESTADOS: Record<RangoResult['estado'], string> = { below: 'Holgado', within: 'Dentro del rango', above: 'Por encima' }
+const { min, max } = giro.costo_ocupacion_objetivo
+const rango = typeof min === 'number' && typeof max === 'number' ? `${formatPercent(min)} a ${formatPercent(max)}` : undefined
+const escenarios = c.escenarios.map((e) => {
+  const r = evaluarRango(e.costoOcupacion, giro)
+  return { ...e, estado: r.kind === 'range' ? ESTADOS[r.estado] : '—' }
+})
+const vecinos = (local.vecinos ?? []).flatMap((v) => {
+  const o = plaza.niveles.find((n) => n.id === local.nivel)?.ocupantes?.find((x) => x.clave === v)
+  return o && !isTodo(o.marca) ? [`${v} ${o.marca}`] : [v]
+})
+
+const qr = await QRCode.toString(urlInteractiva, {
+  type: 'svg',
+  margin: 0,
+  errorCorrectionLevel: 'M',
+  color: { dark: plaza.tema.colores.texto, light: '#0000' },
+})
+const urlCorta = urlInteractiva.replace(/^https:\/\//, '').replace(/\/$/, '')
+const aviso = plaza.legales.aviso_privacidad_url ?? new URL(withBase(`privacidad/${plaza.slug}/`), Astro.site).toString()
+const marcaInterna = kind === 'revision'
+---
+<section class="hoja hoja--portada surface-brand" aria-label="Portada">
+  {heroPdf && <img class="portada__foto" src={heroPdf.src} alt="" />}
+  <div class="portada__capa"></div>
+  <div class="portada__contenido">
+    <header class="portada__encabezado">
+      {logoPdf && <img class="portada__logo" src={logoPdf.src} alt={plaza.nombre} />}
+      <p class="portada__folio t-meta tabular">Folio {folioPdf}</p>
+    </header>
+    <div class="portada__cuerpo">
+      <Label as="p" text={nombrePlaza} />
+      <h1 class="portada__titulo">Propuesta comercial para {prospecto.marca}</h1>
+      {esPersona(prospecto) && <p class="portada__para">Para {prospecto.destinatario}</p>}
+      <p class="portada__local">Local {local.clave} · {nivel} · {area}</p>
+    </div>
+    <dl class="portada__datos">
+      <div><dt><Label as="span" text="Fecha de emisión" /></dt><dd>{emision}</dd></div>
+      <div><dt><Label as="span" text="Vigencia" /></dt><dd>Hasta el {vigencia}</dd></div>
+      <div><dt><Label as="span" text="Folio" /></dt><dd class="tabular">{folioPdf}</dd></div>
+    </dl>
+  </div>
+  {marcaInterna && <div class="marca-interna" aria-hidden="true"><span>Vista previa interna</span></div>}
+</section>
+
+<section class="hoja hoja--propuesta" aria-label="Propuesta comercial">
+  <div class="propuesta">
+    <header class="propuesta__encabezado">
+      <Label as="p" text={nombrePlaza} />
+      <p class="t-meta tabular">Folio {folioPdf} · Emitida el {emision}</p>
+    </header>
+
+    <div class="propuesta__titulo">
+      <h2 class="titulo__local">Local {local.clave}</h2>
+      <p class="t-meta">{nivel} · {area} · Propuesta para {prospecto.marca}</p>
+    </div>
+
+    <div class="propuesta__fila">
+      <section class="bloque" aria-labelledby="pdf-local">
+        <h3 id="pdf-local" class="bloque__titulo"><Label as="span" text="El local" /></h3>
+        <dl class="datos">
+          {datosLocal.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}
+        </dl>
+      </section>
+      {plan && (
+        <section class="bloque" aria-labelledby="pdf-plano">
+          <h3 id="pdf-plano" class="bloque__titulo"><Label as="span" text="Ubicación en la plaza" /></h3>
+          <MiniPlano model={model} plan={plan} ancho={340} proporcion={2.05} />
+          {vecinos.length > 0 && <p class="vecinos t-meta">Vecinos: {vecinos.join(' · ')}</p>}
+        </section>
+      )}
+    </div>
+
+    <div class="propuesta__fila">
+      <section class="bloque estado" aria-labelledby="pdf-condiciones">
+        <h3 id="pdf-condiciones" class="bloque__titulo"><Label as="span" text="Condiciones del local" /></h3>
+        <dl class="filas">
+          <div><dt>Renta mensual</dt><dd>{formatAmount(cond.renta_mensual)} {vatLabel('excluded')}</dd></div>
+          <div><dt>Mantenimiento mensual</dt><dd>{formatAmount(cond.mantenimiento_mensual)} {vatLabel('excluded')}</dd></div>
+          <div class="filas__fuerte"><dt>Subtotal</dt><dd>{formatMoney(c.subtotalMensual)}</dd></div>
+          <div><dt>IVA ({iva})</dt><dd>{formatAmount(c.ivaMensual.amount)}</dd></div>
+          <div class="filas__total"><dt>Total mensual</dt><dd><span class="t-figure">{formatAmount(c.totalMensual.amount)}</span> <span class="t-meta">{vatLabel('included')}</span></dd></div>
+          <div><dt>Depósito en garantía <span class="t-meta">({c.deposito.assumptions.join(', ')})</span></dt><dd>{formatAmount(c.deposito.amount)} <span class="t-meta">{vatLabel(c.deposito.vat)}</span></dd></div>
+          <div><dt>Renta por m²</dt><dd>{formatMoney(c.rentaPorM2)}</dd></div>
+          <div><dt>Mantenimiento por m²</dt><dd>{formatMoney(c.mantenimientoPorM2)}</dd></div>
+        </dl>
+        <p class="nota t-meta">Renta, mantenimiento y montos por m² se expresan antes de IVA. El total mensual y el depósito incluyen IVA del {iva}. Montos en pesos mexicanos.</p>
+      </section>
+      <div class="columna">
+        {terminos.length > 0 && (
+          <section class="bloque" aria-labelledby="pdf-terminos">
+            <h3 id="pdf-terminos" class="bloque__titulo"><Label as="span" text="Condiciones contractuales" /></h3>
+            <dl class="filas">
+              {terminos.map(([k, v, detalle]) => <div><dt>{k}{detalle && <span class="filas__detalle t-meta">{detalle}</span>}</dt><dd>{v}</dd></div>)}
+              <div><dt>Costo del primer año{c.costoAnual.assumptions.length > 0 && <span class="filas__detalle t-meta">{c.costoAnual.assumptions.join('; ')}</span>}</dt><dd>{formatAmount(c.costoAnual.amount)} <span class="t-meta">{vatLabel(c.costoAnual.vat)}</span></dd></div>
+            </dl>
+          </section>
+        )}
+        <section class="bloque" aria-labelledby="pdf-ocupacion">
+          <h3 id="pdf-ocupacion" class="bloque__titulo"><Label as="span" text="Costo de ocupación" /></h3>
+          <table class="tabla tabular">
+            <thead><tr><th scope="col">Escenario</th><th scope="col">Ventas al mes</th><th scope="col">Costo</th><th scope="col">Rango sano</th></tr></thead>
+            <tbody>
+              {escenarios.map((e) => (
+                <tr>
+                  <th scope="row">{e.nombre}</th>
+                  <td>{e.ventasMensuales.kind === 'money' ? formatMoney(e.ventasMensuales, { withVat: false }) : '—'}</td>
+                  <td><strong>{formatPercent(e.costoOcupacion, 1)}</strong></td>
+                  <td>{e.estado}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p class="t-meta">
+            Renta y mantenimiento ({formatMoney(c.subtotalMensual)}) entre ventas mensuales.{rango && ` Rango sano para ${giro.nombre.toLowerCase()}: ${rango}.`} Escenarios ilustrativos.
+          </p>
+          {c.ventasEquilibrio.kind === 'money' && (
+            <p class="equilibrio"><span>Ventas de equilibrio</span> <strong class="tabular">{formatMoney(c.ventasEquilibrio, { withVat: false })}</strong> <span class="t-meta">al mes</span></p>
+          )}
+        </section>
+      </div>
+    </div>
+
+    <div class="propuesta__cierre">
+      <section class="bloque" aria-labelledby="pdf-asesor">
+        <h3 id="pdf-asesor" class="bloque__titulo"><Label as="span" text="Tu contacto" /></h3>
+        <p class="asesor__nombre">{asesor.nombre}</p>
+        {asesor.puesto && <p class="t-meta">{asesor.puesto}</p>}
+        <p class="tabular">WhatsApp {asesor.whatsapp}</p>
+        {asesor.correo && <p>{asesor.correo}</p>}
+        <p class="vigencia">Propuesta vigente hasta el {vigencia}.</p>
+      </section>
+      <a class="qr" href={urlInteractiva}>
+        <span class="qr__codigo" set:html={qr} aria-hidden="true" />
+        <span class="qr__texto">
+          <strong>Explora la propuesta interactiva</strong>
+          <span class="t-meta">{urlCorta}</span>
+        </span>
+      </a>
+      {logoAdminPdf && plaza.administradora && <img class="propuesta__administradora" src={logoAdminPdf.src} alt={plaza.administradora.nombre} />}
+    </div>
+
+    <footer class="propuesta__pie t-meta">
+      <p>{plaza.legales.leyenda_imagenes} Plano esquemático, no a escala.</p>
+      <p>Aviso de privacidad: {aviso.replace(/^https:\/\//, '')} · Presentación preparada por Publifix</p>
+    </footer>
+  </div>
+  {marcaInterna && <div class="marca-interna" aria-hidden="true"><span>Vista previa interna</span></div>}
+</section>
+
+<style>
+  /* Hoja 1 · portada a sangre: foto con capa del color de marca. */
+  .hoja--portada {
+    background: var(--color-brand);
+  }
+
+  .portada__foto {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  .portada__capa {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-brand) 55%, transparent) 0%,
+      color-mix(in srgb, var(--color-brand) 78%, transparent) 45%,
+      var(--color-brand) 82%
+    );
+  }
+
+  .portada__contenido {
+    position: relative;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    block-size: 100%;
+    box-sizing: border-box;
+    padding: var(--space-2xl);
+    color: var(--color-on-brand);
+  }
+
+  .portada__encabezado {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .portada__logo {
+    inline-size: 9rem;
+    block-size: auto;
+    filter: brightness(0) invert(1);
+  }
+
+  .portada__cuerpo {
+    display: grid;
+    align-content: end;
+    gap: var(--space-s);
+    padding-block-end: var(--space-xl);
+  }
+
+  /* Titular de portada: el paso mayor de la escala, ampliado para la hoja carta. */
+  .portada__titulo {
+    max-inline-size: 15ch;
+    font-family: var(--font-display);
+    font-size: calc(var(--step-6) * 1.7);
+    font-weight: var(--title-long-weight);
+    font-stretch: var(--title-long-stretch);
+    letter-spacing: var(--title-long-tracking);
+    line-height: var(--title-long-leading);
+    text-wrap: balance;
+  }
+
+  .portada__para {
+    font-size: var(--step-2);
+    font-weight: var(--strong-weight);
+  }
+
+  .portada__local {
+    font-size: var(--step-1);
+  }
+
+  .portada__datos {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    align-items: start;
+    gap: var(--space-l);
+    padding-block-start: var(--space-m);
+    border-block-start: var(--line-width) solid var(--color-line);
+  }
+
+  .portada__datos div {
+    display: grid;
+    gap: var(--space-3xs);
+  }
+
+  .portada__datos dd {
+    font-size: var(--step-1);
+    font-weight: var(--strong-weight);
+  }
+
+  /* Hoja 2 · propuesta comercial. */
+  .propuesta {
+    display: grid;
+    align-content: start;
+    gap: var(--space-s) var(--space-m);
+    block-size: 100%;
+    box-sizing: border-box;
+    padding: var(--space-l) var(--space-xl) var(--space-s);
+    font-size: var(--step--1);
+    line-height: 1.35;
+  }
+
+  .propuesta__encabezado {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-block-end: var(--space-xs);
+    border-block-end: calc(var(--line-width) * 2) solid var(--color-accent);
+  }
+
+  .propuesta__titulo {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-s);
+  }
+
+  .titulo__local {
+    font-family: var(--font-display);
+    font-size: var(--step-4);
+    font-weight: var(--title-short-weight);
+    font-stretch: var(--title-short-stretch);
+    letter-spacing: var(--title-short-tracking);
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  .propuesta__fila {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: var(--space-xl);
+    align-items: start;
+  }
+
+  .columna {
+    display: grid;
+    gap: var(--space-l);
+  }
+
+  .bloque {
+    display: grid;
+    gap: var(--space-2xs);
+    align-content: start;
+  }
+
+  .bloque__titulo {
+    color: var(--color-text-muted);
+    padding-block-end: var(--space-3xs);
+    border-block-end: var(--line-width) solid var(--color-line);
+  }
+
+  .datos {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-xs) var(--space-s);
+  }
+
+  .datos dt {
+    color: var(--color-text-muted);
+    font-size: var(--step--2);
+  }
+
+  .datos dd {
+    font-weight: var(--strong-weight);
+  }
+
+  .vecinos {
+    line-height: 1.3;
+  }
+
+  .estado {
+    padding: var(--space-s) var(--space-m);
+    background: var(--color-surface);
+    border: var(--line-width) solid var(--color-line);
+    border-radius: var(--radius-m);
+  }
+
+  .filas {
+    display: grid;
+  }
+
+  .filas div {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-s);
+    padding-block: var(--space-3xs);
+    border-block-end: var(--line-width) solid var(--color-line);
+  }
+
+  .filas div:last-child {
+    border-block-end: 0;
+  }
+
+  .filas dt {
+    color: var(--color-text-muted);
+  }
+
+  .filas dd {
+    text-align: end;
+    font-variant-numeric: lining-nums tabular-nums;
+    white-space: nowrap;
+  }
+
+  .filas__detalle {
+    display: block;
+  }
+
+  .filas__fuerte dt,
+  .filas__fuerte dd,
+  .filas__total dt {
+    color: var(--color-text);
+    font-weight: var(--strong-weight);
+  }
+
+  .filas__total .t-figure {
+    font-size: calc(var(--step-3) * var(--figure-size));
+  }
+
+  .nota {
+    margin-block-start: var(--space-2xs);
+  }
+
+  .tabla {
+    inline-size: 100%;
+    border-collapse: collapse;
+  }
+
+  .tabla th,
+  .tabla td {
+    padding: var(--space-3xs) var(--space-2xs);
+    border-block-end: var(--line-width) solid var(--color-line);
+    text-align: end;
+    font-weight: inherit;
+  }
+
+  .tabla th:first-child {
+    text-align: start;
+  }
+
+  .tabla thead th {
+    color: var(--color-text-muted);
+    font-size: var(--step--2);
+  }
+
+  .tabla tbody th {
+    font-weight: var(--strong-weight);
+  }
+
+  .equilibrio {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2xs);
+    padding: var(--space-xs) var(--space-s);
+    background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
+    border-radius: var(--radius-s);
+  }
+
+  .equilibrio strong {
+    font-size: var(--step-1);
+    color: var(--color-accent);
+  }
+
+  .propuesta__cierre {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: var(--space-xl);
+    align-items: center;
+    padding-block-start: var(--space-xs);
+    border-block-start: var(--line-width) solid var(--color-line);
+  }
+
+  .asesor__nombre {
+    font-size: var(--step-1);
+    font-weight: var(--strong-weight);
+  }
+
+  .propuesta__cierre .bloque {
+    gap: 0;
+  }
+
+  .vigencia {
+    margin-block-start: var(--space-3xs);
+    font-weight: var(--strong-weight);
+  }
+
+  .qr {
+    display: flex;
+    align-items: center;
+    gap: var(--space-s);
+    color: var(--color-text);
+    text-decoration: none;
+  }
+
+  .qr__codigo {
+    flex: none;
+    inline-size: 6rem;
+    block-size: 6rem;
+  }
+
+  .qr__codigo :global(svg) {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .qr__texto {
+    display: grid;
+    gap: var(--space-3xs);
+    max-inline-size: 14rem;
+  }
+
+  .qr__texto .t-meta {
+    overflow-wrap: anywhere;
+  }
+
+  .propuesta__administradora {
+    inline-size: 6.5rem;
+    block-size: auto;
+    filter: brightness(0);
+    opacity: 0.8;
+  }
+
+  .propuesta__pie {
+    align-self: end;
+    display: grid;
+    gap: var(--space-3xs);
+    font-size: var(--step--2);
+  }
+</style>

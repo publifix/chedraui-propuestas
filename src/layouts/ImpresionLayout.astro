@@ -1,0 +1,93 @@
+---
+// Página de impresión de una propuesta: dos hojas carta que scripts/pdf.mjs convierte a PDF en el
+// build y luego retira del sitio. Mismos tokens y tipografías de la plaza; escala de impresión fija.
+import '../styles/base.css'
+import '../styles/plano.css'
+import type { ResolvedPresentation } from '../lib/resolve'
+import { fontFaceCss, printThemeCss, themeCss, themeFonts } from '../lib/theme'
+
+interface Props {
+  model: ResolvedPresentation
+  kind: 'revision' | 'envio'
+  /** Metadatos del PDF que lee scripts/pdf.mjs. */
+  pdf: { archivo: string; titulo: string; autor: string; asunto: string }
+}
+
+const { model, kind, pdf } = Astro.props
+const { tema } = model.plaza
+---
+<!doctype html>
+<html lang="es-MX" class:list={['impresion', kind === 'revision' && 'is-revision']}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{pdf.titulo}</title>
+    <meta name="pdf:archivo" content={pdf.archivo} />
+    <meta name="pdf:autor" content={pdf.autor} />
+    <meta name="pdf:asunto" content={pdf.asunto} />
+    <style is:inline set:html={fontFaceCss(themeFonts(tema.tipografias))} />
+    <style is:inline set:html={themeCss(tema) + printThemeCss(tema)} />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
+
+<style is:global>
+  @page {
+    size: letter portrait;
+    margin: 0;
+  }
+
+  html.impresion {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .impresion body {
+    margin: 0;
+    background: var(--color-bg);
+  }
+
+  /* Una hoja carta: lo que no cabe se mide en el build y hace fallar la generación del PDF. */
+  .hoja {
+    position: relative;
+    box-sizing: border-box;
+    inline-size: 8.5in;
+    block-size: 11in;
+    overflow: hidden;
+    break-after: page;
+    background: var(--color-bg);
+  }
+
+  .hoja:last-child {
+    break-after: auto;
+  }
+
+  /* Revisión: marca discreta de vista previa interna en cada hoja. */
+  .marca-interna {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  .marca-interna span {
+    transform: rotate(-32deg);
+    font-family: var(--font-display);
+    font-size: var(--step-5);
+    font-weight: var(--title-short-weight);
+    letter-spacing: var(--title-short-tracking);
+    text-transform: uppercase;
+    color: var(--color-text);
+    opacity: 0.08;
+    white-space: nowrap;
+  }
+
+  .surface-brand .marca-interna span {
+    color: var(--color-on-brand);
+    opacity: 0.16;
+  }
+</style>

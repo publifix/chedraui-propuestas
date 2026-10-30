@@ -30,7 +30,7 @@ export interface FloorPlanInfo {
   locales: Map<string, { id: string; bbox: BBox; punto: Punto }>
   /** Ids de los posibles orígenes de una ruta: estacionamientos, anclas y accesos. */
   origenes: Map<string, string>
-  anclas: Array<{ id: string; marca: string; punto?: Punto }>
+  anclas: Array<{ id: string; marca: string; punto?: Punto; bbox?: BBox }>
   accesos: Array<{ id: string; nombre: string }>
   estacionamientos: Array<{ id: string; nombre: string; punto?: Punto }>
   /** Áreas con nombre de la capa "marina" (opcional), para rotularlas. */
@@ -217,9 +217,10 @@ export function readFloorPlan(svg: string): { errors: string[]; info?: FloorPlan
           return []
         }
         const pts = vertices(el)
-        return [{ id, valor, ...(pts && { punto: puntoRotulo(pts) }) }]
+        const box = bbox(el)
+        return [{ id, valor, ...(pts && { punto: puntoRotulo(pts) }), ...(box && { bbox: box }) }]
       })
-  const anclas = conPrefijo('anclas', 'ancla-', 'data-marca').map(({ id, valor, punto }) => ({ id, marca: valor, ...(punto && { punto }) }))
+  const anclas = conPrefijo('anclas', 'ancla-', 'data-marca').map(({ id, valor, punto, bbox: box }) => ({ id, marca: valor, ...(punto && { punto }), ...(box && { bbox: box }) }))
   const accesos = conPrefijo('accesos', 'acceso-', 'data-nombre').map(({ id, valor }) => ({ id, nombre: valor }))
   const estacionamientos = conPrefijo('estacionamiento', 'estacionamiento-', 'data-nombre').map(({ id, valor, punto }) => ({ id, nombre: valor, ...(punto && { punto }) }))
   const marina = elementsIn(layers.get('marina') ?? '').flatMap((el) => {

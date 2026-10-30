@@ -1,0 +1,18 @@
+---
+// Ruta de impresión del link de revisión: scripts/pdf.mjs la convierte en el PDF de la propuesta y la
+// retira del sitio. El QR apunta al link de revisión (nunca se cruza con el de envío).
+import ImpresionLayout from '../../../layouts/ImpresionLayout.astro'
+import Propuesta from '../../../components/impresion/Propuesta.astro'
+import { pdfMeta } from '../../../lib/pdf'
+import { staticPaths, type RouteEntry } from '../../../lib/site'
+
+export function getStaticPaths() {
+  return staticPaths('revision')
+}
+
+const { model, route } = Astro.props as RouteEntry['props']
+const meta = pdfMeta(model, route, Astro.site!, import.meta.env.BASE_URL)
+---
+<ImpresionLayout model={model} kind="revision" pdf={meta}>
+  <Propuesta model={model} kind="revision" urlInteractiva={meta.urlInteractiva} />
+</ImpresionLayout>
