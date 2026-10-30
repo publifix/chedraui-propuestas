@@ -187,7 +187,7 @@ describe('presentación', () => {
 
   it('rechaza secciones desconocidas o repetidas', () => {
     const p = seed(SEED.presentacion)
-    p['secciones'] = ['Portada', 'Galeria']
+    p['secciones'] = ['Portada', 'Testimonios']
     expect(errorsOf(presentacionSchema, p)[0]).toContain('secciones.1: Opción inválida')
     p['secciones'] = ['Portada', 'Portada']
     expect(errorsOf(presentacionSchema, p)[0]).toContain('secciones: no puede repetir una sección')

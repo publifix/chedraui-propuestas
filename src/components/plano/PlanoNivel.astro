@@ -103,14 +103,16 @@ const id = `plano-${plan.nivel.id.toLowerCase()}`
           <span class="marcador__etiqueta">Tu local · {clave}</span>
         </span>
       </div>
-      <div class="plano__zoom" role="group" aria-label="Acercar o alejar el plano">
-        <button type="button" class="zoom__boton" data-zoom="mas" aria-label="Acercar">
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 6v12M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
-        </button>
-        <button type="button" class="zoom__boton" data-zoom="menos" aria-label="Alejar" disabled>
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
-        </button>
-      </div>
+    </div>
+
+    <!-- En escritorio, en la esquina del plano; en celular, debajo, para no taparlo. -->
+    <div class="plano__zoom" role="group" aria-label="Acercar o alejar el plano">
+      <button type="button" class="zoom__boton" data-zoom="mas" aria-label="Acercar">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 6v12M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+      </button>
+      <button type="button" class="zoom__boton" data-zoom="menos" aria-label="Alejar" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 12h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+      </button>
     </div>
 
     <!-- Ficha del local tocado: flota junto al local, dentro de la pantalla. -->
@@ -616,9 +618,10 @@ const id = `plano-${plan.nivel.id.toLowerCase()}`
     user-select: none;
   }
 
-  /* Controles de zoom en la esquina, como en un mapa. */
+  /* Controles de zoom en la esquina, como en un mapa (el lienzo mide lo mismo que el mapa). */
   .plano__zoom {
     position: absolute;
+    z-index: 2;
     inset-block-start: var(--space-xs);
     inset-inline-end: var(--space-xs);
     display: grid;
@@ -659,10 +662,15 @@ const id = `plano-${plan.nivel.id.toLowerCase()}`
     block-size: 1.25rem;
   }
 
-  /* En celular el plano es bajo: los controles se hacen compactos para no taparlo. */
+  /* En celular el plano es bajo: los controles van debajo del mapa, en fila y a la derecha. */
   @media (max-width: 40rem) {
     .plano__zoom {
+      position: static;
       grid-auto-flow: column;
+      inline-size: max-content;
+      margin-block-start: var(--space-xs);
+      margin-inline-start: auto;
+      box-shadow: none;
     }
 
     .zoom__boton + .zoom__boton {

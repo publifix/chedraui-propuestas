@@ -18,6 +18,7 @@ const CAMPOS_POR_SECCION: Partial<Record<Seccion, string[]>> = {
   BusinessCase: ['escenarios_venta', 'giro.costo_ocupacion_objetivo'],
   Modulos: ['plaza.modulos'],
   Directorio: ['plaza.directorio'],
+  Galeria: ['plaza.galeria'],
   PlanoInteractivo: ['plaza.niveles', 'locales.*.ruta'],
 }
 
@@ -25,7 +26,7 @@ const CAMPOS_POR_SECCION: Partial<Record<Seccion, string[]>> = {
  * Campos de fotos. Una foto que falta no bloquea el estado "lista" (CLAUDE.md §7.5.2): en revisión
  * se lista como foto pendiente y en el link de envío se sustituye por una composición gráfica.
  */
-const CAMPOS_FOTO = ['plaza.hero.imagen', 'plaza.diferenciales.*.imagen', 'plaza.modulos.*.imagen', 'locales.*.media.fotos']
+const CAMPOS_FOTO = ['plaza.hero.imagen', 'plaza.diferenciales.*.imagen', 'plaza.modulos.*.imagen', 'plaza.galeria.*.imagen', 'locales.*.media.fotos']
 
 export const esCampoFoto = (path: string) => CAMPOS_FOTO.some((prefix) => matchesPrefix(path, prefix))
 
@@ -42,6 +43,7 @@ interface ModeloConFotos {
     hero: { imagen: string }
     diferenciales: Array<{ titulo: string; imagen?: string | undefined }>
     modulos?: Array<{ titulo: string; imagen?: string | undefined }> | undefined
+    galeria?: Array<{ imagen: string; alt: string }> | undefined
   }
   locales: Array<{ clave: string; media?: { fotos?: string[] | undefined } | undefined }>
 }
@@ -57,6 +59,9 @@ export function findFotosPendientes(model: ModeloConFotos, secciones: readonly S
     ),
     ...(activa('Modulos') ? (model.plaza.modulos ?? []) : []).flatMap((m, i) =>
       falta(m.imagen) ? [{ path: `plaza.modulos.${i}.imagen`, text: `Módulo «${m.titulo}»` }] : [],
+    ),
+    ...(activa('Galeria') ? (model.plaza.galeria ?? []) : []).flatMap((g, i) =>
+      falta(g.imagen) ? [{ path: `plaza.galeria.${i}.imagen`, text: `Galería «${g.alt}»` }] : [],
     ),
     ...(activa('FichaLocal') ? model.locales : []).flatMap((l, i) => {
       const fotos = l.media?.fotos ?? []

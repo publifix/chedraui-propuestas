@@ -1,0 +1,271 @@
+---
+// 13 · Galería: carrusel de fotos de la plaza antes del cierre. Desliza con el dedo o el pad,
+// con flechas de teclado sobre la pista o con los botones; sin JS se recorre con scroll.
+import Headline from '../Headline.astro'
+import Label from '../Label.astro'
+import PlazaImage from '../PlazaImage.astro'
+import Screen from '../Screen.astro'
+import { isTodo } from '../../lib/todo'
+import { SECTION_IDS } from '../../lib/sections'
+import type { SectionProps } from './types'
+
+type Props = SectionProps
+
+const { model, kind } = Astro.props
+const { plaza } = model
+// Una foto pendiente no entra al carrusel; en revisión se cuenta en la franja (fotos pendientes).
+const fotos = (plaza.galeria ?? []).filter((f) => f.imagen.trim() !== '' && !isTodo(f.imagen))
+const dos = (n: number) => String(n).padStart(2, '0')
+---
+{fotos.length > 0 && (
+  <Screen section={SECTION_IDS.Galeria} labelledby="galeria-titulo" align="start" bleed compact>
+    <div class="galeria" data-galeria>
+      <div class="galeria__cabeza">
+        <Label text={plaza.nombre} />
+        <Headline id="galeria-titulo" text="Recorre la plaza" />
+      </div>
+
+      <ul class="galeria__pista" tabindex="0" aria-label={`Fotos de ${plaza.nombre}. Desliza o usa las flechas para recorrerlas.`} data-pista>
+        {fotos.map((f, i) => (
+          <li class="galeria__foto" aria-label={`${i + 1} de ${fotos.length}`} data-foto>
+            <figure>
+              <PlazaImage plaza={plaza.slug} ruta={f.imagen} alt={f.alt} ratio="3/2" sizes="(min-width: 64rem) 52rem, 86vw" kind={kind} falta={`galeria.${i}.imagen`} class="galeria__imagen" />
+              {f.pie && <figcaption class="galeria__pie t-meta">{f.pie}</figcaption>}
+            </figure>
+          </li>
+        ))}
+      </ul>
+
+      <div class="galeria__controles" data-controles hidden>
+        <p class="galeria__cuenta tabular" aria-live="polite">
+          <span class="visually-hidden">Foto </span><span data-actual>01</span><span aria-hidden="true"> / </span><span class="visually-hidden"> de </span>{dos(fotos.length)}
+        </p>
+        <span class="galeria__progreso" aria-hidden="true"><span data-progreso style={`--avance:${1 / fotos.length}`}></span></span>
+        <div class="galeria__botones">
+          <button type="button" class="galeria__boton" data-mover="-1" aria-label="Foto anterior" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </button>
+          <button type="button" class="galeria__boton" data-mover="1" aria-label="Foto siguiente">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </Screen>
+)}
+
+<script>
+  // Sigue la foto más cercana al inicio de la pista: contador, barra de avance, botones y foto activa.
+  for (const galeria of document.querySelectorAll<HTMLElement>('[data-galeria]')) {
+    const pista = galeria.querySelector<HTMLElement>('[data-pista]')!
+    const fotos = [...pista.querySelectorAll<HTMLElement>('[data-foto]')]
+    const controles = galeria.querySelector<HTMLElement>('[data-controles]')!
+    const actual = galeria.querySelector<HTMLElement>('[data-actual]')!
+    const progreso = galeria.querySelector<HTMLElement>('[data-progreso]')!
+    const [anterior, siguiente] = [...galeria.querySelectorAll<HTMLButtonElement>('[data-mover]')]
+    const reducido = matchMedia('(prefers-reduced-motion: reduce)')
+    let indice = 0
+
+    const inicio = () => parseFloat(getComputedStyle(pista).paddingInlineStart) || 0
+    const cercana = () => {
+      const x = pista.scrollLeft + inicio()
+      let mejor = 0
+      fotos.forEach((f, i) => {
+        if (Math.abs(f.offsetLeft - x) < Math.abs(fotos[mejor]!.offsetLeft - x)) mejor = i
+      })
+      // Al final de la pista, la última foto cuenta como activa aunque no llegue al inicio.
+      return pista.scrollLeft + pista.clientWidth >= pista.scrollWidth - 2 ? fotos.length - 1 : mejor
+    }
+    const pintar = () => {
+      indice = cercana()
+      actual.textContent = String(indice + 1).padStart(2, '0')
+      progreso.style.setProperty('--avance', String((indice + 1) / fotos.length))
+      anterior!.disabled = indice === 0
+      siguiente!.disabled = indice === fotos.length - 1
+      fotos.forEach((f, i) => f.toggleAttribute('data-activa', i === indice))
+    }
+    const ir = (i: number) => {
+      const destino = fotos[Math.max(0, Math.min(fotos.length - 1, i))]!
+      pista.scrollTo({ left: destino.offsetLeft - inicio(), behavior: reducido.matches ? 'auto' : 'smooth' })
+    }
+
+    let pendiente = 0
+    pista.addEventListener('scroll', () => {
+      cancelAnimationFrame(pendiente)
+      pendiente = requestAnimationFrame(pintar)
+    }, { passive: true })
+    anterior!.addEventListener('click', () => ir(indice - 1))
+    siguiente!.addEventListener('click', () => ir(indice + 1))
+    // Las flechas mueven una foto completa, no unos píxeles.
+    pista.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+      e.preventDefault()
+      ir(indice + (e.key === 'ArrowRight' ? 1 : -1))
+    })
+    // Tocar una foto que asoma la trae al frente.
+    fotos.forEach((f, i) => f.addEventListener('click', () => i !== indice && ir(i)))
+    addEventListener('resize', pintar)
+
+    controles.hidden = fotos.length < 2
+    galeria.toggleAttribute('data-js', true)
+    pintar()
+  }
+</script>
+
+<style>
+  .galeria {
+    /* Margen lateral igual al de las demás pantallas; la pista corre a sangre hasta el borde. */
+    --galeria-margen: max(var(--space-m), env(safe-area-inset-left), (100% - 72rem) / 2);
+    --galeria-radio: calc(var(--radius-m) * 2);
+
+    display: grid;
+    gap: var(--space-l);
+    padding-block: var(--space-2xl);
+  }
+
+  .galeria__cabeza,
+  .galeria__controles {
+    padding-inline: var(--galeria-margen) max(var(--space-m), env(safe-area-inset-right), (100% - 72rem) / 2);
+  }
+
+  .galeria__cabeza {
+    display: grid;
+    gap: var(--space-2xs);
+  }
+
+  .galeria__pista {
+    /* Posicionada: offsetLeft de cada foto se mide desde la pista. */
+    position: relative;
+    display: flex;
+    gap: var(--space-s);
+    margin: 0;
+    padding: 0 var(--galeria-margen);
+    list-style: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--galeria-margen);
+    scrollbar-width: none;
+  }
+
+  .galeria__pista::-webkit-scrollbar {
+    display: none;
+  }
+
+  .galeria__pista:focus-visible {
+    outline-offset: calc(-1 * var(--space-3xs));
+  }
+
+  .galeria__foto {
+    flex: 0 0 min(86%, 52rem);
+    scroll-snap-align: start;
+    transition: opacity var(--duration) var(--ease-out);
+  }
+
+  /* Con JS, las fotos que asoman se atenúan para que la activa mande. */
+  .galeria[data-js] .galeria__foto:not([data-activa]) {
+    opacity: 0.5;
+    cursor: pointer;
+  }
+
+  .galeria__foto figure {
+    display: grid;
+    gap: var(--space-xs);
+    margin: 0;
+  }
+
+  .galeria__foto :global(.galeria__imagen) {
+    display: block;
+    border-radius: var(--galeria-radio);
+  }
+
+  .galeria__foto :global(picture) {
+    display: block;
+    overflow: hidden;
+    border-radius: var(--galeria-radio);
+  }
+
+  .galeria__pie {
+    padding-inline-start: var(--space-3xs);
+  }
+
+  .galeria__controles {
+    display: flex;
+    align-items: center;
+    gap: var(--space-m);
+  }
+
+  .galeria__controles[hidden] {
+    display: none;
+  }
+
+  .galeria__cuenta {
+    margin: 0;
+    font-size: var(--step--1);
+    font-weight: var(--strong-weight);
+    letter-spacing: 0.04em;
+  }
+
+  /* Barra de avance: línea fina con el tramo recorrido en el acento. */
+  .galeria__progreso {
+    position: relative;
+    flex: 1;
+    block-size: var(--line-width);
+    background: var(--color-line);
+  }
+
+  .galeria__progreso span {
+    position: absolute;
+    inset: 0;
+    background: var(--color-accent);
+    transform: scaleX(var(--avance));
+    transform-origin: left;
+    transition: transform var(--duration) var(--ease-out);
+  }
+
+  .galeria__botones {
+    display: flex;
+    gap: var(--space-2xs);
+  }
+
+  .galeria__boton {
+    display: grid;
+    place-items: center;
+    inline-size: 48px;
+    block-size: 48px;
+    border: var(--line-width) solid var(--color-accent);
+    border-radius: 50%;
+    background: var(--color-surface);
+    color: var(--color-accent);
+    cursor: pointer;
+    transition:
+      background var(--duration-fast) var(--ease-out),
+      color var(--duration-fast) var(--ease-out);
+  }
+
+  /* Solo con puntero que flota: en pantallas táctiles el hover se queda pegado tras tocar. */
+  @media (hover: hover) {
+    .galeria__boton:hover:not(:disabled) {
+      background: var(--color-accent);
+      color: var(--color-surface);
+    }
+  }
+
+  .galeria__boton:disabled {
+    border-color: var(--color-line);
+    color: color-mix(in srgb, var(--color-text) 30%, var(--color-surface));
+    cursor: default;
+  }
+
+  .galeria__boton svg {
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .galeria__foto,
+    .galeria__progreso span {
+      transition: none;
+    }
+  }
+</style>

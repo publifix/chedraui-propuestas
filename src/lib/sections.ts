@@ -14,6 +14,7 @@ export const SECTION_IDS: Record<Seccion | 'Footer', string> = {
   BusinessCase: 'business-case',
   Modulos: 'modulos',
   Directorio: 'directorio',
+  Galeria: 'galeria',
   Cierre: 'cierre',
   Footer: 'footer',
 }

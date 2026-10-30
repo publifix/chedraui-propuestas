@@ -167,6 +167,13 @@ describe('modelo resuelto', () => {
     )
   })
 
+  it('una foto de la galería en TODO no bloquea lista y se cuenta como foto pendiente', () => {
+    const files = editYaml(seedFiles(), SEED.plaza, (d) => (d['galeria'][1].imagen = 'TODO: foto del pasillo'))
+    const model = resolvePresentation(buildContent(files), ID)
+    expect(model.pendientes).toEqual([])
+    expect(model.fotosPendientes.map((f) => f.path)).toContain('plaza.galeria.1.imagen')
+  })
+
   it('verifica los números del business case de Rubí con el módulo de cálculos', () => {
     const [local] = resolvePresentation(buildContent(seedFiles()), ID).locales
     const c = local!.calculos

@@ -16,6 +16,7 @@ export const SECCIONES = [
   'BusinessCase',
   'Modulos',
   'Directorio',
+  'Galeria',
   'Cierre',
 ] as const
 

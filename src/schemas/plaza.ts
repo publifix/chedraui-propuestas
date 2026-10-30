@@ -89,6 +89,13 @@ const nivel = z.strictObject({
   ocupantes: z.array(ocupante).optional(),
 })
 
+// Foto de la galería en carrusel (sección Galeria): imagen de media/, texto alternativo y pie.
+const fotoGaleria = z.strictObject({
+  imagen: text,
+  alt: text,
+  pie: text.optional(),
+})
+
 const modulo = z.strictObject({
   id: slug,
   titulo: text,
@@ -111,6 +118,7 @@ export const plazaSchema = z
     directorio: z.array(marcaDirectorio).optional(),
     niveles: z.array(nivel).min(1, 'debe tener al menos un nivel'),
     modulos: z.array(modulo).optional(),
+    galeria: z.array(fotoGaleria).optional(),
     // Empresa que comercializa los locales (p. ej. Inmobiliaria Chedraui); su logo va en el cierre.
     administradora: z.strictObject({ nombre: text, logo: text.optional() }).optional(),
     contacto_general: z.strictObject({
