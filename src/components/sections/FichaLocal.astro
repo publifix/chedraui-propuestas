@@ -1,9 +1,11 @@
 ---
 // 7 · FichaLocal: clave, área, nivel, ficha técnica, vecinos y fotos de cada local.
+import Field from '../Field.astro'
 import Headline from '../Headline.astro'
 import Label from '../Label.astro'
 import PlazaImage from '../PlazaImage.astro'
 import Screen from '../Screen.astro'
+import { vecinosDe } from '../../lib/resolve'
 import { SECTION_IDS } from '../../lib/sections'
 import type { SectionProps } from './types'
 
@@ -28,6 +30,8 @@ const si = (v: boolean | undefined) => (v === undefined ? undefined : v ? 'Sí' 
         ].filter((row): row is [string, string] => Boolean(row[1]))
       : []
     const fotos = local.media?.fotos ?? []
+    const vecinos = vecinosDe(model, local)
+    const area = local.area_m2.toLocaleString('es-MX')
     const id = `local-${local.clave.replace(/\W+/g, '-').toLowerCase()}`
     return (
       <Screen labelledby={id} align="start">
@@ -35,7 +39,7 @@ const si = (v: boolean | undefined) => (v === undefined ? undefined : v ? 'Sí' 
         <dl class="datos">
           <div>
             <dt><Label as="span" text="Área" /></dt>
-            <dd class="t-figure">{local.area_m2.toLocaleString('es-MX')} m²</dd>
+            <dd class="t-figure">{area} m²</dd>
           </div>
           <div>
             <dt><Label as="span" text="Nivel" /></dt>
@@ -55,19 +59,26 @@ const si = (v: boolean | undefined) => (v === undefined ? undefined : v ? 'Sí' 
           <p class="todo pendiente">Ficha técnica pendiente (ficha_tecnica en el archivo del local)</p>
         )}
 
-        {local.vecinos && local.vecinos.length > 0 && (
+        {vecinos.length > 0 && (
           <div class="vecinos">
             <Label text="Vecinos" />
-            <ul>{local.vecinos.map((v) => <li>{v}</li>)}</ul>
+            <ul>
+              {vecinos.map((v) => (
+                <li>
+                  <span class="vecino__marca"><Field value={v.marca} /></span>
+                  <span class="vecino__dato t-meta">{v.clave}{v.giro && <> · <Field value={v.giro} /></>}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 
         <div class="fotos">
           {fotos.length > 0
             ? fotos.map((foto, i) => (
-                <PlazaImage plaza={plaza.slug} ruta={foto} alt={`Local ${local.clave}, foto ${i + 1}`} ratio="4/3" sizes="(min-width: 48rem) 33vw, 100vw" kind={kind} falta={`media.fotos.${i}`} />
+                <PlazaImage plaza={plaza.slug} ruta={foto} alt={`Local ${local.clave}, foto ${i + 1}`} ratio="4/3" sizes="(min-width: 48rem) 33vw, 100vw" kind={kind} falta={`media.fotos.${i}`} composicion={{ titulo: `Local ${local.clave}`, cifra: { cifra: local.clave, etiqueta: `Local para ${model.prospecto.marca}` } }} />
               ))
-            : <PlazaImage plaza={plaza.slug} ruta={undefined} alt="" ratio="4/3" sizes="100vw" kind={kind} falta={`fotos del local ${local.clave} (media.fotos)`} />}
+            : <PlazaImage class="fotos__unica" plaza={plaza.slug} ruta={undefined} alt="" ratio="16/9" sizes="100vw" kind={kind} falta={`fotos del local ${local.clave} (media.fotos)`} composicion={{ titulo: `Local ${local.clave}`, cifra: { cifra: local.clave, etiqueta: `Local para ${model.prospecto.marca}` } }} />}
         </div>
       </Screen>
     )
@@ -128,18 +139,31 @@ const si = (v: boolean | undefined) => (v === undefined ? undefined : v ? 'Sí' 
   }
 
   .vecinos ul {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));
     gap: var(--space-2xs);
     padding: 0;
     list-style: none;
   }
 
   .vecinos li {
-    padding: var(--space-3xs) var(--space-xs);
+    display: grid;
+    gap: var(--space-3xs);
+    padding: var(--space-xs) var(--space-s);
     border: var(--line-width) solid var(--color-line);
     border-radius: var(--radius-s);
-    font-size: var(--step--1);
+  }
+
+  .vecino__marca {
+    font-weight: var(--strong-weight);
+    line-height: 1.2;
+  }
+
+  /* Composición en lugar de las fotos: en pantallas anchas, una franja en vez de un bloque. */
+  @media (min-width: 48rem) {
+    .fotos :global(.fotos__unica) {
+      aspect-ratio: 3 / 1 !important;
+    }
   }
 
   .fotos {

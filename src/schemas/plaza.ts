@@ -56,9 +56,10 @@ const diferencial = z.strictObject({
   imagen: text.optional(),
 })
 
+// Sin logo, la marca se muestra como marca tipográfica; con logo (imagen de media/), el logo.
 const ancla = z.strictObject({
   marca: text,
-  logo: text,
+  logo: text.optional(),
   giro: text,
   area_m2: z.number().positive().optional(),
   local_ref: text.optional(),
@@ -66,7 +67,7 @@ const ancla = z.strictObject({
 
 const marcaDirectorio = z.strictObject({
   marca: text,
-  logo: text,
+  logo: text.optional(),
   giro: text,
 })
 
@@ -117,10 +118,24 @@ export const plazaSchema = z
       correo: z.email('debe ser un correo válido'),
       telefono: text,
     }),
-    legales: z.strictObject({
-      aviso_privacidad_url: url,
-      leyenda_imagenes: text,
-    }),
+    legales: z
+      .strictObject({
+        // Aviso externo (https://) o, si no existe, el texto del aviso para la página interna
+        // /privacidad/<plaza>/ (src/pages/privacidad/[plaza].astro).
+        aviso_privacidad_url: url.optional(),
+        aviso_privacidad: z
+          .strictObject({
+            responsable: text,
+            actualizado: text,
+            secciones: z.array(z.strictObject({ titulo: text, texto: text })).min(1, 'debe tener al menos una sección'),
+          })
+          .optional(),
+        leyenda_imagenes: text,
+      })
+      .refine((l) => l.aviso_privacidad_url !== undefined || l.aviso_privacidad !== undefined, {
+        path: ['aviso_privacidad_url'],
+        message: 'define aviso_privacidad_url o el texto en aviso_privacidad',
+      }),
   })
   .superRefine((plaza, ctx) => {
     const seen = new Set<string>()

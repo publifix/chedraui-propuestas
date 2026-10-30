@@ -18,7 +18,7 @@ const modulos = plaza.modulos ?? []
     <ul class="modulos">
       {modulos.map((m, i) => (
         <li class="modulo">
-          <PlazaImage plaza={plaza.slug} ruta={m.imagen} alt={m.titulo} ratio="3/2" sizes="(min-width: 48rem) 50vw, 100vw" kind={kind} falta={`modulos.${i}.imagen`} />
+          <PlazaImage plaza={plaza.slug} ruta={m.imagen} alt={m.titulo} ratio="3/2" sizes="(min-width: 48rem) 50vw, 100vw" kind={kind} falta={`modulos.${i}.imagen`} composicion={{ titulo: m.titulo, texto: m.texto }} />
           <Headline as="h3" class="modulo__titulo" text={m.titulo} />
           <p>{m.texto}</p>
         </li>

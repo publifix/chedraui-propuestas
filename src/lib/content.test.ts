@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { buildContent, ContentValidationError, findTodos, loadContent, resolveContentDir } from './content'
-import { completarSemilla, editYaml, readYaml, SEED, seedFiles } from './test-utils'
+import { buildContent, ContentValidationError, findDemos, findTodos, loadContent, resolveContentDir } from './content'
+import { completarSemilla, editYaml, readYaml, SEED, seedFiles, semillaEnBorrador } from './test-utils'
 
 /** Errores de validación de `files`; falla si la validación pasa. */
 function errorsOf(files: Map<string, string>): string[] {
@@ -22,7 +22,7 @@ describe('contenido semilla', () => {
     expect([...content.plazas.keys()]).toEqual(['el-dorado'])
     expect([...content.plazas.get('el-dorado')!.locales.keys()]).toEqual(['A25+A26'])
     expect([...content.giros.keys()]).toEqual(['perfumeria'])
-    expect([...content.asesores.keys()]).toEqual(['demo'])
+    expect([...content.asesores.keys()]).toEqual(['mariana-ortega'])
     expect([...content.presentaciones.keys()]).toEqual(['2026-11-rubi-perfumeria-a25-a26'])
   })
 
@@ -97,7 +97,7 @@ describe('referencias del local', () => {
   })
 
   it('acepta un plano en TODO mientras no exista', () => {
-    const files = editYaml(seedFiles(), SEED.plaza, (d) => (d['niveles'][0].plano = 'TODO: plano'))
+    const files = editYaml(semillaEnBorrador(), SEED.plaza, (d) => (d['niveles'][0].plano = 'TODO: plano'))
     editYaml(files, SEED.local, (d) => delete d['ruta'])
     files.delete(SVG)
     expect(() => buildContent(files)).not.toThrow()
@@ -165,15 +165,24 @@ describe('TODO', () => {
     ])
   })
 
-  it('el contenido semilla lista sus pendientes', () => {
-    const { todos } = buildContent(seedFiles())
-    expect(todos.some((t) => t.text.includes('confirmar la regla del depósito'))).toBe(true)
+  it('lista los comentarios # TODO del contenido', () => {
+    const files = seedFiles()
+    files.set(SEED.local, `# TODO: confirmar la regla del depósito\n${files.get(SEED.local)}`)
+    const { todos } = buildContent(files)
+    expect(todos).toContainEqual({ file: `content/${SEED.local}`, line: 1, text: 'TODO: confirmar la regla del depósito' })
+  })
+})
+
+describe('DEMO', () => {
+  it('cuenta los comentarios # DEMO (no un # dentro de un valor)', () => {
+    const demos = findDemos('f.yaml', 'a: 1 # DEMO\nb: "#4405"\nc: # DEMO: bloque\n  - x\n#DEMO\nd: DEMO\n# los valores # DEMO son de demostración\ne: "a # b" # DEMO\n')
+    expect(demos.map((d) => d.line)).toEqual([1, 3, 5, 8])
   })
 })
 
 describe('estado "lista"', () => {
   it('falla si queda cualquier TODO visible y lista cada campo', () => {
-    const files = editYaml(seedFiles(), SEED.presentacion, (d) => (d['estado'] = 'lista'))
+    const files = editYaml(semillaEnBorrador(), SEED.presentacion, (d) => (d['estado'] = 'lista'))
     const errors = errorsOf(files)
     const prefix = 'content/presentaciones/2026-11-rubi-perfumeria-a25-a26.yaml › estado: "lista" exige completar'
     expect(errors.every((e) => e.startsWith(prefix))).toBe(true)
@@ -188,18 +197,38 @@ describe('estado "lista"', () => {
   })
 
   it('no exige completar campos de secciones desactivadas', () => {
-    const files = editYaml(completarSemilla(), SEED.plaza, (d) => (d['directorio'][0].logo = 'TODO: logo'))
+    const files = editYaml(completarSemilla(), SEED.plaza, (d) => (d['directorio'][0].giro = 'TODO: giro'))
     editYaml(files, SEED.presentacion, (d) => (d['estado'] = 'lista'))
     expect(errorsOf(files)).toEqual([
-      'content/presentaciones/2026-11-rubi-perfumeria-a25-a26.yaml › estado: "lista" exige completar plaza.directorio.0.logo (TODO: logo)',
+      'content/presentaciones/2026-11-rubi-perfumeria-a25-a26.yaml › estado: "lista" exige completar plaza.directorio.0.giro (TODO: giro)',
     ])
     editYaml(files, SEED.presentacion, (d) => (d['secciones'] = ['Portada', 'Condiciones', 'Cierre']))
     expect(() => buildContent(files)).not.toThrow()
   })
 
   it('en borrador acepta TODO', () => {
-    expect(readYaml(seedFiles(), SEED.presentacion)['estado']).toBe('borrador')
+    const files = semillaEnBorrador()
+    expect(readYaml(files, SEED.presentacion)['estado']).toBe('borrador')
+    expect(() => buildContent(files)).not.toThrow()
+  })
+
+  it('el contenido real de Rubí está en "lista" y pasa la validación', () => {
+    expect(readYaml(seedFiles(), SEED.presentacion)['estado']).toBe('lista')
     expect(() => buildContent(seedFiles())).not.toThrow()
+  })
+
+  it('las fotos faltantes no bloquean "lista"; cualquier otro TODO sí', () => {
+    const files = editYaml(completarSemilla(), SEED.presentacion, (d) => (d['estado'] = 'lista'))
+    editYaml(files, SEED.plaza, (d) => {
+      d['hero'].imagen = 'TODO: foto principal'
+      d['diferenciales'][0].imagen = 'TODO: foto'
+    })
+    editYaml(files, SEED.local, (d) => (d['media'] = { fotos: ['TODO: fotos del local'] }))
+    expect(() => buildContent(files)).not.toThrow()
+    editYaml(files, SEED.plaza, (d) => (d['hero'].alt = 'TODO: texto alternativo'))
+    expect(errorsOf(files)).toEqual([
+      'content/presentaciones/2026-11-rubi-perfumeria-a25-a26.yaml › estado: "lista" exige completar plaza.hero.alt (TODO: texto alternativo)',
+    ])
   })
 
   it('los comentarios # TODO no bloquean una presentación lista', () => {

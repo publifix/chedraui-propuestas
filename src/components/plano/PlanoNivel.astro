@@ -3,7 +3,7 @@
 // capas activables, ruta desde el estacionamiento o un ancla, y versión en texto.
 import Field from '../Field.astro'
 import Label from '../Label.astro'
-import type { ResolvedFloorPlan, ResolvedPresentation } from '../../lib/resolve'
+import { ocupantesDe, vecinosDe, type ResolvedFloorPlan, type ResolvedPresentation } from '../../lib/resolve'
 import { esGiroAfin } from '../../lib/plano/afines'
 import { frameAround, prepareSvg } from '../../lib/plano/svg'
 import { isTodo } from '../../lib/todo'
@@ -17,16 +17,18 @@ interface Props {
 const { model, plan, kind } = Astro.props
 const { plaza, giro } = model
 const afines = giro.giros_afines ?? []
+const ocupantes = ocupantesDe(model, plan.nivel.id)
 const vb = plan.info.viewBox
 const clave = plan.claves[0]!
 const local = model.locales.find((l) => l.clave === clave)!
+const vecinos = vecinosDe(model, local)
 const sinDato = kind === 'revision' ? 'pendiente' : 'sin información'
 const texto = (v: string | undefined) => (v === undefined || isTodo(v) ? sinDato : v)
 
 // Datos del panel por clave: ocupantes del nivel y locales de la presentación.
 type Info = { clave: string; marca: string; giro: string; area?: string; estado?: string; objetivo?: boolean; afin?: boolean }
 const info: Record<string, Info> = {}
-for (const o of plan.ocupantes) {
+for (const o of ocupantes) {
   info[o.clave] = {
     clave: o.clave,
     marca: texto(o.marca),
@@ -38,7 +40,7 @@ for (const o of plan.ocupantes) {
 for (const l of model.locales.filter((l) => plan.claves.includes(l.clave))) {
   info[l.clave] = { clave: l.clave, marca: `Local para ${model.prospecto.marca}`, giro: l.estado === 'disponible' ? 'Disponible' : 'Apartado', area: `${l.area_m2.toLocaleString('es-MX')} m²`, objetivo: true }
 }
-const categorias = new Map(plan.ocupantes.map((o) => [o.clave, o.categoria ?? 'tienda']))
+const categorias = new Map(ocupantes.map((o) => [o.clave, o.categoria ?? 'tienda']))
 const attrs = Object.fromEntries(
   [...plan.info.locales.keys()].map((c) => {
     const i = info[c]
@@ -61,8 +63,8 @@ const view = (v: typeof vb) => `${v.x} ${v.y} ${v.width} ${v.height}`
 
 const ruta = local.ruta && plan.info.rutas.find((r) => r.desde === local.ruta!.desde && r.hasta === clave)
 const origen = ruta && plan.info.origenes.get(ruta.desde)
-const restaurantes = plan.ocupantes.filter((o) => o.categoria === 'restaurante').length
-const nAfines = plan.ocupantes.filter((o) => esGiroAfin(o.giro, afines)).length
+const restaurantes = ocupantes.filter((o) => o.categoria === 'restaurante').length
+const nAfines = ocupantes.filter((o) => esGiroAfin(o.giro, afines)).length
 const capas = [
   { id: 'anclas', nombre: 'Anclas', n: plan.info.anclas.length },
   { id: 'restaurantes', nombre: 'Restaurantes', n: restaurantes },
@@ -114,10 +116,10 @@ const id = `plano-${plan.nivel.id.toLowerCase()}`
         <p>Local {clave} · {local.area_m2.toLocaleString('es-MX')} m² · {plan.nivel.nombre}</p>
         {local.ruta && <p>Desde {origen?.toLowerCase() ?? local.ruta.desde}: <Field value={local.ruta.texto} /></p>}
       </section>
-      {local.vecinos && local.vecinos.length > 0 && (
+      {vecinos.length > 0 && (
         <section>
           <h3 class="t-label">Vecinos</h3>
-          <ul>{local.vecinos.map((v) => <li>{v}</li>)}</ul>
+          <ul>{vecinos.map((v) => <li>{v.clave} · {texto(v.marca)}{v.giro && ` · ${texto(v.giro)}`}</li>)}</ul>
         </section>
       )}
       <section>
@@ -130,7 +132,7 @@ const id = `plano-${plan.nivel.id.toLowerCase()}`
       </section>
       <section class="texto__ocupantes">
         <h3 class="t-label">Otros locales del nivel</h3>
-        <ul>{plan.ocupantes.map((o) => <li>{o.clave} · {texto(o.marca)} · {texto(o.giro)}</li>)}</ul>
+        <ul>{ocupantes.map((o) => <li>{o.clave} · {texto(o.marca)} · {texto(o.giro)}</li>)}</ul>
       </section>
     </div>
   </details>

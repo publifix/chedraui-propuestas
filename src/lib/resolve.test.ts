@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildContent } from './content'
 import { mergeCondiciones, resolveAll, resolvePresentation } from './resolve'
-import { editYaml, readYaml, SEED, seedFiles } from './test-utils'
+import { editYaml, readYaml, SEED, seedFiles, semillaEnBorrador } from './test-utils'
 import { SECCIONES, type CondicionesBase } from '../schemas'
 
 const ID = '2026-11-rubi-perfumeria-a25-a26'
@@ -51,7 +51,7 @@ describe('resolvePresentation', () => {
     expect(model.locales.map((l) => l.clave)).toEqual(['A25+A26'])
     expect(model.locales[0]!.condiciones).toEqual(model.locales[0]!.condiciones_base)
     expect(model.giro.slug).toBe('perfumeria')
-    expect(model.asesor.slug).toBe('demo')
+    expect(model.asesor.slug).toBe('mariana-ortega')
     expect(model.secciones).toEqual([...SECCIONES])
   })
 
@@ -92,6 +92,7 @@ function comparativa(condiciones?: unknown) {
   segundo['clave'] = 'A22'
   segundo['plano_ref'] = 'local-a22'
   delete segundo['ruta']
+  delete segundo['vecinos']
   segundo['area_m2'] = 60
   segundo['condiciones_base'].renta_mensual = 14000
   files.set('plazas/el-dorado/locales/a22.yaml', JSON.stringify(segundo))
@@ -106,7 +107,7 @@ describe('condiciones por local (comparativa)', () => {
     const files = comparativa({ 'A25+A26': { renta_mensual: 16000 }, A22: { meses_gracia: 2 } })
     const [a25, a22] = resolvePresentation(buildContent(files), ID).locales
     expect(a25!.condiciones.renta_mensual).toBe(16000)
-    expect(a25!.condiciones.meses_gracia).toBeUndefined()
+    expect(a25!.condiciones.meses_gracia).toBe(a25!.condiciones_base.meses_gracia)
     expect(a22!.condiciones.renta_mensual).toBe(14000)
     expect(a22!.condiciones.meses_gracia).toBe(2)
   })
@@ -135,18 +136,52 @@ describe('modelo resuelto', () => {
   })
 
   it('marca como pendientes los cálculos que dependen de TODO', () => {
-    const [local] = resolvePresentation(buildContent(seedFiles()), ID).locales
+    const [local] = resolvePresentation(buildContent(semillaEnBorrador()), ID).locales
     expect(local!.calculos.ventasEquilibrio.kind).toBe('pending')
     expect(local!.calculos.escenarios.map((e) => e.costoOcupacion.kind)).toEqual(['pending', 'pending', 'pending'])
   })
 
   it('lista los TODO visibles para el link de revisión', () => {
-    const model = resolvePresentation(buildContent(seedFiles()), ID)
+    const model = resolvePresentation(buildContent(semillaEnBorrador()), ID)
     expect(model.estado).toBe('borrador')
     const paths = model.pendientes.map((t) => t.path)
     expect(paths).toContain('plaza.frase_principal')
-    expect(paths).toContain('narrativa.pivote')
+    expect(paths).toContain('narrativa.cierre')
     expect(paths).toContain('giro.costo_ocupacion_objetivo.max')
     expect(paths).not.toContain('tokens.envio')
+  })
+
+  it('los ocupantes viven solo en plaza.niveles: un TODO de ocupante se lista una vez', () => {
+    const files = editYaml(semillaEnBorrador(), SEED.plaza, (d) => (d['niveles'][0].ocupantes[0].marca = 'TODO: marca del ocupante'))
+    const model = resolvePresentation(buildContent(files), ID)
+    expect(model.planos[0]).not.toHaveProperty('ocupantes')
+    const ocupante = model.pendientes.filter((t) => t.text === 'TODO: marca del ocupante')
+    expect(ocupante.map((t) => t.path)).toEqual(['plaza.niveles.0.ocupantes.0.marca'])
+  })
+
+  it('Rubí, con datos completos, solo deja fotos pendientes', () => {
+    const model = resolvePresentation(buildContent(seedFiles()), ID)
+    expect(model.pendientes).toEqual([])
+    expect(model.fotosPendientes.map((f) => f.path)).toEqual(
+      expect.arrayContaining(['plaza.diferenciales.1.imagen', 'plaza.diferenciales.4.imagen', 'locales.0.media.fotos']),
+    )
+  })
+
+  it('verifica los números del business case de Rubí con el módulo de cálculos', () => {
+    const [local] = resolvePresentation(buildContent(seedFiles()), ID).locales
+    const c = local!.calculos
+    expect(c.subtotalMensual.amount).toBe(19550)
+    const pct = c.escenarios.map((e) => (e.costoOcupacion.kind === 'ratio' ? +(e.costoOcupacion.value * 100).toFixed(2) : null))
+    expect(pct).toEqual([10.86, 7.52, 5.14])
+    expect(c.ventasEquilibrio.kind === 'money' && c.ventasEquilibrio.amount).toBeCloseTo(162916.67, 2)
+  })
+
+  it('cuenta los valores # DEMO de los archivos de la presentación', () => {
+    const model = resolvePresentation(buildContent(seedFiles()), ID)
+    expect(model.demos.length).toBeGreaterThan(0)
+    const archivos = new Set(model.demos.map((d) => d.file))
+    expect(archivos).toEqual(
+      new Set([`content/${SEED.plaza}`, `content/${SEED.local}`, `content/${SEED.giro}`, `content/${SEED.asesor}`, `content/${SEED.presentacion}`]),
+    )
   })
 })

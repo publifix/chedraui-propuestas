@@ -3,6 +3,7 @@
 import Field from '../Field.astro'
 import { Image } from 'astro:assets'
 import { plazaImage } from '../../lib/media'
+import { withBase } from '../../lib/paths'
 import { SECTION_IDS } from '../../lib/sections'
 import { isTodo } from '../../lib/todo'
 import type { SectionProps } from './types'
@@ -13,6 +14,7 @@ const { model } = Astro.props
 const { plaza } = model
 const { legales, contacto_general: contacto } = plaza
 const logo = await plazaImage(plaza.slug, plaza.tema.logo)
+const avisoUrl = legales.aviso_privacidad_url ?? withBase(`privacidad/${plaza.slug}/`)
 const web = contacto.web.startsWith('http') ? contacto.web : `https://${contacto.web}`
 ---
 <footer class="site-footer" data-section={SECTION_IDS.Footer}>
@@ -26,9 +28,9 @@ const web = contacto.web.startsWith('http') ? contacto.web : `https://${contacto
     </p>
     <p class="t-meta"><Field value={legales.leyenda_imagenes} /></p>
     <p class="t-meta">
-      {isTodo(legales.aviso_privacidad_url)
-        ? <>Aviso de privacidad: <Field value={legales.aviso_privacidad_url} /></>
-        : <a href={legales.aviso_privacidad_url} rel="noopener">Aviso de privacidad</a>}
+      {isTodo(avisoUrl)
+        ? <>Aviso de privacidad: <Field value={avisoUrl} /></>
+        : <a href={avisoUrl}>Aviso de privacidad</a>}
     </p>
     <p class="site-footer__credit t-meta">Presentación preparada por Publifix</p>
   </div>

@@ -19,6 +19,16 @@ const { model, kind } = Astro.props
       const c = local.calculos
       const iva = formatPercent(local.condiciones.iva)
       const pdfRule = deposito({ ...local.condiciones, deposito: { ...local.condiciones.deposito, incluye_mantenimiento: true, incluye_iva: true } })
+      const cond = local.condiciones
+      const inc = cond.incremento_anual
+      const terminos = [
+        cond.plazo_minimo_meses && ['Plazo mínimo', `${cond.plazo_minimo_meses} meses`],
+        cond.meses_gracia && ['Meses de gracia', `${cond.meses_gracia} ${cond.meses_gracia === 1 ? 'mes' : 'meses'} sin renta`],
+        inc && (inc.tipo === 'inpc'
+          ? ['Incremento anual', 'Según INPC', `Estimado en ${formatPercent(inc.valor)} sobre la renta a partir del año 2`]
+          : ['Incremento anual', formatPercent(inc.valor), 'Sobre la renta a partir del año 2']),
+        cond.giros_permitidos?.length && ['Giros permitidos', cond.giros_permitidos.join(', ')],
+      ].filter((t): t is [string, string] | [string, string, string] => Boolean(t))
       const id = `estado-${local.clave.replace(/\W+/g, '-').toLowerCase()}`
       return (
         <article class="estado" aria-labelledby={id}>
@@ -43,7 +53,16 @@ const { model, kind } = Astro.props
             </div>
             <div><dt>Renta por m²</dt><dd>{formatMoney(c.rentaPorM2)}</dd></div>
             <div><dt>Mantenimiento por m²</dt><dd>{formatMoney(c.mantenimientoPorM2)}</dd></div>
+            <div>
+              <dt>Costo del primer año{c.costoAnual.assumptions.length > 0 && <span class="estado__detalle t-meta">{c.costoAnual.assumptions.join('; ')}</span>}</dt>
+              <dd class="estado__apilado">{formatAmount(c.costoAnual.amount)}<span class="t-meta">{vatLabel(c.costoAnual.vat)}</span></dd>
+            </div>
           </dl>
+          {terminos.length > 0 && (
+            <dl class="estado__rows estado__rows--extra estado__terminos">
+              {terminos.map(([k, v, detalle]) => <div><dt>{k}{detalle && <span class="estado__detalle t-meta">{detalle}</span>}</dt><dd>{v}</dd></div>)}
+            </dl>
+          )}
           <p class="estado__nota t-meta">
             Renta y mantenimiento se expresan antes de IVA. El total mensual y el depósito incluyen IVA del {iva}. Montos en pesos mexicanos.
           </p>
@@ -148,6 +167,12 @@ const { model, kind } = Astro.props
 
   .estado__rows--extra div:last-child {
     border-block-end: 0;
+  }
+
+  /* Términos de texto: el valor puede ocupar varias líneas. */
+  .estado__terminos dd {
+    white-space: normal;
+    max-inline-size: 60%;
   }
 
   .estado__revision {

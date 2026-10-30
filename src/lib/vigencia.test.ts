@@ -13,6 +13,25 @@ describe('vigencia', () => {
     expect(localIsoDate(new Date(2026, 0, 5, 1, 0))).toBe('2026-01-05')
   })
 
+  it('el 29 de octubre de 2026 en México la propuesta al 30 de noviembre sigue vigente', () => {
+    const tz = process.env.TZ
+    try {
+      process.env.TZ = 'America/Mexico_City'
+      // 29 de octubre a cualquier hora en México, incluso cuando en UTC ya es 30.
+      for (const instante of ['2026-10-29T00:00:00-06:00', '2026-10-29T12:00:00-06:00', '2026-10-29T23:59:00-06:00']) {
+        const now = new Date(instante)
+        expect(localIsoDate(now)).toBe('2026-10-29')
+        expect(isExpired('2026-11-30', now)).toBe(false)
+      }
+      // Último día: vigente hasta las 23:59 hora de México (ya 1 de diciembre en UTC).
+      expect(isExpired('2026-11-30', new Date('2026-11-30T23:30:00-06:00'))).toBe(false)
+      expect(isExpired('2026-11-30', new Date('2026-12-01T00:01:00-06:00'))).toBe(true)
+    } finally {
+      if (tz === undefined) delete process.env.TZ
+      else process.env.TZ = tz
+    }
+  })
+
   it('formatea la fecha en español de México', () => {
     expect(formatVigencia('2026-11-30')).toBe('30 de noviembre de 2026')
   })

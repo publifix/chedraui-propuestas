@@ -1,6 +1,9 @@
 ---
 // 3 · Métricas: cifras de la plaza con fuente y periodo siempre visibles (CLAUDE.md §4.6).
 // Los números suben al entrar en pantalla; sin JS o con movimiento reducido se ven ya completos.
+// La cifra existe una sola vez en el documento: durante la cuenta, el texto real queda
+// transparente (los lectores de pantalla leen el valor final) y encima se pinta una copia
+// decorativa que se retira al terminar.
 import Field from '../Field.astro'
 import Headline from '../Headline.astro'
 import Label from '../Label.astro'
@@ -30,10 +33,7 @@ const metricas = model.plaza.metricas.map((m) => ({ ...m, parsed: parseValor(m.v
         <dt class="metrica__etiqueta"><Label as="span" text={m.etiqueta} /></dt>
         <dd class="metrica__valor t-figure">
           {m.parsed ? (
-            <>
-              <span class="visually-hidden">{m.valor}</span>
-              <span aria-hidden="true" data-counter={m.parsed.value} data-decimals={m.parsed.decimals}>{m.parsed.prefix}<span class="metrica__num">{m.parsed.value.toLocaleString('es-MX', { minimumFractionDigits: m.parsed.decimals })}</span>{m.parsed.suffix}</span>
-            </>
+            <span class="metrica__cifra" data-counter={m.parsed.value} data-decimals={m.parsed.decimals} data-prefix={m.parsed.prefix} data-suffix={m.parsed.suffix}>{m.valor}</span>
           ) : m.valor}
         </dd>
         <dd class="metrica__fuente t-meta">
@@ -52,16 +52,25 @@ const metricas = model.plaza.metricas.map((m) => ({ ...m, parsed: parseValor(m.v
     const run = (el: HTMLElement) => {
       const target = Number(el.dataset.counter)
       const decimals = Number(el.dataset.decimals ?? 0)
-      const num = el.querySelector<HTMLElement>('.metrica__num')
-      if (!num) return
-      const format = (n: number) => n.toLocaleString('es-MX', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
+      const { prefix = '', suffix = '' } = el.dataset
+      const format = (n: number) => prefix + n.toLocaleString('es-MX', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + suffix
+      const overlay = document.createElement('span')
+      overlay.className = 'metrica__cuenta'
+      overlay.setAttribute('aria-hidden', 'true')
+      overlay.textContent = format(0)
+      el.classList.add('is-counting')
+      el.append(overlay)
       const start = performance.now()
       const step = (now: number) => {
         const t = Math.min(1, (now - start) / 1200)
-        num.textContent = format(target * (1 - (1 - t) ** 3))
-        if (t < 1) requestAnimationFrame(step)
+        overlay.textContent = format(target * (1 - (1 - t) ** 3))
+        if (t < 1) {
+          requestAnimationFrame(step)
+          return
+        }
+        overlay.remove()
+        el.classList.remove('is-counting')
       }
-      num.textContent = format(0)
       requestAnimationFrame(step)
     }
     const observer = new IntersectionObserver((entries) => {
@@ -102,5 +111,23 @@ const metricas = model.plaza.metricas.map((m) => ({ ...m, parsed: parseValor(m.v
 
   .metrica__fuente {
     order: 3;
+  }
+
+  .metrica__cifra {
+    position: relative;
+    display: inline-block;
+  }
+
+  .metrica__cifra.is-counting {
+    color: transparent;
+  }
+
+  /* Copia decorativa de la cuenta, alineada al inicio sobre el texto real. */
+  .metrica__cifra :global(.metrica__cuenta) {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    color: var(--color-text);
+    white-space: nowrap;
   }
 </style>

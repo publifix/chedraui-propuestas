@@ -1,0 +1,85 @@
+---
+// Aviso de privacidad de una plaza (CLAUDE.md §7.1, legales.aviso_privacidad): solo para plazas
+// sin aviso externo. Con la identidad de la plaza, noindex y sin enlaces a presentaciones.
+import '../../styles/base.css'
+import Headline from '../../components/Headline.astro'
+import type { Plaza } from '../../schemas'
+import { getContent } from '../../lib/site'
+import { fontFaceCss, preloadUrls, themeCss, themeFonts } from '../../lib/theme'
+
+export function getStaticPaths() {
+  return [...getContent().plazas.values()]
+    .filter(({ plaza }) => plaza.legales.aviso_privacidad && !plaza.legales.aviso_privacidad_url)
+    .map(({ plaza }) => ({ params: { plaza: plaza.slug }, props: { plaza } }))
+}
+
+interface Props {
+  plaza: Plaza
+}
+
+const { plaza } = Astro.props
+const aviso = plaza.legales.aviso_privacidad!
+const { tema } = plaza
+const fonts = themeFonts(tema.tipografias)
+const nombre = plaza.nombre_completo ?? plaza.nombre
+---
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Aviso de privacidad · {plaza.nombre}</title>
+    <meta name="description" content={`Aviso de privacidad de las propuestas comerciales de ${nombre}.`} />
+    <meta name="theme-color" content={tema.colores.fondo} />
+    {preloadUrls([tema.tipografias.display, tema.tipografias.cuerpo]).map((href) => <link rel="preload" href={href} as="font" type="font/woff2" crossorigin />)}
+    <style is:inline set:html={fontFaceCss(fonts)} />
+    <style is:inline set:html={themeCss(tema)} />
+  </head>
+  <body>
+    <main class="aviso">
+      <Headline as="h1" text="Aviso de privacidad" />
+      <p class="t-meta">{nombre} · {aviso.responsable} · Última actualización: {aviso.actualizado}</p>
+      {aviso.secciones.map((s) => (
+        <section class="aviso__seccion">
+          <h2 class="aviso__titulo">{s.titulo}</h2>
+          {s.texto.split(/\n\s*\n/).map((parrafo) => <p>{parrafo}</p>)}
+        </section>
+      ))}
+      <p class="t-meta aviso__contacto">
+        {plaza.contacto_general.correo} · {plaza.contacto_general.telefono} · {plaza.ubicacion.direccion}
+      </p>
+    </main>
+  </body>
+</html>
+
+<style>
+  .aviso {
+    display: grid;
+    gap: var(--space-s);
+    max-inline-size: 42rem;
+    margin-inline: auto;
+    padding: max(var(--space-2xl), env(safe-area-inset-top)) max(var(--space-m), env(safe-area-inset-right)) max(var(--space-2xl), env(safe-area-inset-bottom)) max(var(--space-m), env(safe-area-inset-left));
+  }
+
+  .aviso__seccion {
+    display: grid;
+    gap: var(--space-xs);
+    padding-block-start: var(--space-m);
+    border-block-start: var(--line-width) solid var(--color-line);
+  }
+
+  .aviso__titulo {
+    font-size: var(--step-1);
+    font-weight: var(--strong-weight);
+    line-height: 1.2;
+  }
+
+  .aviso p {
+    max-inline-size: 65ch;
+  }
+
+  .aviso__contacto {
+    margin-block-start: var(--space-l);
+  }
+</style>

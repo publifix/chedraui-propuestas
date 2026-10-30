@@ -46,7 +46,7 @@ const frames = [
     id: 'planta',
     svg: prepareSvg(plan.svg, { prefix: 'zn-', locales: marca, labels: etiqueta }),
     titulo: plan.nivel.nombre,
-    texto: `${plan.info.locales.size} locales · plano esquemático, no a escala`,
+    texto: `Ubicación del local ${clave} · plano esquemático, no a escala`,
     alt: `${plan.nivel.nombre} de ${plaza.nombre} con el local ${clave} resaltado`,
     ratio: vb.width / vb.height,
     origin: `${pct(target.bbox.x + target.bbox.width / 2, vb.x, vb.width)}% ${pct(target.bbox.y + target.bbox.height / 2, vb.y, vb.height)}%`,

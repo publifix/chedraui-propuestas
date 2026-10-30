@@ -1,7 +1,7 @@
 id: 2026-11-rubi-perfumeria-a25-a26
 
 # borrador: solo link de revisión con TODO visibles. lista: sin TODO visibles, genera link de envío.
-estado: borrador
+estado: lista
 
 # Generados con crypto.randomBytes(12).toString('base64url').
 tokens:
@@ -14,27 +14,29 @@ locales:
 
 prospecto:
   marca: Rubí Perfumería
-  # TODO: destinatario real (valor de demostración).
-  destinatario: Equipo Rubí Perfumería
+  destinatario: Equipo Rubí Perfumería # DEMO
   giro: perfumeria
 
 vigencia: 2026-11-30
 
-# Escenarios ilustrativos. TODO: definir ventas mensuales de cada escenario.
+# Escenarios ilustrativos de ventas mensuales (antes de IVA).
 escenarios_venta:
   - nombre: Conservador
-    ventas_mensuales: "TODO: ventas mensuales"
+    ventas_mensuales: 180000 # DEMO
   - nombre: Base
-    ventas_mensuales: "TODO: ventas mensuales"
+    ventas_mensuales: 260000 # DEMO
   - nombre: Optimista
-    ventas_mensuales: "TODO: ventas mensuales"
+    ventas_mensuales: 380000 # DEMO
 
 narrativa:
-  apertura: "TODO: redactar apertura"
-  pivote: "TODO: redactar cita pivote"
-  cierre: "TODO: redactar cierre"
+  apertura: >- # DEMO
+    Liverpool y Chedraui Selecto traen el flujo diario. La marina atrae al visitante de la Riviera,
+    que llega a pasar la tarde. Sally Beauty, Pandora y las marcas de moda ya trazan un recorrido de
+    belleza. Rubí Perfumería entra justo en ese recorrido.
+  pivote: Este es el local que pensamos para Rubí. Ahora, los números, sin adornos. # DEMO
+  cierre: El local se entiende mejor en persona. Te invitamos a recorrerlo. # DEMO
 
-asesor: demo
+asesor: mariana-ortega
 
 seo:
   titulo: Propuesta para Rubí Perfumería · El Dorado

@@ -3,6 +3,7 @@ import '../styles/base.css'
 import { getImage } from 'astro:assets'
 import Footer from '../components/sections/Footer.astro'
 import Label from '../components/Label.astro'
+import SiVencida from '../components/SiVencida.astro'
 import type { ResolvedPresentation } from '../lib/resolve'
 import { plazaImage } from '../lib/media'
 import { withBase } from '../lib/paths'
@@ -42,7 +43,13 @@ const whatsappVencida = whatsappUrl(
 const icono = await plazaImage(plaza.slug, tema.icono)
 const favicon = icono ? (await getImage({ src: icono, width: 64, height: 64, format: 'png' })).src : withBase('favicon.svg')
 const appleIcon = icono ? (await getImage({ src: icono, width: 180, height: 180, format: 'png' })).src : undefined
-const pendientes = model.pendientes
+// Franja de revisión: pendientes que bloquean "lista", fotos pendientes (no bloquean) y datos
+// de demostración (# DEMO). Nada de esto existe en el link de envío.
+const listas = [
+  { nombre: 'pendientes', vacia: 'Sin pendientes: la presentación puede pasar a "lista".', items: model.pendientes.map((t) => ({ ref: t.path, text: t.text })) },
+  { nombre: 'fotos pendientes', vacia: 'Todas las fotos están cargadas.', items: model.fotosPendientes.map((t) => ({ ref: t.path, text: t.text })) },
+  { nombre: 'datos de demostración', vacia: 'Sin datos de demostración.', items: model.demos.map((d) => ({ ref: `${d.file.split('/').slice(-2).join('/')}:${d.line}`, text: d.text.replace(/\s*#\s*DEMO\b.*$/, '') || d.text })) },
+].map((l) => ({ ...l, n: l.items.length }))
 ---
 <!doctype html>
 <html lang="es" class:list={[isRevision ? 'is-revision' : 'is-envio']}>
@@ -91,18 +98,24 @@ const pendientes = model.pendientes
       {isRevision && (
         <aside class="review-banner" aria-label="Vista previa interna">
           <Label as="span" text="Vista previa interna · sin registro" />
-          {pendientes.length > 0 && (
-            <details class="review-banner__todos">
-              <summary class="t-label">{pendientes.length} pendientes</summary>
-              <ol>
-                {pendientes.map((todo) => (
-                  <li>
-                    <code>{todo.path}</code> <span>{todo.text}</span>
-                  </li>
-                ))}
-              </ol>
-            </details>
-          )}
+          <div class="review-banner__counts">
+            {listas.map((lista) => (
+              <details class="review-banner__lista">
+                <summary class="t-meta">{lista.n} {lista.nombre}</summary>
+                {lista.items.length > 0 ? (
+                  <ol>
+                    {lista.items.map((item) => (
+                      <li>
+                        <code>{item.ref}</code> <span>{item.text}</span>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p class="review-banner__vacia">{lista.vacia}</p>
+                )}
+              </details>
+            ))}
+          </div>
         </aside>
       )}
       <header class="site-header">
@@ -118,6 +131,7 @@ const pendientes = model.pendientes
 
     <main id="contenido" tabindex="-1">
       {!isRevision && (
+        <SiVencida>
         <section class="vencida" aria-labelledby="vencida-titulo">
           {logo && <Image src={logo} alt={plaza.nombre} width={200} densities={[1, 2]} class="vencida__logo" />}
           <h1 id="vencida-titulo" class="vencida__titulo">Esta propuesta venció el <time datetime={model.vigencia}>{vigencia}</time>.</h1>
@@ -125,9 +139,12 @@ const pendientes = model.pendientes
           <p class="t-lead">Para revisar las condiciones vigentes, pide una propuesta actualizada a {asesor.nombre}.</p>
           <a class="vencida__boton" href={whatsappVencida} target="_blank" rel="noopener" data-cta="whatsapp-vencida">Solicitar propuesta actualizada por WhatsApp</a>
         </section>
+        </SiVencida>
       )}
       {isRevision && (
-        <p class="aviso-vencida todo" role="note">Esta propuesta venció el {vigencia}: en el link de envío el prospecto solo ve el aviso de propuesta vencida.</p>
+        <SiVencida>
+          <p class="aviso-vencida todo" role="note">Esta propuesta venció el {vigencia}: en el link de envío el prospecto solo ve el aviso de propuesta vencida.</p>
+        </SiVencida>
       )}
       <div class="contenido">
         <slot />
@@ -170,22 +187,10 @@ const pendientes = model.pendientes
 </html>
 
 <style is:global>
-  /* Vigencia (CLAUDE.md §10): el script del <head> agrega .is-vencida si la fecha ya pasó. */
-  .vencida,
-  .aviso-vencida {
-    display: none;
-  }
-
+  /* Vigencia (CLAUDE.md §10): el script del <head> agrega .is-vencida si la fecha ya pasó y
+     SiVencida inserta entonces los avisos; en el link de envío se oculta el contenido. */
   .is-vencida.is-envio main > .contenido {
     display: none;
-  }
-
-  .is-vencida.is-envio .vencida {
-    display: grid;
-  }
-
-  .is-vencida .aviso-vencida {
-    display: block;
   }
 
   :root {
@@ -195,7 +200,7 @@ const pendientes = model.pendientes
   }
 
   .is-revision {
-    --banner-h: 3.25rem;
+    --banner-h: 4.5rem;
   }
 
   @media (min-width: 40rem) {
@@ -207,6 +212,7 @@ const pendientes = model.pendientes
 
 <style>
   .vencida {
+    display: grid;
     align-content: center;
     justify-items: start;
     gap: var(--space-m);
@@ -244,6 +250,7 @@ const pendientes = model.pendientes
   }
 
   .aviso-vencida {
+    display: block;
     margin: var(--space-s) max(var(--space-m), env(safe-area-inset-left));
     padding: var(--space-xs) var(--space-s);
   }
@@ -274,6 +281,7 @@ const pendientes = model.pendientes
 
   .review-banner {
     position: relative;
+    z-index: 2;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -310,7 +318,13 @@ const pendientes = model.pendientes
     }
   }
 
-  .review-banner__todos summary {
+  .review-banner__counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-s);
+  }
+
+  .review-banner__lista summary {
     cursor: pointer;
     list-style: none;
     text-decoration: underline;
@@ -318,11 +332,19 @@ const pendientes = model.pendientes
     text-underline-offset: 0.25em;
   }
 
-  .review-banner__todos summary::-webkit-details-marker {
+  .review-banner__lista summary {
+    color: var(--color-on-accent);
+    font-size: var(--step--1);
+    white-space: nowrap;
+  }
+
+  .review-banner__lista summary::-webkit-details-marker {
     display: none;
   }
 
-  .review-banner__todos ol {
+  .review-banner__lista ol,
+  .review-banner__vacia {
+    z-index: 1;
     position: absolute;
     inset-inline: 0;
     inset-block-start: 100%;
@@ -335,11 +357,15 @@ const pendientes = model.pendientes
     font-size: var(--step--1);
   }
 
-  .review-banner__todos li + li {
+  .review-banner__vacia {
+    padding-inline-start: var(--space-m);
+  }
+
+  .review-banner__lista li + li {
     margin-block-start: var(--space-3xs);
   }
 
-  .review-banner__todos code {
+  .review-banner__lista code {
     color: var(--color-accent);
   }
 

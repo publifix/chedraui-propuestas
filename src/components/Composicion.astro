@@ -1,0 +1,89 @@
+---
+// Composición tipográfica en el color de marca que ocupa el lugar de una foto que falta
+// (CLAUDE.md §7.5.2). Con cifra en el texto, la cifra grande; sin ella, el título. Es
+// decorativa: el mismo texto está junto a ella, así que el suyo va en CSS (attr) y no se repite
+// en el documento ni lo leen los lectores de pantalla. En revisión lleva la marca "Foto pendiente".
+import { cifraDe } from '../lib/composicion'
+import { isShortText } from '../lib/typography'
+
+interface Props {
+  ratio: string
+  kind: 'revision' | 'envio'
+  titulo: string
+  texto?: string | undefined
+  /** Cifra explícita (p. ej. el área del local); si no, se busca en título y texto. */
+  cifra?: { cifra: string; etiqueta: string } | undefined
+  class?: string | undefined
+}
+
+const { ratio, kind, titulo, texto, cifra = cifraDe(titulo, texto), class: className } = Astro.props
+---
+<div class:list={['composicion', 'surface-brand', className]} style={`aspect-ratio:${ratio}`} aria-hidden="true">
+  {cifra ? (
+    <div class="composicion__cifra">
+      <span class="t-figure" data-texto={cifra.cifra}></span>
+      <span class:list={['t-label', !isShortText(cifra.etiqueta) && 'is-long']} data-texto={cifra.etiqueta}></span>
+    </div>
+  ) : (
+    <span class:list={['composicion__titulo', isShortText(titulo) ? 'is-short' : 'is-long']} data-texto={titulo}></span>
+  )}
+  {kind === 'revision' && <span class="composicion__pendiente todo">Foto pendiente</span>}
+</div>
+
+<style>
+  .composicion {
+    position: relative;
+    display: grid;
+    align-content: end;
+    inline-size: 100%;
+    overflow: hidden;
+    container-type: inline-size;
+    padding: var(--space-l);
+    border-radius: var(--radius-m);
+    /* Marco de línea fina, separado del borde: lámina editorial, sin textura ni imagen. */
+    box-shadow:
+      inset 0 0 0 var(--space-xs) var(--color-brand),
+      inset 0 0 0 calc(var(--space-xs) + var(--line-width)) var(--color-line);
+  }
+
+  .composicion__cifra {
+    display: grid;
+    gap: var(--space-2xs);
+  }
+
+  [data-texto]::before {
+    content: attr(data-texto);
+  }
+
+  .composicion__cifra .t-figure {
+    font-size: min(22cqi, calc(var(--step-5) * 1.6));
+    line-height: 0.95;
+  }
+
+  .composicion__titulo {
+    font-family: var(--font-display);
+    font-size: var(--step-4);
+    line-height: 1;
+    overflow-wrap: anywhere;
+  }
+
+  .composicion__titulo.is-short {
+    font-weight: var(--title-short-weight);
+    font-stretch: var(--title-short-stretch);
+    text-transform: var(--title-short-transform);
+    letter-spacing: var(--title-short-tracking);
+    font-size: var(--step-3);
+  }
+
+  .composicion__titulo.is-long {
+    font-weight: var(--title-long-weight);
+    font-stretch: var(--title-long-stretch);
+    letter-spacing: var(--title-long-tracking);
+  }
+
+  .composicion__pendiente {
+    position: absolute;
+    inset-block-start: var(--space-s);
+    inset-inline-start: var(--space-s);
+  }
+</style>

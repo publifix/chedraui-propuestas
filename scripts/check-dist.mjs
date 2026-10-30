@@ -92,6 +92,28 @@ for (const f of files.filter((f) => /^(p|revision)\/[^/]+\/index\.html$/.test(f)
   }
 }
 
+// Vigencia: el aviso de propuesta vencida solo existe dentro de <template> (SiVencida). El HTML
+// visible de una página nunca dice que la propuesta venció; lo decide el navegador con su fecha.
+for (const f of files.filter((f) => /^(p|revision)\/[^/]+\/index\.html$/.test(f))) {
+  const visible = read(f).replace(/<template[\s\S]*?<\/template>/g, '').replace(/<script[\s\S]*?<\/script>/g, '')
+  check(!/venci[óo]/i.test(visible), `${f}: el aviso de propuesta vencida debe ir dentro de <template>`)
+}
+
+// Link de envío: nada que delate un dato pendiente o de demostración (CLAUDE.md §7.5.2 y §7.6).
+for (const f of files.filter((f) => /^p\/[^/]+\/index\.html$/.test(f))) {
+  const html = read(f)
+  const markup = html.replace(/<(script|style|template)\b[\s\S]*?<\/\1>/g, '')
+  const texto = markup.replace(/<[^>]+>/g, ' ')
+  for (const [re, what] of [
+    [/\bTODO\b/, 'un TODO'],
+    [/\bDEMO\b|demostraci[óo]n/i, 'una marca de demostración'],
+    [/pendiente/i, 'la palabra "pendiente"'],
+  ]) {
+    check(!re.test(texto), `${f}: el link de envío no debe mostrar ${what}`)
+  }
+  check(!/class="[^"]*\b(todo|media-placeholder|review-banner)\b/.test(markup), `${f}: el link de envío no debe tener marcadores de revisión`)
+}
+
 if (errors.length > 0) {
   console.error(`dist/ tiene ${errors.length} problema(s):\n${errors.map((e) => `  - ${e}`).join('\n')}`)
   process.exit(1)

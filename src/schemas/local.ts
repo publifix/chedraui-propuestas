@@ -41,6 +41,8 @@ export const localSchema = z.strictObject({
       extraccion: z.boolean().optional(),
     })
     .optional(),
+  // Claves de los locales vecinos del mismo nivel (ocupantes de la plaza u otros locales); la
+  // marca y el giro se toman de niveles[].ocupantes.
   vecinos: z.array(text).optional(),
   // Ruta del plano interactivo: desde un estacionamiento, ancla o acceso del SVG (su id) hasta
   // el local. El texto de cercanía sale de aquí; TODO si no hay dato. Nunca inventar distancias.

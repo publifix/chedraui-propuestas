@@ -121,13 +121,13 @@ Leyenda: **O** = obligatorio, **Op** = opcional.
 | `hero` | objeto | O | `imagen`, `alt` |
 | `metricas` | lista | O | Cada una: `valor`, `etiqueta`, `fuente`, `periodo` |
 | `diferenciales` | lista | O | Cada uno: `titulo`, `texto`, `imagen` (op) |
-| `anclas` | lista | O | Cada una: `marca`, `logo`, `giro`, `area_m2` (op), `local_ref` (op) |
-| `directorio` | lista | Op | Marcas con `logo` y `giro` |
+| `anclas` | lista | O | Cada una: `marca`, `logo` (op), `giro`, `area_m2` (op), `local_ref` (op). Sin logo, la marca se muestra como marca tipográfica |
+| `directorio` | lista | Op | Marcas con `giro` y `logo` (op). Sin logo, marca tipográfica en la familia de display, en tarjetas uniformes |
 | `niveles` | lista | O | Cada uno: `id`, `nombre`, `plano` (ruta SVG que cumple 7.1.2, o `TODO`), `ocupantes` (op): `clave`, `marca`, `giro`, `area_m2` (op), `categoria` (op: `tienda`, `restaurante`, `servicio`) |
 | `modulos` | lista | Op | Experiencias propias (p. ej. `marina`, `park`, `eventos`) con su contenido |
 | `region` | objeto | Op | `mapa`: SVG ilustrativo de la región para la secuencia de zoom (ver 7.1.2) |
 | `contacto_general` | objeto | O | `web`, `correo`, `telefono` |
-| `legales` | objeto | O | `aviso_privacidad_url`, `leyenda_imagenes` |
+| `legales` | objeto | O | `leyenda_imagenes` y el aviso: `aviso_privacidad_url` (externo, `https://`) o `aviso_privacidad` (`responsable`, `actualizado`, `secciones` con `titulo` y `texto`), que se publica en `/privacidad/<plaza>/` (`src/pages/privacidad/[plaza].astro`, `noindex`) y el footer enlaza |
 
 **Imágenes:** las rutas de `plaza.yaml` (logo, icono, hero, diferenciales, módulos, anclas, directorio) y de `media.fotos` del local son relativas a la carpeta de la plaza (`media/<archivo>`), con nombres en minúsculas y guiones. El build falla si una imagen citada no existe; `TODO` se acepta. Se sirven con el pipeline de Astro (`src/lib/media.ts` con el alias `@content` → `CONTENT_DIR`, `src/components/PlazaImage.astro`): AVIF/WebP en anchos de 360 a 1440 px con `sizes` y respaldo JPG. Una imagen que falta se muestra con `MediaPlaceholder.astro` en su proporción; en revisión dice cuál falta.
 
@@ -165,7 +165,7 @@ Toda plaza entrega **un SVG por nivel** (`niveles[].plano`, relativo a la carpet
 | `estado` | enum | O | `disponible`, `apartado` |
 | `condiciones_base` | objeto | O | Ver 7.2.1 |
 | `ficha_tecnica` | objeto | Op | `frente_m`, `altura_m`, `agua`, `gas`, `carga_electrica`, `extraccion` |
-| `vecinos` | lista | Op | Si no se define, se deriva del plano |
+| `vecinos` | lista | Op | Claves de locales del mismo nivel (ocupantes u otros archivos de local; se valida). La marca y el giro salen de `niveles[].ocupantes`: los ocupantes viven solo ahí (una sola fuente de verdad) |
 | `ruta` | objeto | Op | `desde` (id de un estacionamiento, ancla o acceso del plano) y `texto` de cercanía (`TODO` si no hay dato; nunca inventar distancias ni flujos) |
 | `media` | objeto | Op | `fotos`, `video`, `tour` |
 
@@ -234,6 +234,17 @@ condiciones:           # dos locales
 
 - **`borrador`:** solo se genera el link de revisión, con los `TODO` visibles.
 - **`lista`:** el build falla si queda cualquier valor `TODO` en un campo que vea el prospecto (el modelo resuelto: plaza, locales, giro, asesor y presentación, sin contar los campos de secciones desactivadas en `secciones`). Solo entonces se genera también el link de envío (`src/lib/routes.ts`). Los comentarios `# TODO` no bloquean.
+- **Fotos:** una foto que falta (vacía o en `TODO`: `hero.imagen`, `diferenciales[].imagen`, `modulos[].imagen`, `media.fotos` del local) **no bloquea** `lista` (`esCampoFoto`, `findFotosPendientes` en `src/lib/todos.ts`). En revisión se cuenta en la franja como "fotos pendientes"; en ambos links su lugar lo ocupa una composición con los tokens (`src/components/Composicion.astro`: la cifra del texto en grande, p. ej. "160 mil m²", o el título, sobre el color de marca con un marco de línea fina), nunca un marcador de imagen pendiente. Cualquier otro `TODO` sigue bloqueando.
+
+### 7.6 Datos de demostración (`# DEMO`)
+
+Convención interna, distinta de `TODO`: un valor completo y verosímil que todavía no es un dato confirmado de Chedraui o del prospecto.
+
+- Se marca con un comentario `# DEMO` al final de la línea del valor (`plazo_minimo_meses: 36 # DEMO`). Una marca en la línea de un bloque (`directorio: # DEMO: …`) cubre todo el bloque y cuenta una vez. Un comentario que solo menciona la palabra no cuenta: la marca es el comentario que empieza con `DEMO`.
+- El loader las cuenta por archivo (`findDemos` en `src/lib/content.ts`) y el modelo resuelto junta las de los archivos de la presentación (plaza, sus locales, giro, asesor y la presentación) en `demos`.
+- La franja de revisión muestra por separado "N pendientes" (bloquean `lista`), "N fotos pendientes" y "N datos de demostración", cada uno con su lista (archivo, línea y valor).
+- **En el link de envío no aparece ninguna indicación de que un dato es de demostración**: los valores `# DEMO` se ven como cualquier otro y no bloquean `lista`. `pnpm test:dist` revisa que la página de envío no tenga `TODO`, "demostración", "pendiente" ni marcadores de revisión.
+- Antes de operar con Chedraui, cada `# DEMO` se sustituye por el dato real y se quita la marca.
 
 ## 8. Cálculos (`src/lib/calc`)
 
@@ -285,12 +296,14 @@ Una sección = un componente en `src/components/sections`. Cada una recibe el mo
 
 Implementación (paso 5): cada sección es un componente de `src/components/sections/` que recibe solo `{ model, kind }` (modelo resuelto con sus cálculos y tipo de link). `Sections.astro` las monta en el orden de `secciones` o el de esta tabla; `PlanoInteractivo` llega en el paso 6 (en revisión deja un aviso). Ritmo: la mayoría en fondo claro; **Portada, Pivote y Cierre a sangre en el color de marca**. Cada sección lleva `data-section` con un id estable de `src/lib/sections.ts` (`portada`, `hero-plaza`, `metricas`, `diferenciales`, `anclas`, `plano-interactivo`, `ficha-local`, `pivote`, `condiciones`, `business-case`, `modulos`, `directorio`, `cierre`, `footer`) que usará el tracking: no cambiarlos. Detalles:
 - `Metricas`: contadores que suben al entrar en pantalla (valor final para lectores de pantalla y con movimiento reducido), con fuente y periodo siempre visibles.
-- `Condiciones`: tarjeta tipo estado de cuenta por local; en revisión explica el caso pendiente del depósito.
+- `Portada`: dedicatoria "Para {destinatario} · {marca}" sin repetir la marca si el destinatario ya la nombra (`dedicatoria`, `src/lib/prospecto.ts`), frase principal, `narrativa.apertura` y la línea del local.
+- `Condiciones`: tarjeta tipo estado de cuenta por local, con costo del primer año y términos (plazo mínimo, meses de gracia, incremento anual, giros permitidos) cuando existen; en revisión explica el caso pendiente del depósito.
+- `Metricas`: la cifra existe una sola vez en el documento; durante la cuenta el texto real queda transparente y encima se pinta una copia decorativa (`aria-hidden`) que se retira al terminar.
 - `BusinessCase`: barras de dos tonos (rango sano en `acento_suave`, escenario en `acento`), ventas de equilibrio y simulador con control deslizante. El script del navegador importa `src/lib/calc` (`costoOcupacionPct`, `evaluarRango`); `src/lib/todo.ts` y los cálculos no dependen de Zod para que el navegador no lo cargue.
 - `PlanoInteractivo` (paso 6, `src/components/plano/`): secuencia de zoom ligada al scroll en cuatro etapas (región → plaza → planta → local) con GSAP + ScrollTrigger (dependencia npm, chunk propio del sitio, solo se descarga si se permite movimiento; sin JS o con `prefers-reduced-motion` se ven cuatro cuadros estáticos). Después, el plano del nivel: local de la presentación resaltado con un pulso sutil; panel con clave, marca, giro y área al tocar o pulsar Enter sobre cualquier local; capas activables (anclas, restaurantes, accesos, estacionamiento y giros afines al prospecto, cada una con un tratamiento distinto para poder combinarlas); ruta animada desde `ruta.desde` con su texto de cercanía; recorte en la zona del local con opción de planta completa; y "Ver el plano en texto" con el local, vecinos, anclas, accesos y ocupantes para lector de pantalla.
-- `Cierre`: WhatsApp al asesor con mensaje prellenado (`src/lib/whatsapp.ts`), vigencia y estado de propuesta vencida comprobado en el navegador (`src/lib/vigencia.ts`).
+- `Cierre`: WhatsApp al asesor con mensaje prellenado que lo saluda por su nombre de pila (`src/lib/whatsapp.ts`), vigencia y estado de propuesta vencida comprobado en el navegador (`src/lib/vigencia.ts`).
 
-Layout base (`src/layouts/PresentationLayout.astro`): encabezado fijo con fondo, barra de progreso de lectura, `<main>` donde cada sección va dentro de `src/components/Screen.astro` (una idea por pantalla), footer con aviso de privacidad, leyenda de imágenes y crédito de Publifix, franja "Vista previa interna · sin registro" con la lista de pendientes solo en revisión, `noindex` y Open Graph desde `seo`, márgenes seguros (`env(safe-area-inset-*)`) y entrada sutil que respeta `prefers-reduced-motion`. Los valores en `TODO` se muestran con `src/components/Field.astro`. La muestra de tokens de cada plaza vive en `/revision/<token_revision>/tokens/`.
+Layout base (`src/layouts/PresentationLayout.astro`): encabezado fijo con fondo, barra de progreso de lectura, `<main>` donde cada sección va dentro de `src/components/Screen.astro` (una idea por pantalla), footer con aviso de privacidad, leyenda de imágenes y crédito de Publifix, franja "Vista previa interna · sin registro" solo en revisión, con pendientes, fotos pendientes y datos de demostración por separado (§7.6), `noindex` y Open Graph desde `seo`, márgenes seguros (`env(safe-area-inset-*)`) y entrada sutil que respeta `prefers-reduced-motion`. Los valores en `TODO` se muestran con `src/components/Field.astro`. La muestra de tokens de cada plaza vive en `/revision/<token_revision>/tokens/`.
 
 Reglas tipográficas (`src/lib/typography.ts`, `Headline.astro`, `Label.astro`):
 - **Mayúsculas solo en textos de hasta 5 palabras** (sin contar signos como `·`, `&`, `+`). Ahí va el estilo corto: ancho expandido, mayúsculas y tracking amplio, para etiquetas, nombre de plaza y titulares cortos.
@@ -312,7 +325,7 @@ Implementación (paso 7):
 - **Rutas** (`src/lib/routes.ts`, `src/lib/site.ts`): `/revision/<token_revision>/` para toda presentación y `/p/<token_envio>/` solo en estado `lista`. Cualquier otra ruta, incluido un token inexistente, la sirve GitHub Pages con `src/pages/404.astro`: página sobria con la identidad de Publifix (`src/lib/theme/publifix.ts`, neutra hasta tener la oficial), sin enlaces ni datos de presentaciones. El índice del sitio es una portada neutra que no lista nada. Ninguna página enlaza a otra presentación.
 - **Imagen Open Graph** (`src/lib/og.ts`, `src/pages/og/[hash].jpg.ts`): el build genera un JPEG de 1200×630 por presentación con satori + sharp en Archivo: foto hero con capa en `marca` (o solo `marca` si no hay foto), logo de la plaza en `texto_marca`, "Propuesta para {marca}", clave y nombre de la plaza. Se publica en `og/<hash>.jpg`, un hash de los tokens que no revela el id, el prospecto ni los tokens. Si `seo.imagen_og` es una imagen de la plaza, se recorta esa a 1200×630; si es una URL `https://`, se usa tal cual.
 - **Metadatos** (`src/lib/meta.ts`): título, descripción, `og:url` absoluta con el base, `og:image` con medidas y alt, `og:site_name`, `twitter:card` `summary_large_image`, favicon con el icono de la plaza y `noindex, nofollow` en todas las páginas. `public/robots.txt` bloquea `/p/` y `/revision/`; no hay integración de sitemap.
-- **Vigencia** (`src/lib/vigencia.ts`): un script en línea en el `<head>` (`expiryScript`, misma regla que `isExpired`, probada) marca `<html class="is-vencida">` antes de pintar. En el link de envío se oculta el contenido y queda un estado de propuesta vencida con el logo de la plaza, la marca del prospecto y WhatsApp al asesor para pedir una propuesta actualizada (`mensajeVencida`). En revisión se ve todo el contenido con un aviso de que la propuesta venció.
+- **Vigencia** (`src/lib/vigencia.ts`): un script en línea en el `<head>` (`expiryScript`, misma regla que `isExpired`, probada) marca `<html class="is-vencida">` antes de pintar. En el link de envío se oculta el contenido y queda un estado de propuesta vencida con el logo de la plaza, la marca del prospecto y WhatsApp al asesor para pedir una propuesta actualizada (`mensajeVencida`). En revisión se ve todo el contenido con un aviso de que la propuesta venció. Todo aviso de propuesta vencida va dentro de `src/components/SiVencida.astro`: un `<template>` que un script en línea inserta durante el análisis del HTML solo si la página está vencida, así que mientras la propuesta está vigente el texto "venció" no existe en el documento (no lo leen lectores de pantalla ni extractores de texto). Lo prueban `vigencia.test.ts` (29 de octubre en la zona horaria de México) y `pnpm test:dist` (ningún "venció" fuera de `<template>`).
 - **Pruebas:** `src/lib/__fixtures__/2026-12-prueba-lista.yaml` es una presentación en `lista` solo para pruebas (fuera de `CONTENT_DIR`, nunca se publica). `pnpm test:dist` (`scripts/check-dist.mjs`, también en CI después del build) revisa el sitio construido: 404, robots, sin sitemap, ninguna página que liste presentaciones, rutas de envío solo para `lista` y metadatos e imagen OG de cada página.
 
 ## 11. Tracking
@@ -376,10 +389,10 @@ Datos tomados de la presentación PDF actual de Chedraui (junio 2026).
 - Planta baja: 43 locales, 9 restaurantes.
 - Anclas: Liverpool (28,000 m²), Chedraui Selecto (10,706 m²). Otras marcas: Forever 21, Steve Madden, Smart Fit, Sonora Grill, Coppel, Cinépolis, Cinépolis VIP, Pandora, Starbucks, adidas, Shasa, Sally Beauty, Petco, Telcel, Santander, Banregio, entre otras.
 - Contacto general: centrocomercialeldorado.mx · administracion@centrocomercialeldorado.mx · (229) 986 11 96 / 41 23.
-- Imágenes (`content/plazas/el-dorado/media/`, paso 5): `logo-el-dorado.png` (logo vertical), `icono-velero.png` (velero recortado del logo, favicon), `fachada-marina.jpg` (hero), `acceso-nocturno.jpg` (diferencial Legorreta; 662×302 px, **reemplazar por una de mayor resolución**), `marina-panoramica.png` (diferencial marina), `terraza-marina.jpg` (diferencial terrazas). `compras-stock.png` es una foto de stock que no muestra la plaza: no se usa. Pendientes: imágenes de los diferenciales "160 mil m²" y "El Dorado Park", de los módulos, fotos del local y logos de anclas y directorio. Confirmar derechos de uso de las fotos antes de publicar (el repo es público).
+- Imágenes (`content/plazas/el-dorado/media/`, paso 5): `logo-el-dorado.png` (logo vertical), `icono-velero.png` (velero recortado del logo, favicon), `fachada-marina.jpg` (hero), `acceso-nocturno.jpg` (diferencial Legorreta; 662×302 px, **reemplazar por una de mayor resolución**), `marina-panoramica.png` (diferencial marina), `terraza-marina.jpg` (diferencial terrazas). `compras-stock.png` es una foto de stock que no muestra la plaza: no se usa. Pendientes: imágenes de los diferenciales "160 mil m²" y "El Dorado Park", de los módulos, fotos del local (mientras faltan, composiciones con los tokens, §7.5.2). Los logos de anclas y directorio son opcionales: sin ellos, marcas tipográficas. Confirmar derechos de uso de las fotos antes de publicar (el repo es público).
 - Identidad: morado con velero blanco; hashtag #ExperienciaElDorado. Morado de marca `#660066` (tomado del PDF de disponibilidad, junio 2026). El logo es una sans en mayúsculas con espaciado amplio y toda su comunicación es sans: la dirección tipográfica es sans, no serif. Aprobado en el paso 4: paleta de `plaza.yaml`, Archivo como única familia (expandido en mayúsculas para etiquetas, nombre de plaza y titulares cortos; condensado para titulares largos) y Newsreader itálica solo en la cita pivote. `acento_suave` `#9a579a` = `#660066` al 66 % sobre blanco, como en el PDF.
 
-- Plano (paso 6): `planos/pb.svg` es un plano esquemático dibujado a partir de la lámina 6 del PDF. La zona del A25+A26 (franja A25+A26, A24, A23, A22, A21; detrás A16+A17, A18, A19, A20) va con detalle; el resto, en bloques. Liverpool, Chedraui Selecto, accesos, estacionamiento y marina están ubicados de forma aproximada. Ocupantes en `plaza.yaml` según logos y rótulos del PDF; `TODO` donde no se leen con certeza. La ruta del A25+A26 sale del estacionamiento norte; su texto de cercanía queda en `TODO` porque el PDF no da distancias. `planos/region.svg` es un mapa ilustrativo (costa, Río Jamapa, Veracruz, Boca del Río, Antón Lizardo y el punto de la plaza), sin escala.
+- Plano (paso 6): `planos/pb.svg` es un plano esquemático dibujado a partir de la lámina 6 del PDF. La zona del A25+A26 (franja A25+A26, A24, A23, A22, A21; detrás A16+A17, A18, A19, A20) va con detalle; el resto, en bloques. Liverpool, Chedraui Selecto, accesos, estacionamiento y marina están ubicados de forma aproximada. Ocupantes en `plaza.yaml`: logos del plano identificados contra la lámina de directorio (p. 14 del PDF); donde no se leen, una marca de esa lámina que no está en otro local del plano, marcada `# DEMO`, con 9 restaurantes como dice la métrica. Innvictus (A19), Ben & Frank (A5+A6), Las Acamayas (C1+C2+C3+D1) y GNC (C20) se leen en el plano del PDF pero no están en la lámina: se conservan. La ruta del A25+A26 sale del estacionamiento norte con un texto de cercanía `# DEMO`, sin distancias. La secuencia de zoom no cuenta los locales dibujados: el dato de locales es la métrica (43 en planta baja). `planos/region.svg` es un mapa ilustrativo (costa, Río Jamapa, Veracruz, Boca del Río, Antón Lizardo y el punto de la plaza), sin escala.
 
 **Local A25+A26**
 - Nivel: PB. Área: 77.76 m².
@@ -388,12 +401,12 @@ Datos tomados de la presentación PDF actual de Chedraui (junio 2026).
 - Vecinos visibles en el plano: A23, A22, Innvictus (A19), B3 Studio, A18, A20.
 
 **Prospecto demo 1**
-- Marca: Rubí Perfumería. Giro: perfumería. Destinatario: **pendiente**.
+- Marca: Rubí Perfumería. Giro: perfumería. Destinatario: "Equipo Rubí Perfumería" (`# DEMO`). Estado `lista`; datos completos con valores `# DEMO` (narrativa, escenarios de $180,000 / $260,000 / $380,000, rango 8 %–12 %, condiciones y ficha técnica del local, asesora Mariana Ortega, aviso de privacidad y leyenda de imágenes).
 
 **Prospecto demo 2**
 - Por definir: otra marca y otro giro (sugerencia: cafetería o accesorios) sobre un local distinto de la misma plaza.
 
-**Pendientes de información** (usar marcadores `TODO` visibles solo en el link de revisión): plazo mínimo, incremento anual, meses de gracia, giros permitidos, ficha técnica del local, fotos de buena calidad, plano vectorial, fuente de las métricas, asesor responsable, aviso de privacidad, rango de costo de ocupación por giro.
+**Pendientes de información:** fotos de buena calidad (local, diferenciales y módulos) y plano vectorial. Todo lo demás tiene un valor `# DEMO` (§7.6) que se sustituirá por el dato confirmado: plazo mínimo, incremento anual, meses de gracia, giros permitidos, ficha técnica, fuente de las métricas, asesor responsable, aviso de privacidad, rango de costo de ocupación y ocupantes no legibles.
 
 ## 15. Skills de diseño
 
@@ -425,5 +438,6 @@ Se aplican especialmente en los pasos 4, 5 y 10 del plan de trabajo (sección 12
 - Variables de entorno: ver `.env.example`. Los valores reales de Supabase viven solo en `.env` local y en los secrets del repo; nunca en código ni en el chat.
 - **Flujo de cada paso:** correr `pnpm test`, `pnpm build` y `pnpm test:dist`, hacer commit y push a la rama de trabajo, abrir el pull request hacia `main` y esperar la aprobación en el chat. Con la aprobación, Claude hace el merge, confirma que la corrida de `main` terminó en verde y que el sitio se actualizó.
 - El contenido se valida al iniciar `pnpm build` (integración `src/lib/content-validation.ts`): cualquier error de esquema o de referencia detiene el build y se listan todos, en español, con archivo y campo. En `pnpm dev` los errores se reportan sin detener el servidor.
-- Datos pendientes: los campos de texto obligatorios usan `"TODO: …"`; los opcionales se omiten con un comentario `# TODO: …`; solo `costo_ocupacion_objetivo` y `ventas_mensuales` aceptan `TODO` en lugar de número.
+- Datos pendientes: los campos de texto obligatorios usan `"TODO: …"`; los opcionales se omiten con un comentario `# TODO: …`; solo `costo_ocupacion_objetivo` y `ventas_mensuales` aceptan `TODO` en lugar de número. Los datos de demostración llevan `# DEMO` (§7.6).
+- Pruebas: el contenido real ya está en `lista`; las pruebas de borrador y pendientes usan `semillaEnBorrador()` (`src/lib/test-utils.ts`), que le agrega `TODO` en memoria.
 - El hook `.claude/hooks/session-start.sh` prepara Node 24 y las dependencias en sesiones en la nube.

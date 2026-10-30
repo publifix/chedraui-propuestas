@@ -12,7 +12,7 @@ export const SEED = {
   plaza: 'plazas/el-dorado/plaza.yaml',
   local: 'plazas/el-dorado/locales/a25-a26.yaml',
   giro: 'giros/perfumeria.yaml',
-  asesor: 'asesores/demo.yaml',
+  asesor: 'asesores/mariana-ortega.yaml',
   presentacion: 'presentaciones/2026-11-rubi-perfumeria-a25-a26.yaml',
 } as const
 
@@ -29,9 +29,24 @@ export function editYaml(files: Map<string, string>, rel: string, mutate: (data:
   return files
 }
 
+/**
+ * Semilla en estado "borrador" con algunos TODO visibles, para probar pendientes y cálculos en
+ * pendiente (el contenido real ya está completo y en "lista").
+ */
+export function semillaEnBorrador(): Map<string, string> {
+  const files = seedFiles()
+  editYaml(files, SEED.plaza, (d) => (d['frase_principal'] = 'TODO: frase principal de apertura de la plaza'))
+  editYaml(files, SEED.giro, (d) => (d['costo_ocupacion_objetivo'] = { min: 'TODO: validar con fuente', max: 'TODO: validar con fuente' }))
+  return editYaml(files, SEED.presentacion, (d) => {
+    d['estado'] = 'borrador'
+    d['narrativa'].cierre = 'TODO: redactar cierre'
+    for (const e of d['escenarios_venta']) e.ventas_mensuales = 'TODO: ventas mensuales'
+  })
+}
+
 /** Sustituye todos los TODO de los archivos semilla por valores completos (para probar "lista"). */
 export function completarSemilla(): Map<string, string> {
-  const files = seedFiles()
+  const files = semillaEnBorrador()
   const fill = (value: unknown, key = ''): unknown => {
     if (typeof value === 'string' && value.startsWith('TODO')) {
       if (key === 'ventas_mensuales') return 250000

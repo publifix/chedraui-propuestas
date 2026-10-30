@@ -21,12 +21,48 @@ const CAMPOS_POR_SECCION: Partial<Record<Seccion, string[]>> = {
   PlanoInteractivo: ['plaza.niveles', 'plaza.region', 'locales.*.ruta'],
 }
 
-/** Valores TODO que vería el prospecto, según las secciones activas. */
+/**
+ * Campos de fotos. Una foto que falta no bloquea el estado "lista" (CLAUDE.md §7.5.2): en revisión
+ * se lista como foto pendiente y en el link de envío se sustituye por una composición gráfica.
+ */
+const CAMPOS_FOTO = ['plaza.hero.imagen', 'plaza.diferenciales.*.imagen', 'plaza.modulos.*.imagen', 'locales.*.media.fotos']
+
+export const esCampoFoto = (path: string) => CAMPOS_FOTO.some((prefix) => matchesPrefix(path, prefix))
+
+/** Valores TODO que vería el prospecto, según las secciones activas (fotos aparte). */
 export function findVisibleTodos(model: unknown, secciones: readonly Seccion[]): TodoValue[] {
   const hidden = Object.entries(CAMPOS_POR_SECCION)
     .filter(([seccion]) => !secciones.includes(seccion as Seccion))
     .flatMap(([, campos]) => campos)
-  return findTodoValues(model).filter(({ path }) => !hidden.some((prefix) => matchesPrefix(path, prefix)))
+  return findTodoValues(model).filter(({ path }) => !esCampoFoto(path) && !hidden.some((prefix) => matchesPrefix(path, prefix)))
+}
+
+interface ModeloConFotos {
+  plaza: {
+    hero: { imagen: string }
+    diferenciales: Array<{ titulo: string; imagen?: string | undefined }>
+    modulos?: Array<{ titulo: string; imagen?: string | undefined }> | undefined
+  }
+  locales: Array<{ clave: string; media?: { fotos?: string[] | undefined } | undefined }>
+}
+
+/** Fotos que faltan (vacías o en TODO) en las secciones activas. No bloquean "lista". */
+export function findFotosPendientes(model: ModeloConFotos, secciones: readonly Seccion[]): TodoValue[] {
+  const falta = (ruta: string | undefined) => ruta === undefined || isTodo(ruta)
+  const activa = (s: Seccion) => secciones.includes(s)
+  return [
+    ...(activa('HeroPlaza') && falta(model.plaza.hero.imagen) ? [{ path: 'plaza.hero.imagen', text: 'Foto principal de la plaza' }] : []),
+    ...(activa('Diferenciales') ? model.plaza.diferenciales : []).flatMap((d, i) =>
+      falta(d.imagen) ? [{ path: `plaza.diferenciales.${i}.imagen`, text: `Diferencial «${d.titulo}»` }] : [],
+    ),
+    ...(activa('Modulos') ? (model.plaza.modulos ?? []) : []).flatMap((m, i) =>
+      falta(m.imagen) ? [{ path: `plaza.modulos.${i}.imagen`, text: `Módulo «${m.titulo}»` }] : [],
+    ),
+    ...(activa('FichaLocal') ? model.locales : []).flatMap((l, i) => {
+      const fotos = l.media?.fotos ?? []
+      return fotos.length === 0 || fotos.some(falta) ? [{ path: `locales.${i}.media.fotos`, text: `Fotos del local ${l.clave}` }] : []
+    }),
+  ]
 }
 
 /** "locales.0.ruta.texto" coincide con el prefijo "locales.*.ruta" ("*" = un segmento cualquiera). */
